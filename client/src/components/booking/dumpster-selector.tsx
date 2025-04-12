@@ -72,7 +72,7 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
       </div>
 
       <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4">Rental Duration</h3>
+        <h3 className="text-lg font-bold mb-4 text-[#2c2c2c]">Rental Duration</h3>
         <RadioGroup 
           value={selectedDurationId?.toString()} 
           onValueChange={(value) => setSelectedDurationId(parseInt(value))}
@@ -81,11 +81,11 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
           {durations?.map((duration) => (
             <div 
               key={duration.id}
-              className={`border rounded-lg p-4 cursor-pointer ${
+              className={`border rounded-lg cursor-pointer transition-all ${
                 selectedDurationId === duration.id 
-                  ? "border-primary bg-primary bg-opacity-5" 
-                  : "border-neutral-200 hover:border-primary hover:bg-primary hover:bg-opacity-5"
-              } transition-all`}
+                  ? "border-[#ffdd33] bg-[#2c2c2c] text-white p-4" 
+                  : "border-gray-200 hover:border-[#ffdd33] p-4"
+              }`}
             >
               <RadioGroupItem
                 value={duration.id.toString()}
@@ -96,14 +96,16 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
                 htmlFor={`duration-${duration.id}`}
                 className="flex flex-col cursor-pointer"
               >
-                <span className="block font-medium">{duration.days} Days</span>
+                <span className={`block font-medium ${selectedDurationId === duration.id ? "text-[#ffdd33]" : ""}`}>
+                  {duration.days} Days
+                </span>
                 {duration.additionalPrice > 0 && (
-                  <span className="block text-sm text-neutral-600">
+                  <span className={`block text-sm ${selectedDurationId === duration.id ? "text-white text-opacity-90" : "text-neutral-600"}`}>
                     +${(duration.additionalPrice / 100).toFixed(2)}
                   </span>
                 )}
                 {duration.additionalPrice === 0 && (
-                  <span className="block text-sm text-neutral-600">
+                  <span className={`block text-sm ${selectedDurationId === duration.id ? "text-white text-opacity-90" : "text-neutral-600"}`}>
                     Standard rental period
                   </span>
                 )}
@@ -117,9 +119,9 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
         <Button 
           onClick={handleContinue}
           disabled={!selectedDumpsterId || !selectedDurationId}
-          className="px-6 py-3"
+          className="px-8 py-3 bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#ffd700] font-semibold rounded-sm border-none"
         >
-          Continue
+          CONTINUE
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
             className="h-5 w-5 ml-2" 

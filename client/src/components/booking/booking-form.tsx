@@ -52,7 +52,7 @@ export function BookingForm() {
   };
 
   return (
-    <div>
+    <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <BookingSteps 
         currentStep={currentStep} 
         totalSteps={stepLabels.length} 

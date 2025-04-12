@@ -28,9 +28,11 @@ export function BookingSteps({
               key={step}
               className={cn(
                 "flex-1 py-4 px-4 text-center border-b-2 font-medium transition-colors",
-                isActive || isPrevious 
-                  ? "border-primary text-primary" 
-                  : "border-neutral-200 text-neutral-400",
+                isActive 
+                  ? "border-[#ffdd33] text-[#2c2c2c] font-bold" 
+                  : isPrevious
+                    ? "border-[#ffdd33] text-[#2c2c2c]"
+                    : "border-neutral-200 text-neutral-400",
                 isClickable && "cursor-pointer"
               )}
               onClick={() => isClickable && onStepClick(step)}
