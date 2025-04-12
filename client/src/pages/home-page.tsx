@@ -9,9 +9,9 @@ export default function HomePage() {
     <div>
       <Hero />
       
-      <section id="booking-form" className="py-12 md:py-16">
+      <section id="booking-form" className="py-12 md:py-16 bg-[#f5f5f5]">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden border border-[#eaeaea]">
             <BookingForm />
           </div>
         </div>
@@ -21,15 +21,15 @@ export default function HomePage() {
       <Testimonials />
       <FAQ />
       
-      <section className="py-12 md:py-16 bg-primary text-white">
+      <section className="py-12 md:py-16 bg-[#2c2c2c] text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">Book your dumpster today and enjoy hassle-free waste management for your project.</p>
+          <h2 className="text-3xl font-bold mb-4 text-[#ffdd33]">READY TO GET STARTED?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">Book your dumpster today and enjoy hassle-free waste management for your project.</p>
           <a 
             href="#booking-form" 
-            className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-primary bg-white hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+            className="inline-flex items-center px-8 py-3 border border-transparent rounded-sm shadow-sm text-base font-bold text-[#2c2c2c] bg-[#ffdd33] hover:bg-[#ffd700] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ffdd33] uppercase"
           >
-            Book Now
+            RENT NOW
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               className="h-5 w-5 ml-2" 
