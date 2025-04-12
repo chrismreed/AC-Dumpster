@@ -71,7 +71,7 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
             key={addon.id} 
             className={`border rounded-lg p-4 transition-all ${
               selectedAddOns[addon.id]
-                ? "border-[#ffdd33] bg-[#b39000] text-white" 
+                ? "border-[#ffdd33] bg-[#2c2c2c] text-white" 
                 : "border-neutral-200 hover:border-[#ffdd33]"
             }`}
           >
