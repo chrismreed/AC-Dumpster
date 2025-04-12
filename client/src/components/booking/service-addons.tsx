@@ -69,7 +69,11 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
         {addons?.filter(addon => addon.isActive).map((addon) => (
           <div 
             key={addon.id} 
-            className="border border-neutral-200 rounded-lg p-4 hover:border-primary transition-all"
+            className={`border rounded-lg p-4 transition-all ${
+              selectedAddOns[addon.id]
+                ? "border-primary bg-neutral-900 text-white" 
+                : "border-neutral-200 hover:border-primary"
+            }`}
           >
             <div className="flex items-start">
               <div className="flex-shrink-0 pt-1">
@@ -86,7 +90,9 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
                 >
                   {addon.name}
                 </Label>
-                <p className="text-sm text-neutral-600 mt-1">{addon.description}</p>
+                <p className={`text-sm mt-1 ${selectedAddOns[addon.id] ? "text-neutral-300" : "text-neutral-600"}`}>
+                  {addon.description}
+                </p>
                 <p className="text-sm font-medium text-primary mt-2">+${(addon.price / 100).toFixed(2)}</p>
                 
                 {/* Quantity selector for weight and extension add-ons */}
