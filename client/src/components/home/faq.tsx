@@ -31,23 +31,34 @@ export function FAQ() {
   ];
 
   return (
-    <section className="py-12 bg-neutral-50" id="faq">
+    <section className="py-12 bg-white" id="faq">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+        <h2 className="text-3xl font-bold text-center mb-4 text-[#2c2c2c]">FREQUENTLY ASKED QUESTIONS</h2>
+        <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto">Have questions about our dumpster rental service? Find answers to our most commonly asked questions below.</p>
         
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-4">
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="bg-white shadow-sm rounded-lg">
-                <AccordionTrigger className="px-6 py-4 text-left font-medium hover:no-underline">
+              <AccordionItem key={index} value={`item-${index}`} className="bg-white shadow-md rounded-md border border-gray-100 mb-4 overflow-hidden">
+                <AccordionTrigger className="px-6 py-4 text-left font-medium hover:no-underline text-[#2c2c2c] hover:bg-gray-50 hover:text-[#2c2c2c]">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4 text-neutral-600">
+                <AccordionContent className="px-6 pb-4 text-neutral-600 border-t border-gray-100 pt-2">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
+        </div>
+        
+        <div className="text-center mt-10">
+          <p className="text-gray-600 mb-4">Don't see your question? Contact us!</p>
+          <a 
+            href="tel:+12179942582" 
+            className="inline-flex items-center text-[#2c2c2c] font-medium hover:text-[#ffdd33]"
+          >
+            217-994-2582
+          </a>
         </div>
       </div>
     </section>

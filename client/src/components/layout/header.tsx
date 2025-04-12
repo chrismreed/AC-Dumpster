@@ -38,33 +38,31 @@ export function Header() {
       {/* Main navigation */}
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/">
-          <a className="flex flex-col items-start">
+          <div className="flex flex-col items-start cursor-pointer">
             <span className="text-[#ffdd33] font-bold text-2xl tracking-wide">ALLEY CAT</span>
             <span className="text-[#ffdd33] text-xs font-medium">DUMPSTER RENTAL</span>
-          </a>
+          </div>
         </Link>
         
         <nav className="hidden md:flex space-x-6">
-          <Link href="/#pricing">
-            <a className="text-[#ffdd33] hover:text-white font-medium uppercase">Pricing</a>
+          <Link href="/#pricing" className="text-[#ffdd33] hover:text-white font-medium uppercase cursor-pointer">
+            Pricing
           </Link>
-          <Link href="/#faq">
-            <a className="text-[#ffdd33] hover:text-white font-medium uppercase">FAQ</a>
+          <Link href="/#faq" className="text-[#ffdd33] hover:text-white font-medium uppercase cursor-pointer">
+            FAQ
           </Link>
-          <Link href="/#contact">
-            <a className="text-[#ffdd33] hover:text-white font-medium uppercase">Contact</a>
+          <Link href="/#contact" className="text-[#ffdd33] hover:text-white font-medium uppercase cursor-pointer">
+            Contact
           </Link>
-          <Link href="/#about">
-            <a className="text-[#ffdd33] hover:text-white font-medium uppercase">About</a>
+          <Link href="/#about" className="text-[#ffdd33] hover:text-white font-medium uppercase cursor-pointer">
+            About
           </Link>
         </nav>
         
         {user && user.isAdmin ? (
           <div className="hidden md:flex space-x-4">
-            <Link href="/admin/dashboard">
-              <a className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-sm text-sm font-medium text-[#2c2c2c] bg-[#ffdd33] hover:bg-[#ffd700] focus:outline-none">
-                Admin Dashboard
-              </a>
+            <Link href="/admin/dashboard" className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-sm text-sm font-medium text-[#2c2c2c] bg-[#ffdd33] hover:bg-[#ffd700] focus:outline-none cursor-pointer">
+              Admin Dashboard
             </Link>
             <Button
               variant="outline"
@@ -75,10 +73,8 @@ export function Header() {
             </Button>
           </div>
         ) : (
-          <Link href="/#rent">
-            <a className="hidden md:inline-flex items-center justify-center px-6 py-2 border border-transparent rounded-sm text-sm font-bold text-[#2c2c2c] bg-[#ffdd33] hover:bg-[#ffd700] focus:outline-none uppercase">
-              Rent Now
-            </a>
+          <Link href="/#booking-form" className="hidden md:inline-flex items-center justify-center px-6 py-2 border border-transparent rounded-sm text-sm font-bold text-[#2c2c2c] bg-[#ffdd33] hover:bg-[#ffd700] focus:outline-none uppercase cursor-pointer">
+            Rent Now
           </Link>
         )}
         

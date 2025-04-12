@@ -28,31 +28,32 @@ export function Testimonials() {
     const hasHalfStar = rating % 1 !== 0;
     
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={`star-${i}`} className="fill-amber-400 text-amber-400" />);
+      stars.push(<Star key={`star-${i}`} className="fill-[#ffdd33] text-[#ffdd33]" />);
     }
     
     if (hasHalfStar) {
-      stars.push(<StarHalf key="half-star" className="fill-amber-400 text-amber-400" />);
+      stars.push(<StarHalf key="half-star" className="fill-[#ffdd33] text-[#ffdd33]" />);
     }
     
     return stars;
   };
 
   return (
-    <section className="py-12 md:py-16">
+    <section id="testimonials" className="py-12 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12">What Our Customers Say</h2>
+        <h2 className="text-3xl font-bold text-center mb-4 text-[#2c2c2c]">WHAT OUR CUSTOMERS SAY</h2>
+        <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto">Don't just take our word for it - hear from our satisfied customers!</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm p-6 border border-neutral-100">
-              <div className="flex items-center text-amber-400 mb-4">
+            <div key={index} className="bg-white rounded-lg shadow-md p-6 border border-gray-100 hover:border-[#ffdd33] transition-all">
+              <div className="flex items-center mb-4">
                 {renderStars(testimonial.rating)}
               </div>
-              <p className="text-neutral-600 mb-4">"{testimonial.text}"</p>
-              <div className="flex items-center">
-                <div className="font-medium">{testimonial.name}</div>
-                <div className="text-neutral-400 text-sm ml-2">{testimonial.project}</div>
+              <p className="text-neutral-600 mb-4 italic">"{testimonial.text}"</p>
+              <div className="flex items-center border-t border-gray-100 pt-4">
+                <div className="font-medium text-[#2c2c2c]">{testimonial.name}</div>
+                <div className="text-neutral-500 text-sm ml-2">• {testimonial.project}</div>
               </div>
             </div>
           ))}
