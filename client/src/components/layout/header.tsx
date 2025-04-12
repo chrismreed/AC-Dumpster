@@ -92,26 +92,26 @@ export function Header() {
                 </Button>
               </div>
               <nav className="flex flex-col space-y-4 mt-8">
-                <Link href="/" onClick={closeMenu}>
-                  <a className="text-lg font-medium py-2 text-[#ffdd33]">HOME</a>
+                <Link href="/" onClick={closeMenu} className="text-lg font-medium py-2 text-[#ffdd33]">
+                  HOME
                 </Link>
-                <Link href="/#pricing" onClick={closeMenu}>
-                  <a className="text-lg font-medium py-2 text-[#ffdd33]">PRICING</a>
+                <Link href="/#pricing" onClick={closeMenu} className="text-lg font-medium py-2 text-[#ffdd33]">
+                  PRICING
                 </Link>
-                <Link href="/#faq" onClick={closeMenu}>
-                  <a className="text-lg font-medium py-2 text-[#ffdd33]">FAQ</a>
+                <Link href="/#faq" onClick={closeMenu} className="text-lg font-medium py-2 text-[#ffdd33]">
+                  FAQ
                 </Link>
-                <Link href="/#contact" onClick={closeMenu}>
-                  <a className="text-lg font-medium py-2 text-[#ffdd33]">CONTACT</a>
+                <Link href="/#contact" onClick={closeMenu} className="text-lg font-medium py-2 text-[#ffdd33]">
+                  CONTACT
                 </Link>
-                <Link href="/#about" onClick={closeMenu}>
-                  <a className="text-lg font-medium py-2 text-[#ffdd33]">ABOUT</a>
+                <Link href="/#about" onClick={closeMenu} className="text-lg font-medium py-2 text-[#ffdd33]">
+                  ABOUT
                 </Link>
                 
                 {user && user.isAdmin ? (
                   <>
-                    <Link href="/admin/dashboard" onClick={closeMenu}>
-                      <a className="text-lg font-medium text-[#ffdd33] py-2">ADMIN DASHBOARD</a>
+                    <Link href="/admin/dashboard" onClick={closeMenu} className="text-lg font-medium text-[#ffdd33] py-2">
+                      ADMIN DASHBOARD
                     </Link>
                     <Button
                       variant="outline"
@@ -125,10 +125,8 @@ export function Header() {
                     </Button>
                   </>
                 ) : (
-                  <Link href="/#rent" onClick={closeMenu}>
-                    <a className="inline-flex items-center justify-center px-6 py-2 border border-transparent rounded-sm text-sm font-bold text-[#2c2c2c] bg-[#ffdd33] hover:bg-[#ffd700] focus:outline-none uppercase mt-4">
-                      Rent Now
-                    </a>
+                  <Link href="/#booking-form" onClick={closeMenu} className="inline-flex items-center justify-center px-6 py-2 border border-transparent rounded-sm text-sm font-bold text-[#2c2c2c] bg-[#ffdd33] hover:bg-[#ffd700] focus:outline-none uppercase mt-4">
+                    Rent Now
                   </Link>
                 )}
               </nav>
