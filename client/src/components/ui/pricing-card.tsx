@@ -30,7 +30,7 @@ export function PricingCard({
       className={cn(
         "border rounded-lg p-6 cursor-pointer hover:shadow-md transition-all",
         isSelected 
-          ? "border-[#ffdd33] bg-[#2c2c2c] text-white" 
+          ? "border-[#ffdd33] bg-[#b39000] text-white" 
           : isSelected === false 
             ? "border-[#ffdd33] bg-white text-[#2c2c2c] hover:border-[#ffdd33]"
             : "border-neutral-200 bg-white text-[#2c2c2c] hover:border-[#ffdd33]"

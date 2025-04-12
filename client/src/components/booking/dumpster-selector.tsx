@@ -81,11 +81,11 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
           {durations?.map((duration) => (
             <div 
               key={duration.id}
-              className={`border rounded-lg p-4 cursor-pointer ${
+              className={`border rounded-lg p-4 cursor-pointer transition-all ${
                 selectedDurationId === duration.id 
-                  ? "border-primary bg-primary bg-opacity-5" 
-                  : "border-neutral-200 hover:border-primary hover:bg-primary hover:bg-opacity-5"
-              } transition-all`}
+                  ? "border-[#ffdd33] bg-[#b39000] text-white" 
+                  : "border-neutral-200 hover:border-[#ffdd33]"
+              }`}
             >
               <RadioGroupItem
                 value={duration.id.toString()}
@@ -96,15 +96,19 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
                 htmlFor={`duration-${duration.id}`}
                 className="flex flex-col cursor-pointer"
               >
-                <span className="block font-medium">{duration.days} Days</span>
+                <span className="block font-bold text-lg">{duration.days} Days</span>
                 {duration.additionalPrice > 0 && (
-                  <span className="block text-sm text-neutral-600">
+                  <span className={`block text-sm ${
+                    selectedDurationId === duration.id ? "text-neutral-200" : "text-neutral-600"
+                  }`}>
                     +${(duration.additionalPrice / 100).toFixed(2)}
                   </span>
                 )}
                 {duration.additionalPrice === 0 && (
-                  <span className="block text-sm text-neutral-600">
-                    Standard rental period
+                  <span className={`block text-sm ${
+                    selectedDurationId === duration.id ? "text-neutral-200" : "text-neutral-600"
+                  }`}>
+                    ${(duration.additionalPrice / 100).toFixed(2)}
                   </span>
                 )}
               </Label>
@@ -117,7 +121,7 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
         <Button 
           onClick={handleContinue}
           disabled={!selectedDumpsterId || !selectedDurationId}
-          className="px-6 py-3"
+          className="px-6 py-2 bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#ffd700] font-bold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Continue
           <svg 
