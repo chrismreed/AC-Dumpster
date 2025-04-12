@@ -32,7 +32,7 @@ export function PricingCard({
         isSelected 
           ? "border-[#ffdd33] bg-[#2c2c2c] text-white" 
           : isSelected === false 
-            ? "border-[#ffdd33] bg-white text-[#2c2c2c] hover:border-[#ffdd33]"
+            ? "border-[#2c2c2c] bg-white text-[#2c2c2c] hover:border-[#ffdd33]"
             : "border-neutral-200 bg-white text-[#2c2c2c] hover:border-[#ffdd33]"
       )}
       onClick={onClick}
@@ -70,7 +70,7 @@ export function PricingCard({
             <li className="flex items-center text-sm">
               <span className={cn(
                 "mr-2 text-xs", 
-                isSelected ? "text-[#ffdd33]" : "text-green-500"
+                isSelected ? "text-[#ffdd33]" : "text-[#2c2c2c]"
               )}>✓</span>
               <span className={cn(
                 isSelected ? "text-neutral-200" : "text-neutral-600"
@@ -79,7 +79,7 @@ export function PricingCard({
             <li className="flex items-center text-sm">
               <span className={cn(
                 "mr-2 text-xs", 
-                isSelected ? "text-[#ffdd33]" : "text-green-500"
+                isSelected ? "text-[#ffdd33]" : "text-[#2c2c2c]"
               )}>✓</span>
               <span className={cn(
                 isSelected ? "text-neutral-200" : "text-neutral-600"
@@ -88,7 +88,7 @@ export function PricingCard({
             <li className="flex items-center text-sm">
               <span className={cn(
                 "mr-2 text-xs", 
-                isSelected ? "text-[#ffdd33]" : "text-green-500"
+                isSelected ? "text-[#ffdd33]" : "text-[#2c2c2c]"
               )}>✓</span>
               <span className={cn(
                 isSelected ? "text-neutral-200" : "text-neutral-600"

@@ -96,7 +96,7 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
                 htmlFor={`duration-${duration.id}`}
                 className="flex flex-col cursor-pointer"
               >
-                <span className={`block font-medium ${selectedDurationId === duration.id ? "text-[#ffdd33]" : ""}`}>
+                <span className={`block font-medium ${selectedDurationId === duration.id ? "text-[#ffdd33]" : "text-[#2c2c2c]"}`}>
                   {duration.days} Days
                 </span>
                 {duration.additionalPrice > 0 && (

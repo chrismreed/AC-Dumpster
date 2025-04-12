@@ -5,9 +5,17 @@ import { DeliveryDetails } from "@/components/booking/delivery-details";
 import { ServiceAddons } from "@/components/booking/service-addons";
 import { ReviewOrder } from "@/components/booking/review-order";
 
+// Define types for booking data
+interface BookingData {
+  dumpsterId?: number;
+  rentalDurationId?: number;
+  selectedAddOns?: any[];
+  [key: string]: any;
+}
+
 export function BookingForm() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [bookingData, setBookingData] = useState<any>({});
+  const [bookingData, setBookingData] = useState<BookingData>({});
 
   const stepLabels = [
     "Select Dumpster",
@@ -24,17 +32,17 @@ export function BookingForm() {
   };
 
   const handleDumpsterSelect = (data: { dumpsterId: number; rentalDurationId: number }) => {
-    setBookingData(prevData => ({ ...prevData, ...data }));
+    setBookingData((prevData: BookingData) => ({ ...prevData, ...data }));
     setCurrentStep(2);
   };
 
   const handleDeliveryDetails = (data: any) => {
-    setBookingData(prevData => ({ ...prevData, ...data }));
+    setBookingData((prevData: BookingData) => ({ ...prevData, ...data }));
     setCurrentStep(3);
   };
 
   const handleAddOns = (data: { selectedAddOns: any[] }) => {
-    setBookingData(prevData => ({ ...prevData, ...data }));
+    setBookingData((prevData: BookingData) => ({ ...prevData, ...data }));
     setCurrentStep(4);
   };
 
