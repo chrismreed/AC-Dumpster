@@ -1,0 +1,203 @@
+import { useState, useEffect } from "react";
+import {
+  PaymentElement,
+  useStripe,
+  useElements,
+  Elements,
+} from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { Button } from "@/components/ui/button";
+import { Loader2, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+// Load Stripe outside of component to avoid recreating instance on renders
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLIC_KEY || ""
+);
+
+interface PaymentFormContentProps {
+  clientSecret: string;
+  onSuccess: () => void;
+}
+
+function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!stripe) {
+      return;
+    }
+
+    // Check for payment result from redirect
+    const clientSecret = new URLSearchParams(window.location.search).get(
+      "payment_intent_client_secret"
+    );
+
+    if (!clientSecret) {
+      return;
+    }
+
+    stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
+      if (!paymentIntent) return;
+      
+      switch (paymentIntent.status) {
+        case "succeeded":
+          setPaymentStatus("success");
+          toast({
+            title: "Payment succeeded!",
+            description: "Thank you for your payment.",
+          });
+          onSuccess();
+          break;
+        case "processing":
+          setPaymentStatus("processing");
+          toast({
+            title: "Payment processing",
+            description: "Your payment is processing.",
+          });
+          break;
+        case "requires_payment_method":
+          setPaymentStatus("failed");
+          toast({
+            title: "Payment failed",
+            description: "Please try again with a different payment method.",
+            variant: "destructive",
+          });
+          break;
+        default:
+          setPaymentStatus("failed");
+          toast({
+            title: "Something went wrong",
+            description: "Please try again later.",
+            variant: "destructive",
+          });
+          break;
+      }
+    });
+  }, [stripe, toast, onSuccess]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      // Stripe.js hasn't loaded yet
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          // Redirect to the same page to handle the payment result
+          return_url: window.location.origin + window.location.pathname,
+        },
+      });
+
+      if (error) {
+        if (error.type === "card_error" || error.type === "validation_error") {
+          toast({
+            title: "Payment failed",
+            description: error.message || "An error occurred with your payment",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "An unexpected error occurred",
+            description: "Please try again later",
+            variant: "destructive",
+          });
+        }
+        setPaymentStatus("failed");
+      }
+    } catch (error) {
+      toast({
+        title: "Payment error",
+        description: "There was a problem processing your payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+
+    setIsLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full space-y-6">
+      <div className="bg-white p-6 rounded-lg border border-neutral-200">
+        <h3 className="text-lg font-medium mb-4">Payment Information</h3>
+        <PaymentElement id="payment-element" />
+      </div>
+      <div className="flex items-center justify-center">
+        <Button
+          type="submit"
+          className="px-8 py-3 w-full md:w-auto"
+          disabled={!stripe || !elements || isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : paymentStatus === "success" ? (
+            <>
+              <Check className="mr-2 h-4 w-4" />
+              Payment Complete
+            </>
+          ) : (
+            "Complete Payment"
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+interface PaymentFormProps {
+  clientSecret: string;
+  onSuccess: () => void;
+}
+
+export function PaymentForm({ clientSecret, onSuccess }: PaymentFormProps) {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Make sure we set the component to ready state
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading payment form...</span>
+      </div>
+    );
+  }
+
+  const options = {
+    clientSecret,
+    appearance: {
+      theme: 'stripe' as const, // Type assertion to fix TS error
+      variables: {
+        colorPrimary: '#2563EB',
+        colorBackground: '#ffffff',
+        colorText: '#1F2937',
+        colorDanger: '#ef4444',
+        fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+        spacingUnit: '4px',
+        borderRadius: '8px',
+      },
+    },
+  };
+
+  return (
+    <Elements stripe={stripePromise} options={options}>
+      <PaymentFormContent clientSecret={clientSecret} onSuccess={onSuccess} />
+    </Elements>
+  );
+}

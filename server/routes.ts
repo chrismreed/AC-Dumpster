@@ -1,0 +1,528 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { setupAuth } from "./auth";
+import { storage } from "./storage";
+import Stripe from "stripe";
+import { z } from "zod";
+import { 
+  insertDumpsterSchema, 
+  insertAddOnSchema, 
+  insertServiceZoneSchema,
+  insertRentalDurationSchema,
+  insertBookingSchema 
+} from "@shared/schema";
+
+// Check for Stripe secret key
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.warn('Warning: Missing STRIPE_SECRET_KEY environment variable. Stripe payments will not work.');
+}
+
+// Initialize Stripe if key available
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
+  : undefined;
+
+// Admin middleware
+const isAdmin = (req: Request, res: Response, next: Function) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  if (!req.user?.isAdmin) {
+    return res.status(403).json({ message: "Forbidden - Admin access required" });
+  }
+  next();
+};
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication routes
+  setupAuth(app);
+
+  // Dumpster routes
+  app.get("/api/dumpsters", async (_req, res) => {
+    try {
+      const dumpsters = await storage.listDumpsters();
+      res.json(dumpsters);
+    } catch (err) {
+      console.error("Error fetching dumpsters:", err);
+      res.status(500).json({ message: "Failed to fetch dumpsters" });
+    }
+  });
+
+  app.get("/api/dumpsters/:id", async (req, res) => {
+    try {
+      const dumpster = await storage.getDumpster(Number(req.params.id));
+      if (!dumpster) {
+        return res.status(404).json({ message: "Dumpster not found" });
+      }
+      res.json(dumpster);
+    } catch (err) {
+      console.error("Error fetching dumpster:", err);
+      res.status(500).json({ message: "Failed to fetch dumpster" });
+    }
+  });
+
+  app.post("/api/dumpsters", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertDumpsterSchema.parse(req.body);
+      const dumpster = await storage.createDumpster(validatedData);
+      res.status(201).json(dumpster);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid dumpster data", errors: err.errors });
+      }
+      console.error("Error creating dumpster:", err);
+      res.status(500).json({ message: "Failed to create dumpster" });
+    }
+  });
+
+  app.put("/api/dumpsters/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const dumpster = await storage.getDumpster(id);
+      if (!dumpster) {
+        return res.status(404).json({ message: "Dumpster not found" });
+      }
+      
+      const validatedData = insertDumpsterSchema.partial().parse(req.body);
+      const updatedDumpster = await storage.updateDumpster(id, validatedData);
+      res.json(updatedDumpster);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid dumpster data", errors: err.errors });
+      }
+      console.error("Error updating dumpster:", err);
+      res.status(500).json({ message: "Failed to update dumpster" });
+    }
+  });
+
+  app.delete("/api/dumpsters/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const dumpster = await storage.getDumpster(id);
+      if (!dumpster) {
+        return res.status(404).json({ message: "Dumpster not found" });
+      }
+      
+      await storage.deleteDumpster(id);
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting dumpster:", err);
+      res.status(500).json({ message: "Failed to delete dumpster" });
+    }
+  });
+
+  // Add-on routes
+  app.get("/api/addons", async (_req, res) => {
+    try {
+      const addons = await storage.listAddOns();
+      res.json(addons);
+    } catch (err) {
+      console.error("Error fetching add-ons:", err);
+      res.status(500).json({ message: "Failed to fetch add-ons" });
+    }
+  });
+
+  app.get("/api/addons/:id", async (req, res) => {
+    try {
+      const addon = await storage.getAddOn(Number(req.params.id));
+      if (!addon) {
+        return res.status(404).json({ message: "Add-on not found" });
+      }
+      res.json(addon);
+    } catch (err) {
+      console.error("Error fetching add-on:", err);
+      res.status(500).json({ message: "Failed to fetch add-on" });
+    }
+  });
+
+  app.post("/api/addons", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertAddOnSchema.parse(req.body);
+      const addon = await storage.createAddOn(validatedData);
+      res.status(201).json(addon);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid add-on data", errors: err.errors });
+      }
+      console.error("Error creating add-on:", err);
+      res.status(500).json({ message: "Failed to create add-on" });
+    }
+  });
+
+  app.put("/api/addons/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const addon = await storage.getAddOn(id);
+      if (!addon) {
+        return res.status(404).json({ message: "Add-on not found" });
+      }
+      
+      const validatedData = insertAddOnSchema.partial().parse(req.body);
+      const updatedAddon = await storage.updateAddOn(id, validatedData);
+      res.json(updatedAddon);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid add-on data", errors: err.errors });
+      }
+      console.error("Error updating add-on:", err);
+      res.status(500).json({ message: "Failed to update add-on" });
+    }
+  });
+
+  app.delete("/api/addons/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const addon = await storage.getAddOn(id);
+      if (!addon) {
+        return res.status(404).json({ message: "Add-on not found" });
+      }
+      
+      await storage.deleteAddOn(id);
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting add-on:", err);
+      res.status(500).json({ message: "Failed to delete add-on" });
+    }
+  });
+
+  // Service zone routes
+  app.get("/api/zones", async (_req, res) => {
+    try {
+      const zones = await storage.listServiceZones();
+      res.json(zones);
+    } catch (err) {
+      console.error("Error fetching service zones:", err);
+      res.status(500).json({ message: "Failed to fetch service zones" });
+    }
+  });
+
+  app.get("/api/zones/:id", async (req, res) => {
+    try {
+      const zone = await storage.getServiceZone(Number(req.params.id));
+      if (!zone) {
+        return res.status(404).json({ message: "Service zone not found" });
+      }
+      res.json(zone);
+    } catch (err) {
+      console.error("Error fetching service zone:", err);
+      res.status(500).json({ message: "Failed to fetch service zone" });
+    }
+  });
+
+  app.get("/api/zones/zipcode/:zipcode", async (req, res) => {
+    try {
+      const zone = await storage.getServiceZoneByZipCode(req.params.zipcode);
+      if (!zone) {
+        return res.status(404).json({ message: "No service zone found for this ZIP code" });
+      }
+      res.json(zone);
+    } catch (err) {
+      console.error("Error fetching service zone by ZIP code:", err);
+      res.status(500).json({ message: "Failed to fetch service zone by ZIP code" });
+    }
+  });
+
+  app.post("/api/zones", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertServiceZoneSchema.parse(req.body);
+      const zone = await storage.createServiceZone(validatedData);
+      res.status(201).json(zone);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid service zone data", errors: err.errors });
+      }
+      console.error("Error creating service zone:", err);
+      res.status(500).json({ message: "Failed to create service zone" });
+    }
+  });
+
+  app.put("/api/zones/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const zone = await storage.getServiceZone(id);
+      if (!zone) {
+        return res.status(404).json({ message: "Service zone not found" });
+      }
+      
+      const validatedData = insertServiceZoneSchema.partial().parse(req.body);
+      const updatedZone = await storage.updateServiceZone(id, validatedData);
+      res.json(updatedZone);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid service zone data", errors: err.errors });
+      }
+      console.error("Error updating service zone:", err);
+      res.status(500).json({ message: "Failed to update service zone" });
+    }
+  });
+
+  app.delete("/api/zones/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const zone = await storage.getServiceZone(id);
+      if (!zone) {
+        return res.status(404).json({ message: "Service zone not found" });
+      }
+      
+      await storage.deleteServiceZone(id);
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting service zone:", err);
+      res.status(500).json({ message: "Failed to delete service zone" });
+    }
+  });
+
+  // Rental duration routes
+  app.get("/api/durations", async (_req, res) => {
+    try {
+      const durations = await storage.listRentalDurations();
+      res.json(durations);
+    } catch (err) {
+      console.error("Error fetching rental durations:", err);
+      res.status(500).json({ message: "Failed to fetch rental durations" });
+    }
+  });
+
+  app.post("/api/durations", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertRentalDurationSchema.parse(req.body);
+      const duration = await storage.createRentalDuration(validatedData);
+      res.status(201).json(duration);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid rental duration data", errors: err.errors });
+      }
+      console.error("Error creating rental duration:", err);
+      res.status(500).json({ message: "Failed to create rental duration" });
+    }
+  });
+
+  app.put("/api/durations/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const duration = await storage.getRentalDuration(id);
+      if (!duration) {
+        return res.status(404).json({ message: "Rental duration not found" });
+      }
+      
+      const validatedData = insertRentalDurationSchema.partial().parse(req.body);
+      const updatedDuration = await storage.updateRentalDuration(id, validatedData);
+      res.json(updatedDuration);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid rental duration data", errors: err.errors });
+      }
+      console.error("Error updating rental duration:", err);
+      res.status(500).json({ message: "Failed to update rental duration" });
+    }
+  });
+
+  // Booking routes
+  app.get("/api/bookings", isAdmin, async (_req, res) => {
+    try {
+      const bookings = await storage.listBookings();
+      res.json(bookings);
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
+  app.get("/api/bookings/:id", async (req, res) => {
+    try {
+      const booking = await storage.getBooking(Number(req.params.id));
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      res.json(booking);
+    } catch (err) {
+      console.error("Error fetching booking:", err);
+      res.status(500).json({ message: "Failed to fetch booking" });
+    }
+  });
+
+  app.post("/api/bookings", async (req, res) => {
+    try {
+      const validatedData = insertBookingSchema.parse(req.body);
+      const booking = await storage.createBooking(validatedData);
+      res.status(201).json(booking);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid booking data", errors: err.errors });
+      }
+      console.error("Error creating booking:", err);
+      res.status(500).json({ message: "Failed to create booking" });
+    }
+  });
+
+  app.put("/api/bookings/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const booking = await storage.getBooking(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      const validatedData = insertBookingSchema.partial().parse(req.body);
+      const updatedBooking = await storage.updateBooking(id, validatedData);
+      res.json(updatedBooking);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid booking data", errors: err.errors });
+      }
+      console.error("Error updating booking:", err);
+      res.status(500).json({ message: "Failed to update booking" });
+    }
+  });
+
+  // Calculate price route
+  app.post("/api/calculate-price", async (req, res) => {
+    try {
+      const { dumpsterId, rentalDurationId, deliveryZipCode, selectedAddOns } = req.body;
+      
+      if (!dumpsterId || !rentalDurationId || !deliveryZipCode) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Get dumpster
+      const dumpster = await storage.getDumpster(Number(dumpsterId));
+      if (!dumpster) {
+        return res.status(404).json({ message: "Dumpster not found" });
+      }
+
+      // Get rental duration
+      const duration = await storage.getRentalDuration(Number(rentalDurationId));
+      if (!duration) {
+        return res.status(404).json({ message: "Rental duration not found" });
+      }
+
+      // Get service zone
+      const zone = await storage.getServiceZoneByZipCode(deliveryZipCode);
+      if (!zone) {
+        return res.status(404).json({ message: "Service not available in this ZIP code" });
+      }
+
+      // Calculate base price
+      let totalPrice = dumpster.basePrice + duration.additionalPrice + zone.deliveryFee;
+
+      // Add add-ons if any
+      if (selectedAddOns && selectedAddOns.length > 0) {
+        const addOnItems = await Promise.all(selectedAddOns.map(item => {
+          const { addonId, quantity = 1 } = item;
+          return storage.getAddOn(Number(addonId));
+        }));
+
+        // Filter out any undefined add-ons and calculate prices
+        addOnItems
+          .filter(addon => addon !== undefined)
+          .forEach((addon, index) => {
+            if (addon) {
+              const { quantity = 1 } = selectedAddOns[index];
+              totalPrice += addon.price * quantity;
+            }
+          });
+      }
+
+      res.json({ totalPrice });
+    } catch (err) {
+      console.error("Error calculating price:", err);
+      res.status(500).json({ message: "Failed to calculate price" });
+    }
+  });
+
+  // Stripe payment routes
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
+
+      const { amount, bookingId } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ message: "Amount is required" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount, // already in cents
+        currency: "usd",
+        metadata: {
+          bookingId: bookingId ? String(bookingId) : undefined
+        }
+      });
+
+      // If bookingId is provided, update the booking with the paymentIntentId
+      if (bookingId) {
+        await storage.updateBookingPaymentStatus(
+          Number(bookingId),
+          "pending",
+          paymentIntent.id
+        );
+      }
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (err) {
+      console.error("Error creating payment intent:", err);
+      res.status(500).json({ message: "Failed to create payment intent" });
+    }
+  });
+
+  // Webhook for Stripe events
+  app.post('/api/webhook', async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe not configured" });
+    }
+
+    const sig = req.headers['stripe-signature'];
+
+    if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+      return res.status(400).json({ message: "Missing Stripe signature or webhook secret" });
+    }
+
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body, 
+        sig, 
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle specific events
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        
+        // Update booking status if bookingId exists in metadata
+        if (paymentIntent.metadata?.bookingId) {
+          const bookingId = Number(paymentIntent.metadata.bookingId);
+          await storage.updateBookingPaymentStatus(bookingId, "paid", paymentIntent.id);
+          console.log(`Payment for booking ${bookingId} succeeded`);
+        }
+        break;
+        
+      case 'payment_intent.payment_failed':
+        const failedPaymentIntent = event.data.object;
+        
+        // Update booking status if bookingId exists in metadata
+        if (failedPaymentIntent.metadata?.bookingId) {
+          const bookingId = Number(failedPaymentIntent.metadata.bookingId);
+          await storage.updateBookingPaymentStatus(bookingId, "failed", failedPaymentIntent.id);
+          console.log(`Payment for booking ${bookingId} failed`);
+        }
+        break;
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({ received: true });
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
