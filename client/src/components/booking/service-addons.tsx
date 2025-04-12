@@ -71,8 +71,8 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
             key={addon.id} 
             className={`border rounded-lg p-4 transition-all ${
               selectedAddOns[addon.id]
-                ? "border-primary bg-neutral-900 text-white" 
-                : "border-neutral-200 hover:border-primary"
+                ? "border-[#ffdd33] bg-[#2c2c2c] text-white" 
+                : "border-neutral-200 hover:border-[#ffdd33]"
             }`}
           >
             <div className="flex items-start">
@@ -93,7 +93,9 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
                 <p className={`text-sm mt-1 ${selectedAddOns[addon.id] ? "text-neutral-300" : "text-neutral-600"}`}>
                   {addon.description}
                 </p>
-                <p className="text-sm font-medium text-primary mt-2">+${(addon.price / 100).toFixed(2)}</p>
+                <p className={`text-sm font-medium mt-2 ${selectedAddOns[addon.id] ? "text-[#ffdd33]" : "text-[#2c2c2c]"}`}>
+                  +${(addon.price / 100).toFixed(2)}
+                </p>
                 
                 {/* Quantity selector for weight and extension add-ons */}
                 {(addon.name.includes("Weight") || addon.name.includes("Extension")) && 
@@ -138,7 +140,7 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
         <Button
           onClick={onBack}
           variant="outline"
-          className="px-6 py-3"
+          className="px-6 py-2 text-[#ffdd33] border-[#ffdd33] hover:bg-[#2c2c2c]"
         >
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
@@ -156,7 +158,7 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
         </Button>
         <Button 
           onClick={handleContinue}
-          className="px-6 py-3"
+          className="px-6 py-2 bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#ffd700] font-bold"
         >
           Review Order
           <svg 
