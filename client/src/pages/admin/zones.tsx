@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PriceInput } from "@/components/ui/price-input";
 import { ServiceZone, InsertServiceZone, insertServiceZoneSchema } from "@shared/schema";
 import { Loader2, Plus, Edit, Trash, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -253,14 +254,11 @@ export default function ZonesPage() {
                     name="deliveryFee"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Delivery Fee ($)</FormLabel>
+                        <FormLabel>Delivery Fee</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            min="0" 
-                            step="0.01" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          <PriceInput
+                            {...field}
+                            onValueChange={field.onChange}
                           />
                         </FormControl>
                         <FormMessage />
@@ -329,14 +327,11 @@ export default function ZonesPage() {
                   name="deliveryFee"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Delivery Fee ($)</FormLabel>
+                      <FormLabel>Delivery Fee</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
-                          {...field} 
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        <PriceInput
+                          {...field}
+                          onValueChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
