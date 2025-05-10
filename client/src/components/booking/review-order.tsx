@@ -157,6 +157,44 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       return;
     }
 
+    // Find the selected zone for this zip code
+    const selectedZone = zones?.find(z => 
+      z.zipCodes.split(',').includes(bookingData.deliveryZipCode)
+    );
+
+    if (!selectedZone) {
+      toast({
+        title: "Error",
+        description: "Service zone not found for the delivery zip code. Please try a different zip code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Convert string date to proper Date object
+    let deliveryDate;
+    try {
+      // If deliveryDate is already a Date object, this will work
+      if (bookingData.deliveryDate instanceof Date) {
+        deliveryDate = bookingData.deliveryDate;
+      } else {
+        // Parse from string if not a Date
+        deliveryDate = new Date(bookingData.deliveryDate);
+      }
+
+      // Validate the date is valid
+      if (isNaN(deliveryDate.getTime())) {
+        throw new Error("Invalid date");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Invalid delivery date. Please select a valid date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Create complete booking data
     const completeBookingData = {
       ...bookingData,
@@ -166,6 +204,9 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       totalPrice: calculatedPrice,
       paymentStatus: "pending",
       status: "scheduled",
+      serviceZoneId: selectedZone.id,
+      // Ensure the date is properly formatted
+      deliveryDate: deliveryDate.toISOString()
     };
 
     // Create booking
