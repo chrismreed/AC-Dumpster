@@ -474,7 +474,7 @@ export class MemStorage implements IStorage {
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     const PgStore = connectPgSimple(session);
@@ -492,7 +492,7 @@ export class DatabaseStorage implements IStorage {
       // Create admin user
       await this.createUser({
         username: "admin",
-        password: await hashPassword("admin123"),
+        password: await bcrypt.hash("admin123", 10),
         email: "admin@dumpsterdirect.com",
         isAdmin: true,
       });
@@ -502,30 +502,30 @@ export class DatabaseStorage implements IStorage {
         name: "10 Yard Dumpster",
         description: "Ideal for small projects like bathroom renovations or yard cleanups.",
         dimensions: "12' x 8' x 4'",
-        weight_limit: 2000,
-        suitable_for: "Small renovations, garage cleanouts, yard waste",
-        image_url: "/images/10yard.jpg",
-        base_price: 25000,
+        weightLimit: 2000,
+        availability: 5,
+        imageUrl: "/images/10yard.jpg",
+        basePrice: 25000,
       });
 
       const dumpster2 = await this.createDumpster({
         name: "20 Yard Dumpster",
         description: "Perfect for medium-sized projects like kitchen renovations or deck removal.",
         dimensions: "16' x 8' x 5'",
-        weight_limit: 3000,
-        suitable_for: "Kitchen renovations, deck removal, large cleanouts",
-        image_url: "/images/20yard.jpg",
-        base_price: 35000,
+        weightLimit: 3000,
+        availability: 5,
+        imageUrl: "/images/20yard.jpg",
+        basePrice: 35000,
       });
 
       const dumpster3 = await this.createDumpster({
         name: "30 Yard Dumpster",
         description: "Our largest option for major projects like home renovations or commercial cleanouts.",
         dimensions: "20' x 8' x 6'",
-        weight_limit: 5000,
-        suitable_for: "Large renovations, commercial projects, construction debris",
-        image_url: "/images/30yard.jpg",
-        base_price: 45000,
+        weightLimit: 5000,
+        availability: 5,
+        imageUrl: "/images/30yard.jpg",
+        basePrice: 45000,
       });
 
       // Create rental durations
@@ -767,6 +767,6 @@ export class DatabaseStorage implements IStorage {
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import connectPgSimple from "connect-pg-simple";
-import { hashPassword } from "./auth";
+import * as bcrypt from 'bcryptjs';
 
 export const storage = new DatabaseStorage();

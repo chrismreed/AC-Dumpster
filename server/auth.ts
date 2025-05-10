@@ -15,18 +15,23 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+export async function hashPassword(password: string) {
+  // Use bcrypt style password hashing
+  return await bcrypt.hash(password, 10);
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    // Use bcrypt compare
+    return await bcrypt.compare(supplied, stored);
+  } catch (error) {
+    console.error("Password comparison error:", error);
+    return false;
+  }
 }
+
+// Import bcrypt
+import * as bcrypt from 'bcryptjs';
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
