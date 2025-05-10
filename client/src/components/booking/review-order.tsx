@@ -171,29 +171,19 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       return;
     }
 
-    // Convert string date to proper Date object
-    let deliveryDate;
-    try {
-      // If deliveryDate is already a Date object, this will work
-      if (bookingData.deliveryDate instanceof Date) {
-        deliveryDate = bookingData.deliveryDate;
-      } else {
-        // Parse from string if not a Date
-        deliveryDate = new Date(bookingData.deliveryDate);
-      }
-
-      // Validate the date is valid
-      if (isNaN(deliveryDate.getTime())) {
-        throw new Error("Invalid date");
-      }
-    } catch (error) {
+    // Format the delivery date properly
+    // In the DeliveryDetails form, the date is stored as a string in YYYY-MM-DD format
+    if (!bookingData.deliveryDate) {
       toast({
         title: "Error",
-        description: "Invalid delivery date. Please select a valid date.",
+        description: "Delivery date is required. Please go back and select a date.",
         variant: "destructive",
       });
       return;
     }
+    
+    // Create a valid date string (YYYY-MM-DD) that will be converted to a timestamp by the server
+    const deliveryDate = bookingData.deliveryDate;
 
     // Create complete booking data
     const completeBookingData = {
