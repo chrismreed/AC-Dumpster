@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dumpster, RentalDuration } from "@shared/schema";
 import { PricingCard } from "@/components/ui/pricing-card";
@@ -14,6 +14,7 @@ interface DumpsterSelectorProps {
 export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
   const [selectedDumpsterId, setSelectedDumpsterId] = useState<number | null>(null);
   const [selectedDurationId, setSelectedDurationId] = useState<number | null>(null);
+  const durationSectionRef = useRef<HTMLDivElement>(null);
 
   const { data: dumpsters, isLoading: isLoadingDumpsters } = useQuery<Dumpster[]>({
     queryKey: ["/api/dumpsters"],
@@ -29,6 +30,18 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
       setSelectedDurationId(durations[0].id);
     }
   }, [durations, selectedDurationId]);
+  
+  // Scroll to duration section when a dumpster is selected
+  useEffect(() => {
+    if (selectedDumpsterId && durationSectionRef.current) {
+      setTimeout(() => {
+        durationSectionRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 100);
+    }
+  }, [selectedDumpsterId]);
 
   const handleContinue = () => {
     if (selectedDumpsterId && selectedDurationId) {
@@ -74,8 +87,9 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
         ))}
       </div>
 
-      <div className="mt-8">
-        <h3 className="text-lg font-bold mb-4 text-[#2c2c2c]">Rental Duration</h3>
+      <div className="mt-12 pt-8 border-t border-gray-200" ref={durationSectionRef}>
+        <h3 className="text-2xl font-bold mb-4 text-[#2c2c2c]">Rental Duration</h3>
+        <p className="text-neutral-600 mb-6">How long will you need the dumpster? Choose the rental period that best fits your project timeline.</p>
         <RadioGroup 
           value={selectedDurationId?.toString()} 
           onValueChange={(value) => setSelectedDurationId(parseInt(value))}

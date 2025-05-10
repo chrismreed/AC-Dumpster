@@ -50,10 +50,10 @@ export function PricingCard({
   return (
     <div 
       className={cn(
-        "border rounded-lg overflow-hidden shadow-sm transition-all relative",
+        "border rounded-lg overflow-hidden transition-all relative",
         isSelected 
-          ? "border-[#ffdd33] bg-white" 
-          : "border-neutral-200 bg-white hover:border-neutral-300"
+          ? "border-[#ffdd33] border-2 bg-white shadow-md ring-2 ring-[#ffdd33] ring-opacity-20" 
+          : "border-neutral-200 bg-white hover:border-neutral-300 shadow-sm"
       )}
       onClick={onClick}
       data-dumpster-id={id}
@@ -92,13 +92,10 @@ export function PricingCard({
           </ul>
           
           <Button 
-            className={cn(
-              "w-full bg-[#2c2c2c] hover:bg-[#232323] text-white font-medium",
-              isSelected && "bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#ffcc00]"
-            )}
+            className="w-full bg-[#2c2c2c] hover:bg-[#232323] text-white font-medium"
             onClick={onClick}
           >
-            {isSelected ? "Selected" : "Rent This Dumpster"}
+            Rent This Dumpster
           </Button>
         </div>
       </div>
