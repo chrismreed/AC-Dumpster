@@ -193,6 +193,10 @@ export default function DashboardPage() {
                     <YAxis />
                     <Tooltip 
                       formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue']}
+                      wrapperClassName="recharts-tooltip-custom"
+                      itemStyle={{ color: "#333" }}
+                      contentStyle={{ background: "white", border: "1px solid #ddd" }}
+                      labelStyle={{ fontWeight: "bold" }}
                     />
                     <Bar dataKey="amount" fill="#2563EB" />
                   </BarChart>
@@ -223,7 +227,11 @@ export default function DashboardPage() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [value, 'Bookings']} />
+                    <Tooltip 
+                      formatter={(value) => [value, 'Bookings']} 
+                      wrapperClassName="recharts-tooltip-custom"
+                      contentStyle={{ background: "white", border: "1px solid #ddd" }}
+                    />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
