@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Trash2 } from "lucide-react";
+import { Button } from "./button";
 
 interface PricingCardProps {
   id: number;
@@ -10,6 +10,7 @@ interface PricingCardProps {
   weightLimit: number;
   isSelected?: boolean;
   onClick?: () => void;
+  isPopular?: boolean;
 }
 
 export function PricingCard({
@@ -20,88 +21,86 @@ export function PricingCard({
   basePrice,
   weightLimit,
   isSelected = false,
-  onClick
+  onClick,
+  isPopular = false
 }: PricingCardProps) {
   // Convert pounds to tons for display
   const weightLimitInTons = weightLimit / 2000;
   
+  // Get the dumpster size in yards from the name (e.g., "10 Yard Dumpster" -> "10 Yard")
+  const yardSize = name.split(" ")[0] + " Yard";
+  
+  // Determine the best use case based on size
+  let bestFor = "Small residential projects";
+  let loadSize = `${weightLimitInTons} tons`;
+  let feature = "Compact footprint";
+  
+  if (name.includes("15")) {
+    bestFor = "Medium home renovations";
+    loadSize = "5-6 pickup truck loads";
+    feature = "Good for mixed debris";
+  } else if (name.includes("20")) {
+    bestFor = "Large construction projects";
+    loadSize = "7-8 pickup truck loads";
+    feature = "Great for bulky items";
+  } else if (name.includes("10")) {
+    loadSize = "3-4 pickup truck loads";
+  }
+  
   return (
     <div 
       className={cn(
-        "border rounded-lg p-6 cursor-pointer hover:shadow-md transition-all",
+        "border rounded-lg overflow-hidden shadow-sm transition-all relative",
         isSelected 
-          ? "border-[#ffdd33] bg-[#2c2c2c] text-white" 
-          : isSelected === false 
-            ? "border-[#2c2c2c] bg-white text-[#2c2c2c] hover:border-[#ffdd33]"
-            : "border-neutral-200 bg-white text-[#2c2c2c] hover:border-[#ffdd33]"
+          ? "border-[#ffdd33] bg-white" 
+          : "border-neutral-200 bg-white hover:border-neutral-300"
       )}
       onClick={onClick}
       data-dumpster-id={id}
     >
-      <div className="flex flex-col">
-        <h3 className="font-bold text-xl mb-1">{name}</h3>
-        <p className={cn(
-          "text-sm mb-1", 
-          isSelected ? "text-neutral-300" : "text-neutral-500"
-        )}>{dimensions}</p>
-        <p className={cn(
-          "text-sm mb-4", 
-          isSelected ? "text-neutral-300" : "text-neutral-600"
-        )}>{description}</p>
+      {isPopular && (
+        <div className="absolute top-0 right-0 bg-[#ffdd33] text-[#2c2c2c] text-xs font-bold px-4 py-1">
+          MOST POPULAR
+        </div>
+      )}
+      
+      <div className="p-6">
+        <h3 className="font-bold text-2xl mb-2 text-[#2c2c2c]">{yardSize}</h3>
+        <p className="text-neutral-600 mb-4">{description}</p>
         
-        <div className="mt-2 mb-4">
-          <span className={cn(
-            "text-2xl font-bold", 
-            isSelected ? "text-[#ffdd33]" : "text-[#2c2c2c]"
-          )}>${(basePrice / 100).toFixed(0)}</span>
-          <span className={cn(
-            "text-sm", 
-            isSelected ? "text-neutral-300" : "text-neutral-500"
-          )}> 7-day rental included</span>
+        <div className="mb-5">
+          <span className="text-3xl font-bold text-[#2c2c2c]">${(basePrice / 100).toFixed(0)}</span>
+          <div className="text-sm text-neutral-500">7-day rental included</div>
         </div>
         
-        <div className="mt-2">
-          <p className={cn(
-            "text-sm font-medium", 
-            isSelected ? "text-white" : "text-[#2c2c2c]"
-          )}>Best for: Small residential projects</p>
+        <div className="mb-4">
+          <p className="font-medium text-[#2c2c2c] mb-2">Best for: {bestFor}</p>
           
-          <ul className="mt-2 space-y-1">
+          <ul className="space-y-2 mb-6">
             <li className="flex items-center text-sm">
-              <span className={cn(
-                "mr-2 text-xs", 
-                isSelected ? "text-[#ffdd33]" : "text-[#2c2c2c]"
-              )}>✓</span>
-              <span className={cn(
-                isSelected ? "text-neutral-200" : "text-neutral-600"
-              )}>Holds {weightLimitInTons} tons</span>
+              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-neutral-600">Holds {loadSize}</span>
             </li>
             <li className="flex items-center text-sm">
-              <span className={cn(
-                "mr-2 text-xs", 
-                isSelected ? "text-[#ffdd33]" : "text-[#2c2c2c]"
-              )}>✓</span>
-              <span className={cn(
-                isSelected ? "text-neutral-200" : "text-neutral-600"
-              )}>Compact footprint</span>
+              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-neutral-600">{feature}</span>
             </li>
             <li className="flex items-center text-sm">
-              <span className={cn(
-                "mr-2 text-xs", 
-                isSelected ? "text-[#ffdd33]" : "text-[#2c2c2c]"
-              )}>✓</span>
-              <span className={cn(
-                isSelected ? "text-neutral-200" : "text-neutral-600"
-              )}>7-day rental included</span>
+              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-neutral-600">7-day rental included</span>
             </li>
           </ul>
+          
+          <Button 
+            className={cn(
+              "w-full bg-[#2c2c2c] hover:bg-[#232323] text-white font-medium",
+              isSelected && "bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#ffcc00]"
+            )}
+            onClick={onClick}
+          >
+            {isSelected ? "Selected" : "Rent This Dumpster"}
+          </Button>
         </div>
-        
-        {isSelected && (
-          <div className="mt-4 py-1 px-2 bg-[#ffdd33] text-[#2c2c2c] text-xs font-bold text-center rounded-sm uppercase">
-            Selected
-          </div>
-        )}
       </div>
     </div>
   );

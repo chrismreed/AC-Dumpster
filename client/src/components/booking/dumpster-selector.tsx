@@ -49,14 +49,16 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-neutral-800 mb-6">Select Your Dumpster Size</h2>
-      <p className="text-neutral-600 mb-8">
-        Choose the right size for your project. Not sure what size you need? 
-        <a href="#" className="text-primary hover:underline ml-1">View our size guide</a>.
-      </p>
+      <div className="text-center mb-12 max-w-3xl mx-auto">
+        <h2 className="text-3xl font-bold text-[#2c2c2c] mb-4">Our Dumpster Sizes</h2>
+        <p className="text-neutral-600">
+          We offer a variety of dumpster sizes to fit your specific needs. All rentals include 
+          delivery, pickup, and 7 days of usage.
+        </p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {dumpsters?.map((dumpster) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {dumpsters?.map((dumpster, index) => (
           <PricingCard
             key={dumpster.id}
             id={dumpster.id}
@@ -67,6 +69,7 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
             weightLimit={dumpster.weightLimit}
             isSelected={selectedDumpsterId === dumpster.id}
             onClick={() => setSelectedDumpsterId(dumpster.id)}
+            isPopular={index === 1} // Make the middle option (15 yard) popular
           />
         ))}
       </div>
@@ -115,25 +118,13 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
         </RadioGroup>
       </div>
 
-      <div className="mt-10 text-right">
+      <div className="mt-10 text-center md:text-right">
         <Button 
           onClick={handleContinue}
           disabled={!selectedDumpsterId || !selectedDurationId}
-          className="px-8 py-3 bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#ffd700] font-semibold rounded-sm border-none"
+          className="px-8 py-3 bg-[#2c2c2c] text-white hover:bg-[#222222] font-semibold rounded-md"
         >
-          CONTINUE
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-5 w-5 ml-2" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path 
-              fillRule="evenodd" 
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" 
-              clipRule="evenodd" 
-            />
-          </svg>
+          Continue to Delivery Details
         </Button>
       </div>
     </div>
