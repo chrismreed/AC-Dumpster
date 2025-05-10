@@ -208,7 +208,7 @@ export class MemStorage implements IStorage {
     // Create default service zones
     this.createServiceZone({
       name: "Zone A - City Center",
-      zipCodes: "10001,10002,10003,10004,10005",
+      zipCodes: "10001,10002,10003,10004,10005,62401",
       deliveryFee: 4500 // $45
     });
     this.createServiceZone({
