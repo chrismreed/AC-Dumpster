@@ -472,4 +472,301 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.SessionStore;
+
+  constructor() {
+    const PgStore = connectPgSimple(session);
+    this.sessionStore = new PgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true
+    });
+    this.initializeDefaultData();
+  }
+
+  private async initializeDefaultData() {
+    // Only add default data if no users exist
+    const users = await this.listUsers();
+    if (users.length === 0) {
+      // Create admin user
+      await this.createUser({
+        username: "admin",
+        password: await hashPassword("admin123"),
+        email: "admin@dumpsterdirect.com",
+        isAdmin: true,
+      });
+
+      // Create sample dumpsters
+      const dumpster1 = await this.createDumpster({
+        name: "10 Yard Dumpster",
+        description: "Ideal for small projects like bathroom renovations or yard cleanups.",
+        dimensions: "12' x 8' x 4'",
+        weight_limit: 2000,
+        suitable_for: "Small renovations, garage cleanouts, yard waste",
+        image_url: "/images/10yard.jpg",
+        base_price: 25000,
+      });
+
+      const dumpster2 = await this.createDumpster({
+        name: "20 Yard Dumpster",
+        description: "Perfect for medium-sized projects like kitchen renovations or deck removal.",
+        dimensions: "16' x 8' x 5'",
+        weight_limit: 3000,
+        suitable_for: "Kitchen renovations, deck removal, large cleanouts",
+        image_url: "/images/20yard.jpg",
+        base_price: 35000,
+      });
+
+      const dumpster3 = await this.createDumpster({
+        name: "30 Yard Dumpster",
+        description: "Our largest option for major projects like home renovations or commercial cleanouts.",
+        dimensions: "20' x 8' x 6'",
+        weight_limit: 5000,
+        suitable_for: "Large renovations, commercial projects, construction debris",
+        image_url: "/images/30yard.jpg",
+        base_price: 45000,
+      });
+
+      // Create rental durations
+      await this.createRentalDuration({
+        days: 3,
+        additionalPrice: 0,
+      });
+      await this.createRentalDuration({
+        days: 7,
+        additionalPrice: 5000,
+      });
+      await this.createRentalDuration({
+        days: 14,
+        additionalPrice: 10000,
+      });
+
+      // Create service zones
+      await this.createServiceZone({
+        name: "Zone A - City Center",
+        zipCodes: "10001,10002,10003,10004,10005,62401",
+        deliveryFee: 4500 // $45
+      });
+      await this.createServiceZone({
+        name: "Zone B - Suburban",
+        zipCodes: "10006,10007,10008,10009,10010",
+        deliveryFee: 5500 // $55
+      });
+      await this.createServiceZone({
+        name: "Zone C - Outer Areas",
+        zipCodes: "10011,10012,10013,10014,10015",
+        deliveryFee: 6500 // $65
+      });
+
+      // Create add-ons
+      await this.createAddOn({
+        name: "Extra Weight",
+        description: "Additional weight allowance (per 500 pounds)",
+        price: 5000,
+      });
+      await this.createAddOn({
+        name: "Dumpster Liner",
+        description: "Protective liner for containing fine materials",
+        price: 2500,
+      });
+      await this.createAddOn({
+        name: "Driveway Protection",
+        description: "Boards to protect your driveway from damage",
+        price: 3000,
+      });
+    }
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async listUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
+  // Dumpster methods
+  async getDumpster(id: number): Promise<Dumpster | undefined> {
+    const [dumpster] = await db.select().from(dumpsters).where(eq(dumpsters.id, id));
+    return dumpster;
+  }
+
+  async listDumpsters(): Promise<Dumpster[]> {
+    return db.select().from(dumpsters);
+  }
+
+  async createDumpster(insertDumpster: InsertDumpster): Promise<Dumpster> {
+    const [dumpster] = await db.insert(dumpsters).values(insertDumpster).returning();
+    return dumpster;
+  }
+
+  async updateDumpster(id: number, dumpsterUpdate: Partial<InsertDumpster>): Promise<Dumpster | undefined> {
+    const [updatedDumpster] = await db
+      .update(dumpsters)
+      .set(dumpsterUpdate)
+      .where(eq(dumpsters.id, id))
+      .returning();
+    return updatedDumpster;
+  }
+
+  async deleteDumpster(id: number): Promise<boolean> {
+    const result = await db.delete(dumpsters).where(eq(dumpsters.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Add-on methods
+  async getAddOn(id: number): Promise<AddOn | undefined> {
+    const [addon] = await db.select().from(addOns).where(eq(addOns.id, id));
+    return addon;
+  }
+
+  async listAddOns(): Promise<AddOn[]> {
+    return db.select().from(addOns);
+  }
+
+  async createAddOn(insertAddOn: InsertAddOn): Promise<AddOn> {
+    const [addon] = await db.insert(addOns).values(insertAddOn).returning();
+    return addon;
+  }
+
+  async updateAddOn(id: number, addonUpdate: Partial<InsertAddOn>): Promise<AddOn | undefined> {
+    const [updatedAddOn] = await db
+      .update(addOns)
+      .set(addonUpdate)
+      .where(eq(addOns.id, id))
+      .returning();
+    return updatedAddOn;
+  }
+
+  async deleteAddOn(id: number): Promise<boolean> {
+    const result = await db.delete(addOns).where(eq(addOns.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Service zone methods
+  async getServiceZone(id: number): Promise<ServiceZone | undefined> {
+    const [zone] = await db.select().from(serviceZones).where(eq(serviceZones.id, id));
+    return zone;
+  }
+
+  async getServiceZoneByZipCode(zipCode: string): Promise<ServiceZone | undefined> {
+    // Find zone that contains this zip code
+    const zones = await db.select().from(serviceZones);
+    return zones.find(zone => 
+      zone.zipCodes.split(',').some(zip => zip.trim() === zipCode)
+    );
+  }
+
+  async listServiceZones(): Promise<ServiceZone[]> {
+    return db.select().from(serviceZones);
+  }
+
+  async createServiceZone(insertZone: InsertServiceZone): Promise<ServiceZone> {
+    const [zone] = await db.insert(serviceZones).values(insertZone).returning();
+    return zone;
+  }
+
+  async updateServiceZone(id: number, zoneUpdate: Partial<InsertServiceZone>): Promise<ServiceZone | undefined> {
+    const [updatedZone] = await db
+      .update(serviceZones)
+      .set(zoneUpdate)
+      .where(eq(serviceZones.id, id))
+      .returning();
+    return updatedZone;
+  }
+
+  async deleteServiceZone(id: number): Promise<boolean> {
+    const result = await db.delete(serviceZones).where(eq(serviceZones.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Rental duration methods
+  async getRentalDuration(id: number): Promise<RentalDuration | undefined> {
+    const [duration] = await db.select().from(rentalDurations).where(eq(rentalDurations.id, id));
+    return duration;
+  }
+
+  async listRentalDurations(): Promise<RentalDuration[]> {
+    return db.select().from(rentalDurations);
+  }
+
+  async createRentalDuration(insertDuration: InsertRentalDuration): Promise<RentalDuration> {
+    const [duration] = await db.insert(rentalDurations).values(insertDuration).returning();
+    return duration;
+  }
+
+  async updateRentalDuration(id: number, durationUpdate: Partial<InsertRentalDuration>): Promise<RentalDuration | undefined> {
+    const [updatedDuration] = await db
+      .update(rentalDurations)
+      .set(durationUpdate)
+      .where(eq(rentalDurations.id, id))
+      .returning();
+    return updatedDuration;
+  }
+
+  async deleteRentalDuration(id: number): Promise<boolean> {
+    const result = await db.delete(rentalDurations).where(eq(rentalDurations.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Booking methods
+  async getBooking(id: number): Promise<Booking | undefined> {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    return booking;
+  }
+
+  async listBookings(): Promise<Booking[]> {
+    return db.select().from(bookings);
+  }
+
+  async listBookingsByStatus(status: string): Promise<Booking[]> {
+    return db.select().from(bookings).where(eq(bookings.status, status));
+  }
+
+  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    const [booking] = await db.insert(bookings).values(insertBooking).returning();
+    return booking;
+  }
+
+  async updateBooking(id: number, bookingUpdate: Partial<InsertBooking>): Promise<Booking | undefined> {
+    const [updatedBooking] = await db
+      .update(bookings)
+      .set(bookingUpdate)
+      .where(eq(bookings.id, id))
+      .returning();
+    return updatedBooking;
+  }
+
+  async updateBookingPaymentStatus(id: number, paymentStatus: string, stripePaymentIntentId?: string): Promise<Booking | undefined> {
+    const updates: Partial<InsertBooking> = { 
+      status: paymentStatus 
+    };
+    
+    if (stripePaymentIntentId) {
+      updates.stripePaymentIntentId = stripePaymentIntentId;
+    }
+    
+    return this.updateBooking(id, updates);
+  }
+}
+
+// Import for database-specific functions
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import connectPgSimple from "connect-pg-simple";
+import { hashPassword } from "./auth";
+
+export const storage = new DatabaseStorage();
