@@ -65,9 +65,9 @@ export function Header() {
               Admin Dashboard
             </Link>
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={handleLogout}
-              className="text-sm text-[#ffdd33] border-[#ffdd33]"
+              className="text-sm text-[#ffdd33] hover:text-[#2c2c2c] hover:bg-[#ffdd33]"
             >
               Logout
             </Button>
@@ -114,12 +114,12 @@ export function Header() {
                       ADMIN DASHBOARD
                     </Link>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => {
                         handleLogout();
                         closeMenu();
                       }}
-                      className="mt-4 text-[#ffdd33] border-[#ffdd33]"
+                      className="mt-4 text-[#ffdd33] hover:text-[#2c2c2c] hover:bg-[#ffdd33]"
                     >
                       Logout
                     </Button>
