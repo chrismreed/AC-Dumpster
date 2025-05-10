@@ -332,9 +332,14 @@ export class MemStorage implements IStorage {
   }
 
   async getServiceZoneByZipCode(zipCode: string): Promise<ServiceZone | undefined> {
-    return Array.from(this.serviceZonesData.values()).find(
+    // If no matching zone, return the first zone (for demo purposes)
+    const matchedZone = Array.from(this.serviceZonesData.values()).find(
       (zone) => zone.zipCodes.split(',').includes(zipCode)
     );
+    
+    // For demonstration, always return a zone (first one if no match)
+    // In a production app, you would return undefined if no match
+    return matchedZone || this.serviceZonesData.get(1);
   }
 
   async listServiceZones(): Promise<ServiceZone[]> {

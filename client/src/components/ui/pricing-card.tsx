@@ -92,7 +92,7 @@ export function PricingCard({
           </ul>
           
           <Button 
-            className="w-full bg-[#2c2c2c] hover:bg-[#232323] text-white font-medium"
+            className="w-full font-medium"
             onClick={onClick}
           >
             Rent This Dumpster

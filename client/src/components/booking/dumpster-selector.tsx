@@ -136,7 +136,7 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
         <Button 
           onClick={handleContinue}
           disabled={!selectedDumpsterId || !selectedDurationId}
-          className="px-8 py-3 bg-[#2c2c2c] text-white hover:bg-[#222222] font-semibold rounded-md"
+          className="px-8 py-3 font-semibold"
         >
           Continue to Delivery Details
         </Button>
