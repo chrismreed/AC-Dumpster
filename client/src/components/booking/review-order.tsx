@@ -195,8 +195,8 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       paymentStatus: "pending",
       status: "scheduled",
       serviceZoneId: selectedZone.id,
-      // Ensure the date is properly formatted
-      deliveryDate: deliveryDate.toISOString()
+      // Pass the date string directly to the server
+      deliveryDate: deliveryDate
     };
 
     // Create booking

@@ -102,10 +102,24 @@ export const insertRentalDurationSchema = createInsertSchema(rentalDurations).om
   createdAt: true,
 });
 
-export const insertBookingSchema = createInsertSchema(bookings).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertBookingSchema = createInsertSchema(bookings)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    // Override the default date validation to handle string dates properly
+    deliveryDate: z.string().or(z.date()).transform(val => {
+      if (typeof val === 'string') {
+        const date = new Date(val);
+        if (isNaN(date.getTime())) {
+          throw new Error('Invalid date format');
+        }
+        return date;
+      }
+      return val;
+    })
+  });
 
 // Types
 export type User = typeof users.$inferSelect;
