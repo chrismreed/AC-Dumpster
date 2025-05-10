@@ -56,27 +56,28 @@ export function AdminNav() {
       </div>
       <nav className="mt-4">
         {navItems.map((item, index) => (
-          <Link href={item.href} key={index}>
-            <a
-              className={cn(
-                "flex items-center px-6 py-3 text-sm",
-                location === item.href
-                  ? "bg-primary bg-opacity-10 text-primary font-medium border-r-4 border-primary"
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              {item.icon}
-              {item.title}
-            </a>
+          <Link 
+            href={item.href} 
+            key={index}
+            className={cn(
+              "flex items-center px-6 py-3 text-sm",
+              location === item.href
+                ? "bg-primary bg-opacity-10 text-primary font-medium border-r-4 border-primary"
+                : "text-gray-600 hover:bg-gray-50"
+            )}
+          >
+            {item.icon}
+            {item.title}
           </Link>
         ))}
       </nav>
       <div className="px-6 py-6 mt-auto border-t absolute bottom-0 w-full">
-        <Link href="/">
-          <a className="flex items-center text-sm text-gray-600 hover:text-primary mb-4">
-            <Home className="mr-2 h-4 w-4" />
-            Back to Website
-          </a>
+        <Link 
+          href="/"
+          className="flex items-center text-sm text-gray-600 hover:text-primary mb-4"
+        >
+          <Home className="mr-2 h-4 w-4" />
+          Back to Website
         </Link>
         <Button variant="outline" className="w-full" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
