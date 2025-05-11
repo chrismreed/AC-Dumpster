@@ -116,11 +116,7 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
           });
         }
         setPaymentStatus("failed");
-        
-        // Notify parent component about the error
-        if (onSuccess) {
-          onSuccess(); // We can't pass error info here, but the booking should be updated on server
-        }
+        // Don't call onSuccess for failed payments
       }
     } catch (error) {
       console.error("Payment submission error:", error);
@@ -130,6 +126,7 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
         variant: "destructive",
       });
       setPaymentStatus("failed");
+      // Don't call onSuccess for errors
     }
 
     setIsLoading(false);
