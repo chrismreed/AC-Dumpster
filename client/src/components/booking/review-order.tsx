@@ -26,8 +26,8 @@ const contactSchema = z.object({
   fullName: z.string().min(3, "Full name is required"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Please enter a valid phone number"),
-  termsAgreed: z.literal(true, {
-    errorMap: () => ({ message: "You must agree to the terms and conditions" }),
+  termsAgreed: z.boolean().refine(val => val === true, {
+    message: "You must agree to the terms and conditions",
   }),
   paymentMethod: z.enum(["card", "paypal"]),
 });
