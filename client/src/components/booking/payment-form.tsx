@@ -91,13 +91,17 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
     setIsLoading(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
+      console.log("Confirming payment with Stripe...");
+      const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
           // Redirect to the same page to handle the payment result
           return_url: window.location.origin + window.location.pathname,
         },
       });
+      
+      console.log("Stripe confirmPayment result:", result);
+      const { error } = result;
 
       if (error) {
         // Handle Stripe specific errors with better messages
@@ -155,6 +159,15 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
     <form onSubmit={handleSubmit} className="w-full space-y-6">
       <div className="bg-white p-6 rounded-lg border border-neutral-200">
         <h3 className="text-lg font-medium mb-4">Payment Information</h3>
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-blue-800 text-sm">
+          <p>Test Mode: Use card number <strong>4242 4242 4242 4242</strong> for successful payments.</p>
+          <p className="mt-1">Use any future expiration date, any 3-digit CVC, and any 5-digit ZIP code.</p>
+        </div>
+        {paymentStatus === "failed" && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-md text-red-800 text-sm">
+            <p>Payment failed. Please check your card details and try again.</p>
+          </div>
+        )}
         <PaymentElement id="payment-element" />
       </div>
       <div className="flex items-center justify-center">

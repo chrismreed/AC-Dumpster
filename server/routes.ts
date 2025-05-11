@@ -461,24 +461,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe payment routes
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
+      console.log("Creating payment intent with body:", req.body);
+      
       if (!stripe) {
+        console.error("Stripe not configured - missing STRIPE_SECRET_KEY");
         return res.status(500).json({ message: "Stripe not configured" });
       }
 
       const { amount, bookingId } = req.body;
       
       if (!amount) {
+        console.error("Amount is required for payment intent");
         return res.status(400).json({ message: "Amount is required" });
       }
 
+      console.log(`Creating payment intent for amount: ${amount} cents, bookingId: ${bookingId || 'none'}`);
+      
       const paymentIntent = await stripe.paymentIntents.create({
-        amount, // already in cents
+        amount: Number(amount), // Ensure amount is a number
         currency: "usd",
         metadata: {
           bookingId: bookingId ? String(bookingId) : undefined
-        }
+        },
+        payment_method_types: ['card']
       });
 
+      console.log("Payment intent created successfully:", {
+        id: paymentIntent.id,
+        amount: paymentIntent.amount,
+        status: paymentIntent.status,
+        clientSecret: paymentIntent.client_secret ? "exists" : "missing"
+      });
+      
       // If bookingId is provided, update the booking with the paymentIntentId
       if (bookingId) {
         await storage.updateBookingPaymentStatus(
@@ -486,6 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "pending",
           paymentIntent.id
         );
+        console.log(`Updated booking ${bookingId} with payment intent ${paymentIntent.id}`);
       }
 
       res.json({ clientSecret: paymentIntent.client_secret });
