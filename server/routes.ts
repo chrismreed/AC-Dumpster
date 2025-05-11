@@ -374,6 +374,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update booking" });
     }
   });
+  
+  // Endpoint to update booking payment status for customer checkout
+  app.patch("/api/bookings/:id/payment-status", async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      const booking = await storage.getBooking(bookingId);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      const { status } = req.body;
+      if (!status || !["pending", "paid", "failed", "canceled"].includes(status)) {
+        return res.status(400).json({ message: "Invalid payment status" });
+      }
+      
+      const updatedBooking = await storage.updateBookingPaymentStatus(
+        bookingId,
+        status,
+        booking.stripePaymentIntentId || undefined
+      );
+      
+      res.json(updatedBooking);
+    } catch (err) {
+      console.error("Error updating booking payment status:", err);
+      res.status(500).json({ message: "Failed to update booking payment status" });
+    }
+  });
 
   // Calculate price route
   app.post("/api/calculate-price", async (req, res) => {

@@ -203,15 +203,38 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
     createBookingMutation.mutate(completeBookingData);
   };
 
-  const handlePaymentSuccess = () => {
-    setPaymentSuccess(true);
-    toast({
-      title: "Payment Successful!",
-      description: "Your dumpster rental has been booked successfully.",
-    });
-    
-    // Reset the form and go back to step 1
-    onSubmit({ paymentSuccess: true, bookingId });
+  const handlePaymentResult = (success = true) => {
+    // Only set success state if payment was successful
+    if (success) {
+      setPaymentSuccess(true);
+      toast({
+        title: "Payment Successful!",
+        description: "Your dumpster rental has been booked successfully.",
+      });
+      
+      // Reset the form and go back to step 1 with success flag
+      onSubmit({ paymentSuccess: true, bookingId });
+    } else {
+      // For failed payments, we'll update the booking on the server
+      // but stay on the current screen to let the user try again
+      if (bookingId) {
+        // Update the booking status to reflect the failed payment
+        apiRequest("PATCH", `/api/bookings/${bookingId}/payment-status`, {
+          status: "failed"
+        }).catch(err => {
+          console.error("Failed to update booking payment status:", err);
+        });
+      }
+      
+      // Clear client secret to force a new payment intent
+      setClientSecret(null);
+      
+      toast({
+        title: "Payment Not Completed",
+        description: "Your booking information is saved. Please try payment again or contact customer support.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Get display data
@@ -473,7 +496,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
             <div>
               <PaymentForm 
                 clientSecret={clientSecret} 
-                onSuccess={handlePaymentSuccess} 
+                onSuccess={() => handlePaymentResult(true)} 
               />
               <div className="mt-4 flex justify-between">
                 <Button

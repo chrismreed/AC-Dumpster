@@ -100,30 +100,58 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
       });
 
       if (error) {
+        // Handle Stripe specific errors with better messages
         if (error.type === "card_error" || error.type === "validation_error") {
+          const errorMessage = getCardErrorMessage(error.code) || error.message || "Your card was declined.";
           toast({
-            title: "Payment failed",
-            description: error.message || "An error occurred with your payment",
+            title: "Payment Failed",
+            description: errorMessage,
             variant: "destructive",
           });
         } else {
           toast({
-            title: "An unexpected error occurred",
-            description: "Please try again later",
+            title: "Payment Error",
+            description: "An unexpected error occurred. Please try again with a different payment method.",
             variant: "destructive",
           });
         }
         setPaymentStatus("failed");
+        
+        // Notify parent component about the error
+        if (onSuccess) {
+          onSuccess(); // We can't pass error info here, but the booking should be updated on server
+        }
       }
     } catch (error) {
+      console.error("Payment submission error:", error);
       toast({
-        title: "Payment error",
-        description: "There was a problem processing your payment. Please try again.",
+        title: "Payment Error",
+        description: "There was a problem processing your payment. Please try again or use a different card.",
         variant: "destructive",
       });
+      setPaymentStatus("failed");
     }
 
     setIsLoading(false);
+  };
+  
+  // Helper function to provide more user-friendly error messages
+  const getCardErrorMessage = (code?: string): string | undefined => {
+    if (!code) return undefined;
+    
+    const errorMessages: Record<string, string> = {
+      'card_declined': "Your card was declined. Please try another payment method.",
+      'expired_card': "Your card has expired. Please use a different card.",
+      'incorrect_cvc': "The security code (CVC) is incorrect. Please check and try again.",
+      'incorrect_zip': "The ZIP/postal code is incorrect. Please check and try again.",
+      'insufficient_funds': "Your card has insufficient funds. Please use a different payment method.",
+      'invalid_expiry_month': "The expiration month is invalid. Please check and try again.",
+      'invalid_expiry_year': "The expiration year is invalid. Please check and try again.",
+      'invalid_number': "Your card number is invalid. Please check and try again.",
+      'processing_error': "An error occurred while processing your card. Please try again."
+    };
+    
+    return errorMessages[code] || undefined;
   };
 
   return (
