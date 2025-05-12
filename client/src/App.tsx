@@ -14,6 +14,7 @@ import DumpstersPage from "@/pages/admin/dumpsters";
 import AddOnsPage from "@/pages/admin/add-ons";
 import ZonesPage from "@/pages/admin/zones";
 import BookingsPage from "@/pages/admin/bookings";
+import DeliveryMapPage from "@/pages/admin/delivery-map";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
       <ProtectedRoute path="/admin/add-ons" component={AddOnsPage} adminOnly />
       <ProtectedRoute path="/admin/zones" component={ZonesPage} adminOnly />
       <ProtectedRoute path="/admin/bookings" component={BookingsPage} adminOnly />
+      <ProtectedRoute path="/admin/delivery-map" component={DeliveryMapPage} adminOnly />
       <Route component={NotFound} />
     </Switch>
   );

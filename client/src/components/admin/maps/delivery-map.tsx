@@ -1,29 +1,33 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  GoogleMap, 
-  Marker, 
-  InfoWindow, 
-  useJsApiLoader,
-  MarkerClusterer 
-} from '@react-google-maps/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Calendar, Package, Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { Booking, Dumpster } from '@shared/schema';
 import { formatDate } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
 
 interface DeliveryMapProps {
   bookings: Booking[];
   dumpsters: Dumpster[];
 }
 
-// Define map container style
-const containerStyle = {
-  width: '100%',
-  height: '700px'
+// Default map center (will be adjusted based on markers)
+const defaultCenter = {
+  lat: 39.8283, // Middle of USA as fallback
+  lng: -98.5795,
 };
 
-// Geocode an address to get coordinates
+// Map container style
+const containerStyle = {
+  width: '100%',
+  height: '500px',
+  borderRadius: '0.5rem',
+};
+
+// Geocode address to get coordinates
 async function geocodeAddress(address: string): Promise<google.maps.LatLngLiteral | null> {
+  if (!address) return null;
+  
   try {
     const geocoder = new google.maps.Geocoder();
     const result = await geocoder.geocode({ address });
@@ -32,7 +36,7 @@ async function geocodeAddress(address: string): Promise<google.maps.LatLngLitera
       const location = result.results[0].geometry.location;
       return {
         lat: location.lat(),
-        lng: location.lng()
+        lng: location.lng(),
       };
     }
     return null;
@@ -46,110 +50,94 @@ async function geocodeAddress(address: string): Promise<google.maps.LatLngLitera
 function getStatusColor(status: string): string {
   switch (status) {
     case 'scheduled':
-      return '#3b82f6'; // blue
+      return '#3B82F6'; // blue-500
     case 'delivered':
-      return '#10b981'; // green
+      return '#10B981'; // green-500
     case 'completed':
-      return '#8b5cf6'; // purple
+      return '#8B5CF6'; // purple-500
     case 'cancelled':
-      return '#ef4444'; // red
+      return '#EF4444'; // red-500
     default:
-      return '#6b7280'; // gray
+      return '#6B7280'; // gray-500
   }
 }
 
 export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [markers, setMarkers] = useState<Array<{ booking: Booking; position: google.maps.LatLngLiteral }>>([]);
-  const [center, setCenter] = useState<google.maps.LatLngLiteral>({ lat: 37.7749, lng: -122.4194 }); // Default to San Francisco
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedMarker, setSelectedMarker] = useState<{ booking: Booking; position: google.maps.LatLngLiteral } | null>(null);
+  const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(defaultCenter);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Load Google Maps API
-  const { isLoaded, loadError } = useJsApiLoader({
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-    libraries: ['places'],
   });
 
-  // Get dumpster name from dumpster ID
-  const getDumpsterName = useCallback((id: number) => {
-    return dumpsters?.find(d => d.id === id)?.name || `Dumpster #${id}`;
+  // Function to get dumpster name by ID
+  const getDumpsterName = useCallback((dumpsterId: number) => {
+    const dumpster = dumpsters.find(d => d.id === dumpsterId);
+    return dumpster ? dumpster.name : 'Unknown Dumpster';
   }, [dumpsters]);
 
-  // Generate markers for each booking with valid coordinates
+  // Geocode all booking addresses
   useEffect(() => {
-    if (!isLoaded || !bookings || bookings.length === 0) return;
+    if (!isLoaded || !bookings.length) return;
 
-    const generateMarkers = async () => {
-      setIsLoading(true);
+    const geocodeBookings = async () => {
+      const geocodedMarkers = [];
       
-      const markersWithCoords = [];
-      const validAddresses = [];
-
       for (const booking of bookings) {
-        const fullAddress = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
-        const coords = await geocodeAddress(fullAddress);
+        // Skip bookings without delivery address
+        if (!booking.deliveryAddress) continue;
         
-        if (coords) {
-          markersWithCoords.push({
-            booking,
-            position: coords
-          });
-          validAddresses.push(coords);
+        const fullAddress = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+        const position = await geocodeAddress(fullAddress);
+        
+        if (position) {
+          geocodedMarkers.push({ booking, position });
         }
       }
-
-      setMarkers(markersWithCoords);
       
-      // If we have at least one valid address, center the map on the average location
-      if (validAddresses.length > 0) {
-        const avgLat = validAddresses.reduce((sum, loc) => sum + loc.lat, 0) / validAddresses.length;
-        const avgLng = validAddresses.reduce((sum, loc) => sum + loc.lng, 0) / validAddresses.length;
-        setCenter({ lat: avgLat, lng: avgLng });
+      setMarkers(geocodedMarkers);
+      
+      // If we have markers, center the map on the first one
+      if (geocodedMarkers.length > 0) {
+        setMapCenter(geocodedMarkers[0].position);
       }
       
-      setIsLoading(false);
+      setMapLoaded(true);
     };
 
-    generateMarkers();
-  }, [bookings, isLoaded]);
+    geocodeBookings();
+  }, [isLoaded, bookings]);
 
-  // Map options
-  const mapOptions = useMemo(() => ({
-    disableDefaultUI: false,
-    clickableIcons: false,
-    scrollwheel: true,
-    streetViewControl: true,
-    zoomControl: true,
-    mapTypeControl: true,
-  }), []);
+  // Handle map load
+  const onLoad = useCallback((map: google.maps.Map) => {
+    if (markers.length > 0) {
+      // Create bounds to contain all markers
+      const bounds = new google.maps.LatLngBounds();
+      markers.forEach(marker => bounds.extend(marker.position));
+      map.fitBounds(bounds);
+    }
+  }, [markers]);
 
-  // Handle loading and error states
-  if (loadError) {
+  if (!isLoaded) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Delivery Locations Map</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center items-center h-96 flex-col">
-            <MapPin className="h-12 w-12 text-red-500 mb-4" />
-            <p>Error loading Google Maps: {loadError.message}</p>
-          </div>
+        <CardContent className="flex justify-center items-center h-[500px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading Google Maps...</span>
         </CardContent>
       </Card>
     );
   }
 
-  if (!isLoaded) {
+  if (mapLoaded && markers.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Delivery Locations Map</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center items-center h-96">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+        <CardContent className="flex justify-center items-center h-[500px]">
+          <p className="text-muted-foreground">No valid delivery addresses found to display</p>
         </CardContent>
       </Card>
     );
@@ -158,67 +146,74 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <MapPin className="mr-2 h-5 w-5" />
-          Delivery Locations Map
-        </CardTitle>
+        <CardTitle>Delivery Locations</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center items-center h-96">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={center}
-            zoom={10}
-            options={mapOptions}
-          >
-            {markers.length > 0 && (
-              <MarkerClusterer>
-                {(clusterer) => (
-                  <div>
-                    {markers.map((marker, index) => (
-                      <Marker
-                        key={`marker-${marker.booking.id}-${index}`}
-                        position={marker.position}
-                        title={`${marker.booking.customerName}: ${marker.booking.deliveryAddress}`}
-                        clusterer={clusterer}
-                        onClick={() => setSelectedBooking(marker.booking)}
-                        icon={{
-                          path: google.maps.SymbolPath.CIRCLE,
-                          fillColor: getStatusColor(marker.booking.status),
-                          fillOpacity: 0.8,
-                          strokeWeight: 1,
-                          strokeColor: '#ffffff',
-                          scale: 10,
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </MarkerClusterer>
-            )}
+        <GoogleMap
+          mapContainerStyle={containerStyle}
+          center={mapCenter}
+          zoom={10}
+          onLoad={onLoad}
+          options={{
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true,
+          }}
+        >
+          {markers.map((marker, index) => (
+            <Marker
+              key={`${marker.booking.id}-${index}`}
+              position={marker.position}
+              icon={{
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: getStatusColor(marker.booking.status),
+                fillOpacity: 1,
+                strokeWeight: 1,
+                strokeColor: '#FFFFFF',
+                scale: 10,
+              }}
+              onClick={() => setSelectedMarker(marker)}
+            />
+          ))}
 
-            {selectedBooking && (
-              <InfoWindow
-                position={markers.find(m => m.booking.id === selectedBooking.id)?.position as google.maps.LatLngLiteral}
-                onCloseClick={() => setSelectedBooking(null)}
-              >
-                <div className="p-2 max-w-xs">
-                  <h3 className="font-medium text-lg mb-2">{selectedBooking.customerName}</h3>
-                  <div className="space-y-1 text-sm">
-                    <p><strong>Address:</strong> {selectedBooking.deliveryAddress}, {selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</p>
-                    <p><strong>Dumpster:</strong> {getDumpsterName(selectedBooking.dumpsterId)}</p>
-                    <p><strong>Delivery Date:</strong> {formatDate(selectedBooking.deliveryDate)}</p>
-                    <p><strong>Status:</strong> <span className="capitalize">{selectedBooking.status}</span></p>
+          {selectedMarker && (
+            <InfoWindow
+              position={selectedMarker.position}
+              onCloseClick={() => setSelectedMarker(null)}
+            >
+              <div className="p-2 max-w-[300px]">
+                <h3 className="font-bold text-lg mb-1">{selectedMarker.booking.customerName}</h3>
+                <p className="text-gray-700 mb-1">
+                  {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryState} {selectedMarker.booking.deliveryZip}
+                </p>
+                <div className="grid grid-cols-2 gap-1 mb-2">
+                  <div>
+                    <span className="text-xs text-gray-500">Delivery Date</span>
+                    <p className="text-sm">{formatDate(selectedMarker.booking.deliveryDate)}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Pickup Date</span>
+                    <p className="text-sm">{formatDate(selectedMarker.booking.pickupDate)}</p>
                   </div>
                 </div>
-              </InfoWindow>
-            )}
-          </GoogleMap>
-        )}
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">{getDumpsterName(selectedMarker.booking.dumpsterId)}</span>
+                  <Badge 
+                    className="capitalize" 
+                    variant={
+                      selectedMarker.booking.status === 'scheduled' ? 'default' :
+                      selectedMarker.booking.status === 'delivered' ? 'success' :
+                      selectedMarker.booking.status === 'completed' ? 'secondary' :
+                      'destructive'
+                    }
+                  >
+                    {selectedMarker.booking.status}
+                  </Badge>
+                </div>
+              </div>
+            </InfoWindow>
+          )}
+        </GoogleMap>
       </CardContent>
     </Card>
   );
