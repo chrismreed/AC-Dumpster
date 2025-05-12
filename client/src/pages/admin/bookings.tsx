@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,8 @@ export default function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [sortBy, setSortBy] = useState<string>("deliveryDate");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Fetch bookings and related data
   const { data: bookings, isLoading: isLoadingBookings } = useQuery<Booking[]>({
@@ -114,11 +116,36 @@ export default function BookingsPage() {
     }
   };
 
-  // Filter bookings by status
-  const filteredBookings = bookings?.filter((booking) => {
-    if (statusFilter === "all") return true;
-    return booking.status === statusFilter;
-  });
+  // Filter and sort bookings
+  const sortedAndFilteredBookings = useMemo(() => {
+    if (!bookings) return [];
+    
+    // First filter by status
+    let result = bookings.filter((booking) => {
+      if (statusFilter === "all") return true;
+      return booking.status === statusFilter;
+    });
+
+    // Then sort by the selected field
+    result = [...result].sort((a, b) => {
+      if (sortBy === "deliveryDate") {
+        const dateA = new Date(a.deliveryDate).getTime();
+        const dateB = new Date(b.deliveryDate).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      } else if (sortBy === "createdAt") {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      } else if (sortBy === "id") {
+        return sortOrder === "asc" ? a.id - b.id : b.id - a.id;
+      }
+      
+      // Default sort by ID
+      return sortOrder === "asc" ? a.id - b.id : b.id - a.id;
+    });
+    
+    return result;
+  }, [bookings, statusFilter, sortBy, sortOrder]);
 
   // Get related data for a booking
   const getDumpsterName = (id: number) => {
@@ -398,16 +425,44 @@ export default function BookingsPage() {
         )}
 
         <Tabs defaultValue="list" className="w-full">
-          <TabsList className="w-full md:w-auto">
-            <TabsTrigger value="list" className="flex items-center">
-              <List className="mr-2 h-4 w-4" />
-              List View
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center">
-              <Calendar className="mr-2 h-4 w-4" />
-              Calendar View
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <TabsList className="w-full md:w-auto">
+              <TabsTrigger value="list" className="flex items-center">
+                <List className="mr-2 h-4 w-4" />
+                List View
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="flex items-center">
+                <Calendar className="mr-2 h-4 w-4" />
+                Calendar View
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm whitespace-nowrap">Sort by:</span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="id">ID</SelectItem>
+                  <SelectItem value="deliveryDate">Delivery Date</SelectItem>
+                  <SelectItem value="createdAt">Booking Date</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline" 
+                size="icon" 
+                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                title={sortOrder === "asc" ? "Ascending" : "Descending"}
+              >
+                {sortOrder === "asc" ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/><path d="M11 12h10"/><path d="M11 16h7"/><path d="M11 20h4"/></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 12h10"/><path d="M11 16h7"/><path d="M11 20h4"/></svg>
+                )}
+              </Button>
+            </div>
+          </div>
           
           <TabsContent value="calendar" className="mt-6">
             {isLoadingBookings || !bookings || !dumpsters || !durations ? (
@@ -435,10 +490,48 @@ export default function BookingsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:text-primary"
+                          onClick={() => {
+                            if (sortBy === "id") {
+                              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortBy("id");
+                              setSortOrder("asc");
+                            }
+                          }}
+                        >
+                          <div className="flex items-center">
+                            ID
+                            {sortBy === "id" && (
+                              <span className="ml-1">
+                                {sortOrder === "asc" ? "↑" : "↓"}
+                              </span>
+                            )}
+                          </div>
+                        </TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead>Dumpster</TableHead>
-                        <TableHead>Delivery Date</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:text-primary"
+                          onClick={() => {
+                            if (sortBy === "deliveryDate") {
+                              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortBy("deliveryDate");
+                              setSortOrder("asc");
+                            }
+                          }}
+                        >
+                          <div className="flex items-center">
+                            Delivery Date
+                            {sortBy === "deliveryDate" && (
+                              <span className="ml-1">
+                                {sortOrder === "asc" ? "↑" : "↓"}
+                              </span>
+                            )}
+                          </div>
+                        </TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Total</TableHead>
@@ -446,14 +539,14 @@ export default function BookingsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredBookings?.length === 0 ? (
+                      {sortedAndFilteredBookings.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={8} className="text-center py-8">
                             <p className="text-muted-foreground">No bookings found</p>
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredBookings?.map((booking) => (
+                        sortedAndFilteredBookings.map((booking) => (
                           <TableRow key={booking.id}>
                             <TableCell>{booking.id}</TableCell>
                             <TableCell>{booking.customerName}</TableCell>
