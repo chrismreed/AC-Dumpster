@@ -67,33 +67,65 @@ export default function ZonesPage() {
     queryKey: ["/api/zones"],
   });
 
+  // Extended schema for form with geofencing fields
+  const extendedZoneSchema = insertServiceZoneSchema.extend({
+    useGeofencing: z.boolean().default(false),
+    centerLat: z.number().nullable().optional(),
+    centerLng: z.number().nullable().optional(),
+    radiusMeters: z.number().nullable().optional(),
+    feeMultiplier: z.number().default(1.0),
+    maxDrivingMinutes: z.number().nullable().optional()
+  });
+  
+  type ExtendedZoneForm = z.infer<typeof extendedZoneSchema>;
+
   // Create form for adding new service zone
-  const addForm = useForm<InsertServiceZone>({
-    resolver: zodResolver(insertServiceZoneSchema),
+  const addForm = useForm<ExtendedZoneForm>({
+    resolver: zodResolver(extendedZoneSchema),
     defaultValues: {
       name: "",
       zipCodes: "",
       deliveryFee: 0,
+      useGeofencing: false,
+      centerLat: null,
+      centerLng: null,
+      radiusMeters: null,
+      feeMultiplier: 1.0,
+      maxDrivingMinutes: null
     },
   });
 
   // Create form for editing service zone
-  const editForm = useForm<InsertServiceZone>({
-    resolver: zodResolver(insertServiceZoneSchema),
+  const editForm = useForm<ExtendedZoneForm>({
+    resolver: zodResolver(extendedZoneSchema),
     defaultValues: {
       name: "",
       zipCodes: "",
       deliveryFee: 0,
+      useGeofencing: false,
+      centerLat: null,
+      centerLng: null,
+      radiusMeters: null,
+      feeMultiplier: 1.0,
+      maxDrivingMinutes: null
     },
   });
 
   // Add zone mutation
   const addZoneMutation = useMutation({
-    mutationFn: async (data: InsertServiceZone) => {
+    mutationFn: async (data: ExtendedZoneForm) => {
       // Convert fee from dollars to cents
+      // Format geofencing data based on whether it's enabled
       const formattedData = {
         ...data,
         deliveryFee: data.deliveryFee * 100,
+        // Include geofencing fields only if geofencing is enabled
+        useGeofencing: data.useGeofencing,
+        centerLat: data.useGeofencing ? data.centerLat : null,
+        centerLng: data.useGeofencing ? data.centerLng : null,
+        radiusMeters: data.useGeofencing ? data.radiusMeters : null,
+        feeMultiplier: data.useGeofencing ? data.feeMultiplier : 1.0,
+        maxDrivingMinutes: data.useGeofencing ? data.maxDrivingMinutes : null
       };
       
       const response = await apiRequest("POST", "/api/zones", formattedData);
@@ -119,12 +151,19 @@ export default function ZonesPage() {
 
   // Edit zone mutation
   const editZoneMutation = useMutation({
-    mutationFn: async (data: InsertServiceZone & { id: number }) => {
+    mutationFn: async (data: ExtendedZoneForm & { id: number }) => {
       const { id, ...rest } = data;
       // Convert fee from dollars to cents
       const formattedData = {
         ...rest,
         deliveryFee: rest.deliveryFee * 100,
+        // Include geofencing fields only if geofencing is enabled
+        useGeofencing: rest.useGeofencing,
+        centerLat: rest.useGeofencing ? rest.centerLat : null,
+        centerLng: rest.useGeofencing ? rest.centerLng : null,
+        radiusMeters: rest.useGeofencing ? rest.radiusMeters : null,
+        feeMultiplier: rest.useGeofencing ? rest.feeMultiplier : 1.0,
+        maxDrivingMinutes: rest.useGeofencing ? rest.maxDrivingMinutes : null
       };
       
       const response = await apiRequest("PUT", `/api/zones/${id}`, formattedData);
@@ -169,22 +208,42 @@ export default function ZonesPage() {
     },
   });
 
-  const onAddSubmit = (data: InsertServiceZone) => {
-    addZoneMutation.mutate(data);
+  const onAddSubmit = (data: ExtendedZoneForm) => {
+    // Ensure useGeofencing is always a boolean
+    const formData = {
+      ...data,
+      useGeofencing: Boolean(data.useGeofencing),
+      feeMultiplier: data.feeMultiplier || 1.0
+    };
+    addZoneMutation.mutate(formData);
   };
 
-  const onEditSubmit = (data: InsertServiceZone) => {
+  const onEditSubmit = (data: ExtendedZoneForm) => {
     if (selectedZone) {
-      editZoneMutation.mutate({ ...data, id: selectedZone.id });
+      // Ensure useGeofencing is always a boolean
+      const formData = {
+        ...data,
+        useGeofencing: Boolean(data.useGeofencing),
+        feeMultiplier: data.feeMultiplier || 1.0,
+        id: selectedZone.id
+      };
+      editZoneMutation.mutate(formData);
     }
   };
 
   const handleEdit = (zone: ServiceZone) => {
     setSelectedZone(zone);
     // Convert fee from cents to dollars for form display
+    // Handle geofencing fields
     editForm.reset({
       ...zone,
       deliveryFee: zone.deliveryFee / 100,
+      useGeofencing: zone.useGeofencing || false,
+      centerLat: zone.centerLat || null,
+      centerLng: zone.centerLng || null,
+      radiusMeters: zone.radiusMeters || null,
+      feeMultiplier: zone.feeMultiplier || 1.0,
+      maxDrivingMinutes: zone.maxDrivingMinutes || null
     });
     setIsEditDialogOpen(true);
   };
@@ -226,54 +285,199 @@ export default function ZonesPage() {
               </DialogHeader>
               <Form {...addForm}>
                 <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
-                  <FormField
-                    control={addForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Zone Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Zone A - City Center" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="zipCodes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ZIP Codes</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="10001,10002,10003,10004,10005" 
-                            {...field} 
+                  <Tabs defaultValue="basic" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                      <TabsTrigger value="geofence">Geofencing</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="basic" className="space-y-4 pt-4">
+                      <FormField
+                        control={addForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Zone Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Zone A - City Center" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={addForm.control}
+                        name="zipCodes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ZIP Codes</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="10001,10002,10003,10004,10005" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <p className="text-sm text-muted-foreground">
+                              Enter ZIP codes separated by commas
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={addForm.control}
+                        name="deliveryFee"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Base Delivery Fee</FormLabel>
+                            <FormControl>
+                              <PriceInput
+                                {...field}
+                                onValueChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="geofence" className="space-y-4 pt-4">
+                      <FormField
+                        control={addForm.control}
+                        name="useGeofencing"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Enable Geofencing</FormLabel>
+                              <FormDescription>
+                                Calculate delivery fees based on actual driving distance using Google Maps
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      {addForm.watch("useGeofencing") && (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={addForm.control}
+                              name="centerLat"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Center Latitude</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      step="0.000001"
+                                      placeholder="39.1200"
+                                      value={field.value === null ? "" : field.value}
+                                      onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={addForm.control}
+                              name="centerLng"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Center Longitude</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      step="0.000001"
+                                      placeholder="-88.5434"
+                                      value={field.value === null ? "" : field.value}
+                                      onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <FormField
+                            control={addForm.control}
+                            name="radiusMeters"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Service Radius (meters)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="20000"
+                                    value={field.value === null ? "" : field.value}
+                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Maximum distance from center point in meters (e.g., 20000 = 20km)
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
                           />
-                        </FormControl>
-                        <p className="text-sm text-muted-foreground">
-                          Enter ZIP codes separated by commas
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="deliveryFee"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Delivery Fee</FormLabel>
-                        <FormControl>
-                          <PriceInput
-                            {...field}
-                            onValueChange={field.onChange}
+                          
+                          <FormField
+                            control={addForm.control}
+                            name="feeMultiplier"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Fee Multiplier</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.1"
+                                    placeholder="1.5"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Multiply the base fee by this amount (e.g., 1.5 = 150% of base fee)
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          
+                          <FormField
+                            control={addForm.control}
+                            name="maxDrivingMinutes"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Max Driving Time (minutes)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="45"
+                                    value={field.value === null ? "" : field.value}
+                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Maximum acceptable driving time for delivery in this zone
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                  
                   <DialogFooter>
                     <Button 
                       type="submit" 
@@ -302,51 +506,196 @@ export default function ZonesPage() {
             </DialogHeader>
             <Form {...editForm}>
               <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-                <FormField
-                  control={editForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Zone Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="zipCodes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ZIP Codes</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <p className="text-sm text-muted-foreground">
-                        Enter ZIP codes separated by commas
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="deliveryFee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Fee</FormLabel>
-                      <FormControl>
-                        <PriceInput
-                          {...field}
-                          onValueChange={field.onChange}
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                    <TabsTrigger value="geofence">Geofencing</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="basic" className="space-y-4 pt-4">
+                    <FormField
+                      control={editForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Zone Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="zipCodes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ZIP Codes</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} />
+                          </FormControl>
+                          <p className="text-sm text-muted-foreground">
+                            Enter ZIP codes separated by commas
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="deliveryFee"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Base Delivery Fee</FormLabel>
+                          <FormControl>
+                            <PriceInput
+                              {...field}
+                              onValueChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="geofence" className="space-y-4 pt-4">
+                    <FormField
+                      control={editForm.control}
+                      name="useGeofencing"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Enable Geofencing</FormLabel>
+                            <FormDescription>
+                              Calculate delivery fees based on actual driving distance using Google Maps
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {editForm.watch("useGeofencing") && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={editForm.control}
+                            name="centerLat"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Center Latitude</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.000001"
+                                    placeholder="39.1200"
+                                    value={field.value === null ? "" : field.value}
+                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="centerLng"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Center Longitude</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.000001"
+                                    placeholder="-88.5434"
+                                    value={field.value === null ? "" : field.value}
+                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={editForm.control}
+                          name="radiusMeters"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Service Radius (meters)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="20000"
+                                  value={field.value === null ? "" : field.value}
+                                  onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Maximum distance from center point in meters (e.g., 20000 = 20km)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        
+                        <FormField
+                          control={editForm.control}
+                          name="feeMultiplier"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Fee Multiplier</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  step="0.1"
+                                  placeholder="1.5"
+                                  value={field.value}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Multiply the base fee by this amount (e.g., 1.5 = 150% of base fee)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={editForm.control}
+                          name="maxDrivingMinutes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Max Driving Time (minutes)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  placeholder="45"
+                                  value={field.value === null ? "" : field.value}
+                                  onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Maximum acceptable driving time for delivery in this zone
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+                  </TabsContent>
+                </Tabs>
+                
                 <DialogFooter>
                   <Button 
                     type="submit" 
@@ -366,36 +715,121 @@ export default function ZonesPage() {
         {/* Service Zones Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {zones?.map((zone) => {
-            const zipCodeCount = zone.zipCodes.split(',').length;
+            const zipCodeCount = zone.zipCodes ? zone.zipCodes.split(',').filter(Boolean).length : 0;
             
             return (
               <Card key={zone.id}>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center">
-                    <MapPin className="mr-2 h-5 w-5 text-primary" />
+                    {zone.useGeofencing ? (
+                      <Globe className="mr-2 h-5 w-5 text-primary" />
+                    ) : (
+                      <MapPin className="mr-2 h-5 w-5 text-primary" />
+                    )}
                     {zone.name}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm font-medium">ZIP Codes</p>
-                      <p className="text-sm text-neutral-600 mt-1">
-                        {zipCodeCount > 5 
-                          ? zone.zipCodes.split(',').slice(0, 5).join(', ') + ` +${zipCodeCount - 5} more`
-                          : zone.zipCodes.split(',').join(', ')}
+                      <p className="text-sm font-medium">Zone Type</p>
+                      <p className="text-sm font-medium mt-1">
+                        {zone.useGeofencing ? (
+                          <span className="flex items-center text-emerald-600">
+                            <Map className="mr-1 h-4 w-4" /> 
+                            Geofence-based pricing
+                          </span>
+                        ) : (
+                          <span className="flex items-center text-blue-600">
+                            <MapPin className="mr-1 h-4 w-4" /> 
+                            ZIP code-based pricing
+                          </span>
+                        )}
                       </p>
                     </div>
+                    
+                    {!zone.useGeofencing && (
+                      <div>
+                        <p className="text-sm font-medium">ZIP Codes</p>
+                        <p className="text-sm text-neutral-600 mt-1">
+                          {zipCodeCount > 0 ? (
+                            zipCodeCount > 5 
+                              ? zone.zipCodes.split(',').slice(0, 5).join(', ') + ` +${zipCodeCount - 5} more`
+                              : zone.zipCodes.split(',').join(', ')
+                          ) : (
+                            <span className="text-neutral-400">No ZIP codes defined</span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {zone.useGeofencing && (
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="font-medium">Center Point</p>
+                          <p className="text-neutral-600">
+                            {zone.centerLat && zone.centerLng ? (
+                              <span>{zone.centerLat.toFixed(4)}, {zone.centerLng.toFixed(4)}</span>
+                            ) : (
+                              <span className="text-neutral-400">Not set</span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Radius</p>
+                          <p className="text-neutral-600">
+                            {zone.radiusMeters ? (
+                              <span>{(zone.radiusMeters / 1000).toFixed(1)} km</span>
+                            ) : (
+                              <span className="text-neutral-400">Not set</span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Fee Multiplier</p>
+                          <p className="text-neutral-600">
+                            {zone.feeMultiplier ? (
+                              <span>{zone.feeMultiplier.toFixed(1)}x</span>
+                            ) : (
+                              <span>1.0x</span>
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Max Drive Time</p>
+                          <p className="text-neutral-600">
+                            {zone.maxDrivingMinutes ? (
+                              <span>{zone.maxDrivingMinutes} mins</span>
+                            ) : (
+                              <span className="text-neutral-400">No limit</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm font-medium">Delivery Fee</p>
                         <p className="text-lg font-bold text-primary">${(zone.deliveryFee / 100).toFixed(2)}</p>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">Coverage</p>
-                        <p className="text-lg font-bold">{zipCodeCount} ZIP codes</p>
-                      </div>
+                      {!zone.useGeofencing && (
+                        <div>
+                          <p className="text-sm font-medium">Coverage</p>
+                          <p className="text-lg font-bold">{zipCodeCount} ZIP codes</p>
+                        </div>
+                      )}
+                      {zone.useGeofencing && (
+                        <div>
+                          <p className="text-sm font-medium">Dynamic Pricing</p>
+                          <div className="flex items-center">
+                            <Navigation className="h-4 w-4 mr-1 text-orange-500" />
+                            <p className="text-sm font-medium">Distance-based</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    
                     <div className="flex space-x-2 pt-4">
                       <Button 
                         variant="outline" 
