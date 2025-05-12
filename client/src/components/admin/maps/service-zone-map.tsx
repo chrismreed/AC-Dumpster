@@ -1,14 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Circle, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Circle, Marker, InfoWindow } from '@react-google-maps/api';
 import { useQuery } from '@tanstack/react-query';
 import { ServiceZone } from '@shared/schema';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Navigation, Map } from 'lucide-react';
+import { MapPin, Navigation, Map, Globe } from 'lucide-react';
 
 // Define the business location (center point for all operations)
 const BUSINESS_LOCATION = {
@@ -44,11 +39,13 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
   const [hoveredZone, setHoveredZone] = useState<ServiceZone | null>(null);
   const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
   const [animatingZones, setAnimatingZones] = useState<number[]>([]);
+  const [infoPosition, setInfoPosition] = useState<google.maps.LatLng | null>(null);
 
   // Load the Google Maps JS API
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries: ['places', 'geometry'],
   });
 
   // Fetch service zones
@@ -67,19 +64,23 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
   }, []);
 
   // Start animation for a zone when hovered
-  const handleZoneMouseOver = useCallback((zone: ServiceZone) => {
-    setHoveredZone(zone);
-    setAnimatingZones(prev => [...prev, zone.id]);
+  const handleZoneMouseOver = useCallback((zone: ServiceZone, position: google.maps.LatLng) => {
+    if (zone.centerLat && zone.centerLng) {
+      setHoveredZone(zone);
+      setInfoPosition(position);
+      setAnimatingZones(prev => [...prev, zone.id]);
 
-    // Stop animation after duration
-    setTimeout(() => {
-      setAnimatingZones(prev => prev.filter(id => id !== zone.id));
-    }, ANIMATION_DURATION);
+      // Stop animation after duration
+      setTimeout(() => {
+        setAnimatingZones(prev => prev.filter(id => id !== zone.id));
+      }, ANIMATION_DURATION);
+    }
   }, []);
 
   // Reset hover state
   const handleZoneMouseOut = useCallback(() => {
     setHoveredZone(null);
+    setInfoPosition(null);
   }, []);
 
   // Handle click on a zone
@@ -161,67 +162,67 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
               const isAnimating = animatingZones.includes(zone.id);
               const isSelected = selectedZone?.id === zone.id;
               const baseColor = getZoneColor(zone.feeMultiplier);
+              const center = {
+                lat: zone.centerLat as number,
+                lng: zone.centerLng as number,
+              };
               
               return (
-                <HoverCard key={zone.id} open={hoveredZone?.id === zone.id}>
-                  <HoverCardTrigger asChild>
-                    <Circle
-                      center={{
-                        lat: zone.centerLat as number,
-                        lng: zone.centerLng as number,
-                      }}
-                      radius={zone.radiusMeters || 10000}
-                      options={{
-                        fillColor: baseColor,
-                        fillOpacity: isSelected ? 0.4 : isAnimating ? 0.5 : 0.2,
-                        strokeColor: baseColor,
-                        strokeOpacity: isSelected ? 1 : 0.8,
-                        strokeWeight: isSelected ? 3 : 2,
-                        clickable: true,
-                        editable: isAdmin && isSelected,
-                        zIndex: isSelected ? 2 : isAnimating ? 1 : 0,
-                      }}
-                      onMouseOver={() => handleZoneMouseOver(zone)}
-                      onMouseOut={handleZoneMouseOut}
-                      onClick={() => handleZoneClick(zone)}
-                    />
-                  </HoverCardTrigger>
-                  <HoverCardContent 
-                    className="w-80" 
-                    side="top"
-                    align="center"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center">
-                        <Map className="h-5 w-5 mr-2 text-primary" />
-                        <h4 className="text-sm font-semibold">{zone.name}</h4>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <div className="flex items-center">
-                          <Navigation className="h-4 w-4 mr-1 text-muted-foreground" />
-                          <span>Radius: {((zone.radiusMeters || 0) / 1000).toFixed(1)} km</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-sm">Fee Multiplier: {zone.feeMultiplier}x</span>
-                        </div>
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
-                          <span>Center: {zone.centerLat?.toFixed(4)}, {zone.centerLng?.toFixed(4)}</span>
-                        </div>
-                        {zone.maxDrivingMinutes && (
-                          <div className="flex items-center">
-                            <span className="text-sm">Max Drive Time: {zone.maxDrivingMinutes} min</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {isAdmin ? "Click to edit circle" : ""}
-                      </div>
-                    </div>
-                  </HoverCardContent>
-                </HoverCard>
+                <React.Fragment key={zone.id}>
+                  <Circle
+                    center={center}
+                    radius={zone.radiusMeters || 10000}
+                    options={{
+                      fillColor: baseColor,
+                      fillOpacity: isSelected ? 0.4 : isAnimating ? 0.5 : 0.2,
+                      strokeColor: baseColor,
+                      strokeOpacity: isSelected ? 1 : 0.8,
+                      strokeWeight: isSelected ? 3 : 2,
+                      clickable: true,
+                      editable: isAdmin && isSelected,
+                      zIndex: isSelected ? 2 : isAnimating ? 1 : 0,
+                    }}
+                    onMouseOver={() => {
+                      const position = new google.maps.LatLng(center.lat, center.lng);
+                      handleZoneMouseOver(zone, position);
+                    }}
+                    onMouseOut={handleZoneMouseOut}
+                    onClick={() => handleZoneClick(zone)}
+                  />
+                </React.Fragment>
               );
             })}
+
+            {/* Info Window for hovering */}
+            {hoveredZone && infoPosition && (
+              <InfoWindow
+                position={infoPosition}
+                onCloseClick={handleZoneMouseOut}
+              >
+                <div className="p-2 max-w-xs">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <h4 className="font-medium text-sm">{hoveredZone.name}</h4>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                      <span>Radius: {((hoveredZone.radiusMeters || 0) / 1000).toFixed(1)} km</span>
+                    </div>
+                    {hoveredZone.feeMultiplier && (
+                      <div className="flex items-center gap-1">
+                        <span>Fee: {hoveredZone.feeMultiplier}x</span>
+                      </div>
+                    )}
+                    {hoveredZone.maxDrivingMinutes && (
+                      <div className="flex items-center gap-1">
+                        <span>Max drive: {hoveredZone.maxDrivingMinutes} min</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </InfoWindow>
+            )}
           </GoogleMap>
           
           {/* Legend */}
