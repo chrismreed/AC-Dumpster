@@ -92,19 +92,19 @@ export default function DeliveryMapPage() {
           <CardContent className="pt-6">
             <div className="flex space-x-4 justify-center">
               <div className="flex items-center">
-                <div className="h-4 w-4 rounded-full bg-blue-500 mr-2"></div>
+                <div className="h-4 w-4 rounded-full mr-2" style={{ backgroundColor: "#3B82F6" }}></div>
                 <span className="text-sm">Scheduled</span>
               </div>
               <div className="flex items-center">
-                <div className="h-4 w-4 rounded-full bg-green-500 mr-2"></div>
+                <div className="h-4 w-4 rounded-full mr-2" style={{ backgroundColor: "#10B981" }}></div>
                 <span className="text-sm">Delivered</span>
               </div>
               <div className="flex items-center">
-                <div className="h-4 w-4 rounded-full bg-purple-500 mr-2"></div>
+                <div className="h-4 w-4 rounded-full mr-2" style={{ backgroundColor: "#8B5CF6" }}></div>
                 <span className="text-sm">Completed</span>
               </div>
               <div className="flex items-center">
-                <div className="h-4 w-4 rounded-full bg-red-500 mr-2"></div>
+                <div className="h-4 w-4 rounded-full mr-2" style={{ backgroundColor: "#EF4444" }}></div>
                 <span className="text-sm">Cancelled</span>
               </div>
             </div>
