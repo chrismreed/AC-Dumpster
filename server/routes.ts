@@ -19,7 +19,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 // Initialize Stripe if key available
 const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" as any })
   : undefined;
 
 // Admin middleware
@@ -438,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add add-ons if any
       if (selectedAddOns && selectedAddOns.length > 0) {
-        const addOnItems = await Promise.all(selectedAddOns.map(item => {
+        const addOnItems = await Promise.all(selectedAddOns.map((item: { addonId: string | number, quantity?: number }) => {
           const { addonId, quantity = 1 } = item;
           return storage.getAddOn(Number(addonId));
         }));
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: amountInteger,
           currency: "usd",
           metadata: {
-            bookingId: bookingId ? String(bookingId) : undefined
+            bookingId: bookingId ? String(bookingId) : null
           },
           // Only use one of these options, not both
           // payment_method_types: ['card'],
@@ -557,9 +557,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sig, 
         process.env.STRIPE_WEBHOOK_SECRET
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Webhook signature verification failed:', err);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message || 'Unknown error'}`);
     }
 
     // Handle specific events

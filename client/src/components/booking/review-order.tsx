@@ -290,12 +290,19 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
           <p className="text-green-700 mb-4">
             Booking ID: <span className="font-bold">#{bookingId}</span>
           </p>
-          <Button 
-            onClick={() => onSubmit({ paymentSuccess: true, bookingId })}
-            className="mt-4"
-          >
-            Book Another Dumpster
-          </Button>
+          <div className="flex flex-col md:flex-row gap-4 justify-center mt-4">
+            <Button 
+              variant="outline"
+              onClick={() => window.location.href = `/booking-confirmation?id=${bookingId}`}
+            >
+              View Booking Details
+            </Button>
+            <Button 
+              onClick={() => onSubmit({ paymentSuccess: true, bookingId })}
+            >
+              Book Another Dumpster
+            </Button>
+          </div>
         </div>
       ) : (
         <>
