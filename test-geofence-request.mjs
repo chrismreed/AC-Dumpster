@@ -29,7 +29,8 @@ async function testGeofencePricing() {
     });
     
     console.log('\n=== DISTANT ADDRESS TEST ===');
-    console.log(JSON.stringify(distantResponse.data, null, 2));
+    console.log('Response status:', distantResponse.status);
+    console.log('Response data:', JSON.stringify(distantResponse.data, null, 2));
     
     // Test address without full details (should fall back to ZIP-based pricing)
     const zipOnlyResponse = await axios.post('http://localhost:5000/api/calculate-price', {
@@ -40,7 +41,8 @@ async function testGeofencePricing() {
     });
     
     console.log('\n=== ZIP CODE ONLY TEST ===');
-    console.log(JSON.stringify(zipOnlyResponse.data, null, 2));
+    console.log('Response status:', zipOnlyResponse.status);
+    console.log('Response data:', JSON.stringify(zipOnlyResponse.data, null, 2));
     
   } catch (error) {
     console.error('Test failed:', error.response?.data || error.message);
