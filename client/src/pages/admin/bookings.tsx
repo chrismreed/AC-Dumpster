@@ -69,8 +69,14 @@ export default function BookingsPage() {
   // Update booking status mutation
   const updateBookingStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const response = await apiRequest("PUT", `/api/bookings/${id}`, { status });
-      return response.json();
+      try {
+        const response = await apiRequest("PUT", `/api/bookings/${id}`, { status });
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error updating booking:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
@@ -80,10 +86,11 @@ export default function BookingsPage() {
         description: "The booking status has been updated successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error",
-        description: `Failed to update booking: ${error.message}`,
+        description: `Failed to update booking: ${error?.message || "Unknown error"}`,
         variant: "destructive",
       });
     },
@@ -95,7 +102,16 @@ export default function BookingsPage() {
   };
 
   const handleStatusChange = (id: number, status: string) => {
-    updateBookingStatusMutation.mutate({ id, status });
+    try {
+      updateBookingStatusMutation.mutate({ id, status });
+    } catch (error) {
+      console.error("Error in handleStatusChange:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update booking status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter bookings by status
