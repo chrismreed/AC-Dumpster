@@ -449,8 +449,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let drivingDistance = null;
       let geofencingApplied = false;
       
+      // Log geofencing info for debugging
+      console.log(`Checking if geofencing should be applied: zone.useGeofencing=${zone.useGeofencing}, deliveryAddress=${!!deliveryAddress}, deliveryCity=${!!deliveryCity}`);
+      console.log('Zone details:', JSON.stringify(zone, null, 2));
+      
       // If geofencing is enabled and we have full address details, calculate better fee
       if (zone.useGeofencing && deliveryAddress && deliveryCity) {
+        console.log('Geofencing conditions met, will calculate distance-based fee');
         try {
           // Import distance service
           const { calculateDistanceFee } = await import('./services/distance-service');

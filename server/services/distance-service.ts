@@ -41,6 +41,17 @@ export async function calculateDistanceFee(
     // Format complete address
     const destinationAddress = `${deliveryAddress}, ${deliveryCity}, ${deliveryZipCode}`;
     
+    console.log(`Calculating distance from ${BUSINESS_LOCATION.address} to ${destinationAddress}`);
+    // Get the Google Maps API key from environment variables
+    // Note: Using VITE_ prefix for client-side, but we need to use the same key on server-side
+    const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+    console.log(`Using Google Maps API key: ${apiKey ? 'present (starts with ' + apiKey.substring(0, 5) + '...)' : 'missing'}`);
+    
+    if (!apiKey) {
+      console.error('Google Maps API key is missing. Cannot calculate distance.');
+      throw new Error('Google Maps API key is not configured');
+    }
+    
     // Call Google Maps Distance Matrix API
     const response = await axios.get(
       'https://maps.googleapis.com/maps/api/distancematrix/json',
@@ -49,10 +60,13 @@ export async function calculateDistanceFee(
           origins: BUSINESS_LOCATION.address,
           destinations: destinationAddress,
           mode: 'driving',
-          key: process.env.VITE_GOOGLE_MAPS_API_KEY
+          key: apiKey
         }
       }
     );
+    
+    // Log response for debugging
+    console.log('Distance Matrix API Response:', JSON.stringify(response.data, null, 2));
     
     // Parse response
     const data = response.data;
@@ -91,7 +105,7 @@ export async function calculateDistanceFee(
       {
         params: {
           address: destinationAddress,
-          key: process.env.VITE_GOOGLE_MAPS_API_KEY
+          key: apiKey // Using the same API key variable we defined above
         }
       }
     );
