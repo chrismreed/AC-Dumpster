@@ -330,10 +330,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/bookings/:id", async (req, res) => {
     try {
-      const booking = await storage.getBooking(Number(req.params.id));
+      const bookingId = Number(req.params.id);
+      const booking = await storage.getBooking(bookingId);
+      
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
+      
       res.json(booking);
     } catch (err) {
       console.error("Error fetching booking:", err);

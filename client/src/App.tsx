@@ -15,12 +15,14 @@ import AddOnsPage from "@/pages/admin/add-ons";
 import ZonesPage from "@/pages/admin/zones";
 import BookingsPage from "@/pages/admin/bookings";
 import DeliveryMapPage from "@/pages/admin/delivery-map";
+import BookingConfirmationPage from "@/pages/booking-confirmation";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/booking-confirmation" component={BookingConfirmationPage} />
       <ProtectedRoute path="/admin/dashboard" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dumpsters" component={DumpstersPage} adminOnly />
       <ProtectedRoute path="/admin/add-ons" component={AddOnsPage} adminOnly />

@@ -53,6 +53,10 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
     stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
       if (!paymentIntent) return;
       
+      // Extract booking ID from URL if present
+      const urlParams = new URLSearchParams(window.location.search);
+      const bookingId = urlParams.get("id");
+      
       switch (paymentIntent.status) {
         case "succeeded":
           setPaymentStatus("success");
@@ -60,7 +64,13 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
             title: "Payment succeeded!",
             description: "Thank you for your payment.",
           });
-          onSuccess();
+          
+          // If booking ID exists, redirect to confirmation page
+          if (bookingId) {
+            window.location.href = `/booking-confirmation?id=${bookingId}`;
+          } else {
+            onSuccess();
+          }
           break;
         case "processing":
           setPaymentStatus("processing");
@@ -101,13 +111,21 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
 
     try {
       console.log("Confirming payment with Stripe...");
-      console.log("Using Stripe public key:", import.meta.env.VITE_STRIPE_PUBLIC_KEY?.substring(0, 8) + "...");
+      
+      // Extract booking ID from URL if present (e.g., /booking?id=123)
+      const urlParams = new URLSearchParams(window.location.search);
+      const bookingId = urlParams.get("id");
+      
+      // Determine return URL - if we have a booking ID, go to confirmation page
+      const returnUrl = bookingId 
+        ? `${window.location.origin}/booking-confirmation?id=${bookingId}`
+        : `${window.location.origin}${window.location.pathname}`;
       
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          // Redirect to the same page to handle the payment result
-          return_url: window.location.origin + window.location.pathname,
+          // Redirect to confirmation page with booking ID
+          return_url: returnUrl,
         },
         redirect: 'if_required',
       });
@@ -115,7 +133,7 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
       console.log("Stripe confirmPayment result:", JSON.stringify(result));
       const { error, paymentIntent } = result;
       
-      // If we get a successful payment
+      // If we get a successful payment without redirect
       if (paymentIntent && paymentIntent.status === 'succeeded') {
         console.log("Payment succeeded!");
         setPaymentStatus("success");
@@ -123,6 +141,14 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
           title: "Payment successful!",
           description: "Your booking is confirmed.",
         });
+        
+        // If we have a booking ID, redirect to confirmation page
+        if (bookingId) {
+          window.location.href = `/booking-confirmation?id=${bookingId}`;
+          return;
+        }
+        
+        // Otherwise, call the success callback
         onSuccess();
         return;
       }
