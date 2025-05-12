@@ -409,7 +409,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Calculate price route
   app.post("/api/calculate-price", async (req, res) => {
     try {
-      const { dumpsterId, rentalDurationId, deliveryZipCode, selectedAddOns } = req.body;
+      const { 
+        dumpsterId, 
+        rentalDurationId, 
+        deliveryZipCode, 
+        deliveryAddress, 
+        deliveryCity, 
+        selectedAddOns 
+      } = req.body;
       
       if (!dumpsterId || !rentalDurationId || !deliveryZipCode) {
         return res.status(400).json({ message: "Missing required fields" });
@@ -433,8 +440,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Service not available in this ZIP code" });
       }
 
-      // Calculate base price
-      let totalPrice = dumpster.basePrice + duration.additionalPrice + zone.deliveryFee;
+      // Calculate initial total price
+      let totalPrice = dumpster.basePrice + duration.additionalPrice;
+      
+      // Calculate delivery fee - Use geofencing if enabled and address is provided
+      let deliveryFee = zone.deliveryFee;
+      let drivingTime = null;
+      let drivingDistance = null;
+      let geofencingApplied = false;
+      
+      // If geofencing is enabled and we have full address details, calculate better fee
+      if (zone.useGeofencing && deliveryAddress && deliveryCity) {
+        try {
+          // Import distance service
+          const { calculateDistanceFee } = await import('./services/distance-service');
+          
+          // Calculate fee based on actual driving distance/time
+          const distanceData = await calculateDistanceFee(
+            deliveryAddress, 
+            deliveryCity, 
+            deliveryZipCode
+          );
+          
+          // If the address is within a service area, use the calculated fee
+          if (distanceData.inServiceArea) {
+            deliveryFee = distanceData.fee;
+            drivingTime = distanceData.drivingTime;
+            drivingDistance = distanceData.drivingDistance;
+            geofencingApplied = true;
+          }
+          // Otherwise, fall back to zone-based pricing
+        } catch (error) {
+          console.error('Error in geofencing calculation:', error);
+          // Fall back to zone-based pricing if geofencing fails
+        }
+      }
+      
+      // Add delivery fee to total price
+      totalPrice += deliveryFee;
 
       // Add add-ons if any
       if (selectedAddOns && selectedAddOns.length > 0) {
@@ -454,7 +497,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
-      res.json({ totalPrice });
+      // Return comprehensive pricing details
+      res.json({ 
+        totalPrice,
+        basePrice: dumpster.basePrice,
+        durationPrice: duration.additionalPrice,
+        deliveryFee,
+        ...(geofencingApplied ? { 
+          geofencingApplied,
+          drivingTime,
+          drivingDistance
+        } : {})
+      });
     } catch (err) {
       console.error("Error calculating price:", err);
       res.status(500).json({ message: "Failed to calculate price" });

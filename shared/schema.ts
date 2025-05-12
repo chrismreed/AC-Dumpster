@@ -41,6 +41,12 @@ export const serviceZones = pgTable("service_zones", {
   name: text("name").notNull(),
   zipCodes: text("zip_codes").notNull(), // Comma-separated list of zip codes
   deliveryFee: integer("delivery_fee").notNull(), // In cents
+  useGeofencing: boolean("use_geofencing").default(false),
+  centerLat: doublePrecision("center_lat"), // Center latitude for geofencing
+  centerLng: doublePrecision("center_lng"), // Center longitude for geofencing
+  radiusMeters: integer("radius_meters"), // Radius in meters for circular geofencing
+  feeMultiplier: doublePrecision("fee_multiplier").default(1.0), // Multiplier for the base fee
+  maxDrivingMinutes: integer("max_driving_minutes"), // Maximum driving time in minutes
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

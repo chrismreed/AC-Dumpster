@@ -25,12 +25,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
 import { ServiceZone, InsertServiceZone, insertServiceZoneSchema } from "@shared/schema";
-import { Loader2, Plus, Edit, Trash, MapPin } from "lucide-react";
+import { Loader2, Plus, Edit, Trash, MapPin, Globe, Map, Navigation } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -46,6 +47,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { z } from "zod";
 
 export default function ZonesPage() {
   const { toast } = useToast();
