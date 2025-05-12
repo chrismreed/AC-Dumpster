@@ -113,8 +113,9 @@ export function BookingCalendar({ bookings, dumpsters, durations }: BookingCalen
   };
 
   // Format date for display
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -148,15 +149,15 @@ export function BookingCalendar({ bookings, dumpsters, durations }: BookingCalen
   };
 
   // Calculate pickup date
-  const getPickupDate = (deliveryDate: string, durationId: number) => {
+  const getPickupDate = (deliveryDate: string | Date, durationId: number) => {
     const durationDays = getDurationDays(durationId);
     if (durationDays === "N/A") return "N/A";
     
-    const startDate = new Date(deliveryDate);
+    const startDate = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + Number(durationDays));
     
-    return formatDate(endDate.toISOString());
+    return formatDate(endDate);
   };
 
   return (

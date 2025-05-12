@@ -135,8 +135,9 @@ export default function BookingsPage() {
   };
 
   // Format date for display
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -196,7 +197,7 @@ export default function BookingsPage() {
             </Select>
           </div>
         </div>
-
+        
         {/* Booking Details Dialog */}
         {selectedBooking && (
           <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
@@ -380,63 +381,91 @@ export default function BookingsPage() {
           </Dialog>
         )}
 
-        {/* Bookings Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {statusFilter === 'all' ? 'All Bookings' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Bookings`}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Dumpster</TableHead>
-                    <TableHead>Delivery Date</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBookings?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
-                        <p className="text-muted-foreground">No bookings found</p>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredBookings?.map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell>{booking.id}</TableCell>
-                        <TableCell>{booking.customerName}</TableCell>
-                        <TableCell>{getDumpsterName(booking.dumpsterId)}</TableCell>
-                        <TableCell>{formatDate(booking.deliveryDate)}</TableCell>
-                        <TableCell>{booking.deliveryZipCode}</TableCell>
-                        <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                        <TableCell>${(booking.totalPrice / 100).toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewBooking(booking)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </TableCell>
+        <Tabs defaultValue="list" className="w-full">
+          <TabsList className="w-full md:w-auto">
+            <TabsTrigger value="list" className="flex items-center">
+              <List className="mr-2 h-4 w-4" />
+              List View
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center">
+              <Calendar className="mr-2 h-4 w-4" />
+              Calendar View
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="calendar" className="mt-6">
+            {isLoadingBookings || !bookings || !dumpsters || !durations ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <BookingCalendar 
+                bookings={bookings} 
+                dumpsters={dumpsters} 
+                durations={durations} 
+              />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="list" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {statusFilter === 'all' ? 'All Bookings' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Bookings`}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Dumpster</TableHead>
+                        <TableHead>Delivery Date</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBookings?.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8">
+                            <p className="text-muted-foreground">No bookings found</p>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredBookings?.map((booking) => (
+                          <TableRow key={booking.id}>
+                            <TableCell>{booking.id}</TableCell>
+                            <TableCell>{booking.customerName}</TableCell>
+                            <TableCell>{getDumpsterName(booking.dumpsterId)}</TableCell>
+                            <TableCell>{formatDate(booking.deliveryDate)}</TableCell>
+                            <TableCell>{booking.deliveryZipCode}</TableCell>
+                            <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                            <TableCell>${(booking.totalPrice / 100).toFixed(2)}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleViewBooking(booking)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
