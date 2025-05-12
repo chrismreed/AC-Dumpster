@@ -474,6 +474,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             drivingTime = distanceData.drivingTime;
             drivingDistance = distanceData.drivingDistance;
             geofencingApplied = true;
+            
+            // Log if we're using the fallback fee
+            if (distanceData.usingFallback) {
+              console.log('Using fallback zone fee due to Google Maps API limitations:', deliveryFee);
+            }
           }
           // Otherwise, fall back to zone-based pricing
         } catch (error) {
@@ -512,7 +517,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(geofencingApplied ? { 
           geofencingApplied,
           drivingTime,
-          drivingDistance
+          drivingDistance,
+          // Include fallback status flag if geofencing was applied but we used fallback
+          usingFallbackPricing: drivingTime === null
         } : {})
       });
     } catch (err) {

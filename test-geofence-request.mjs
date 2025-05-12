@@ -14,7 +14,9 @@ async function testGeofencePricing() {
     });
     
     console.log('=== NEARBY ADDRESS TEST ===');
-    console.log(JSON.stringify(nearbyResponse.data, null, 2));
+    // Log the full response including any available headers
+    console.log('Response status:', nearbyResponse.status);
+    console.log('Response data:', JSON.stringify(nearbyResponse.data, null, 2));
     
     // Test address further away (should have higher fee)
     const distantResponse = await axios.post('http://localhost:5000/api/calculate-price', {
