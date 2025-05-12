@@ -464,7 +464,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const distanceData = await calculateDistanceFee(
             deliveryAddress, 
             deliveryCity, 
-            deliveryZipCode
+            deliveryZipCode,
+            zone.deliveryFee // Pass the base zone fee as fallback
           );
           
           // If the address is within a service area, use the calculated fee

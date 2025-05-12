@@ -29,125 +29,192 @@ const GEOFENCE_ZONES = [
 export async function calculateDistanceFee(
   deliveryAddress: string, 
   deliveryCity: string, 
-  deliveryZipCode: string
+  deliveryZipCode: string,
+  zoneBaseDeliveryFee: number = 0
 ): Promise<{ 
   fee: number; 
-  drivingTime: number; 
-  drivingDistance: number;
+  drivingTime: number | null; 
+  drivingDistance: number | null;
   inServiceArea: boolean;
   zoneMultiplier: number;
+  usingFallback: boolean;
 }> {
+  // Format complete address
+  const destinationAddress = `${deliveryAddress}, ${deliveryCity}, ${deliveryZipCode}`;
+  
+  console.log(`Calculating distance from ${BUSINESS_LOCATION.address} to ${destinationAddress}`);
+  
   try {
-    // Format complete address
-    const destinationAddress = `${deliveryAddress}, ${deliveryCity}, ${deliveryZipCode}`;
-    
-    console.log(`Calculating distance from ${BUSINESS_LOCATION.address} to ${destinationAddress}`);
     // Get the Google Maps API key from environment variables
     // Note: Using VITE_ prefix for client-side, but we need to use the same key on server-side
     const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
     console.log(`Using Google Maps API key: ${apiKey ? 'present (starts with ' + apiKey.substring(0, 5) + '...)' : 'missing'}`);
     
     if (!apiKey) {
-      console.error('Google Maps API key is missing. Cannot calculate distance.');
-      throw new Error('Google Maps API key is not configured');
+      console.error('Google Maps API key is missing. Falling back to zone base fee.');
+      return {
+        fee: zoneBaseDeliveryFee,
+        drivingTime: null,
+        drivingDistance: null,
+        inServiceArea: true, // Assume in service area since we have a zone match
+        zoneMultiplier: 1.0,
+        usingFallback: true
+      };
     }
     
-    // Call Google Maps Distance Matrix API
-    const response = await axios.get(
-      'https://maps.googleapis.com/maps/api/distancematrix/json',
-      {
-        params: {
-          origins: BUSINESS_LOCATION.address,
-          destinations: destinationAddress,
-          mode: 'driving',
-          key: apiKey
+    try {
+      // Call Google Maps Distance Matrix API
+      const response = await axios.get(
+        'https://maps.googleapis.com/maps/api/distancematrix/json',
+        {
+          params: {
+            origins: BUSINESS_LOCATION.address,
+            destinations: destinationAddress,
+            mode: 'driving',
+            key: apiKey
+          }
         }
-      }
-    );
-    
-    // Log response for debugging
-    console.log('Distance Matrix API Response:', JSON.stringify(response.data, null, 2));
-    
-    // Parse response
-    const data = response.data;
-    
-    // Check if we got valid results
-    if (
-      !data.rows || 
-      !data.rows[0] || 
-      !data.rows[0].elements || 
-      !data.rows[0].elements[0] ||
-      data.rows[0].elements[0].status !== 'OK'
-    ) {
-      console.error('Invalid response from Distance Matrix API:', data);
-      throw new Error('Unable to calculate distance');
-    }
-    
-    // Extract driving time and distance
-    const drivingTimeInSeconds = data.rows[0].elements[0].duration.value;
-    const drivingDistanceInMeters = data.rows[0].elements[0].distance.value;
-    
-    // Convert to minutes for fee calculation
-    const drivingTimeInMinutes = Math.ceil(drivingTimeInSeconds / 60);
-    
-    // Determine fee based on driving time tiers
-    let fee = 0;
-    for (const tier of DISTANCE_TIERS) {
-      if (drivingTimeInMinutes <= tier.maxMinutes) {
-        fee = tier.fee;
-        break;
-      }
-    }
-    
-    // Geocode the destination address to get coordinates
-    const geocodeResponse = await axios.get(
-      'https://maps.googleapis.com/maps/api/geocode/json',
-      {
-        params: {
-          address: destinationAddress,
-          key: apiKey // Using the same API key variable we defined above
-        }
-      }
-    );
-    
-    // Get coordinates of destination
-    const destinationCoords = geocodeResponse.data.results[0]?.geometry?.location;
-    if (!destinationCoords) {
-      throw new Error('Unable to geocode destination address');
-    }
-    
-    // Determine which geofence zone the destination falls into
-    let zoneMultiplier = 1.0;
-    let inServiceArea = false;
-    
-    for (const zone of GEOFENCE_ZONES) {
-      const distance = getDistanceFromLatLonInMeters(
-        zone.center.lat, 
-        zone.center.lng, 
-        destinationCoords.lat, 
-        destinationCoords.lng
       );
       
-      if (distance <= zone.radius) {
-        zoneMultiplier = zone.feeMultiplier;
-        inServiceArea = true;
-        break;
+      // Log response for debugging
+      console.log('Distance Matrix API Response:', JSON.stringify(response.data, null, 2));
+      
+      // Parse response
+      const data = response.data;
+      
+      // Check if API key restriction error
+      if (data.status === 'REQUEST_DENIED' && data.error_message?.includes('referer restrictions')) {
+        console.log('API key has referer restrictions. Falling back to zone base fee.');
+        return {
+          fee: zoneBaseDeliveryFee,
+          drivingTime: null,
+          drivingDistance: null,
+          inServiceArea: true, // Assume in service area since we have a zone match
+          zoneMultiplier: 1.0,
+          usingFallback: true
+        };
       }
+      
+      // Check if we got valid results
+      if (
+        !data.rows || 
+        !data.rows[0] || 
+        !data.rows[0].elements || 
+        !data.rows[0].elements[0] ||
+        data.rows[0].elements[0].status !== 'OK'
+      ) {
+        console.error('Invalid response from Distance Matrix API:', data);
+        // Fall back to zone base delivery fee
+        return {
+          fee: zoneBaseDeliveryFee,
+          drivingTime: null,
+          drivingDistance: null,
+          inServiceArea: true,
+          zoneMultiplier: 1.0,
+          usingFallback: true
+        };
+      }
+      
+      // Extract driving time and distance
+      const drivingTimeInSeconds = data.rows[0].elements[0].duration.value;
+      const drivingDistanceInMeters = data.rows[0].elements[0].distance.value;
+      
+      // Convert to minutes for fee calculation
+      const drivingTimeInMinutes = Math.ceil(drivingTimeInSeconds / 60);
+      
+      // Determine fee based on driving time tiers
+      let fee = 0;
+      for (const tier of DISTANCE_TIERS) {
+        if (drivingTimeInMinutes <= tier.maxMinutes) {
+          fee = tier.fee;
+          break;
+        }
+      }
+      
+      // Try to geocode the address for more precise zone calculation
+      try {
+        // Geocode the destination address to get coordinates
+        const geocodeResponse = await axios.get(
+          'https://maps.googleapis.com/maps/api/geocode/json',
+          {
+            params: {
+              address: destinationAddress,
+              key: apiKey
+            }
+          }
+        );
+        
+        // Get coordinates of destination
+        const destinationCoords = geocodeResponse.data.results[0]?.geometry?.location;
+        if (destinationCoords) {
+          // Determine which geofence zone the destination falls into
+          let zoneMultiplier = 1.0;
+          let inServiceArea = false;
+          
+          for (const zone of GEOFENCE_ZONES) {
+            const distance = getDistanceFromLatLonInMeters(
+              zone.center.lat, 
+              zone.center.lng, 
+              destinationCoords.lat, 
+              destinationCoords.lng
+            );
+            
+            if (distance <= zone.radius) {
+              zoneMultiplier = zone.feeMultiplier;
+              inServiceArea = true;
+              break;
+            }
+          }
+          
+          // Apply zone multiplier to the fee
+          fee = Math.round(fee * zoneMultiplier);
+          
+          return {
+            fee,
+            drivingTime: drivingTimeInMinutes,
+            drivingDistance: Math.round(drivingDistanceInMeters / 1000), // Convert to km
+            inServiceArea,
+            zoneMultiplier,
+            usingFallback: false
+          };
+        }
+      } catch (geocodeError) {
+        console.log('Error during geocoding, using driving time only:', geocodeError);
+      }
+      
+      // If geocoding failed, just use the driving time fee
+      return {
+        fee,
+        drivingTime: drivingTimeInMinutes,
+        drivingDistance: Math.round(drivingDistanceInMeters / 1000), // Convert to km
+        inServiceArea: true, // Assume in service area since we have a zone match
+        zoneMultiplier: 1.0,
+        usingFallback: false
+      };
+      
+    } catch (apiError) {
+      console.error('Error calling Google Maps API:', apiError);
+      // Fall back to zone base delivery fee
+      return {
+        fee: zoneBaseDeliveryFee,
+        drivingTime: null,
+        drivingDistance: null,
+        inServiceArea: true,
+        zoneMultiplier: 1.0,
+        usingFallback: true
+      };
     }
-    
-    // Apply zone multiplier to the fee
-    fee = Math.round(fee * zoneMultiplier);
-    
-    return {
-      fee,
-      drivingTime: drivingTimeInMinutes,
-      drivingDistance: Math.round(drivingDistanceInMeters / 1000), // Convert to km
-      inServiceArea,
-      zoneMultiplier
-    };
   } catch (error) {
     console.error('Error calculating distance fee:', error);
-    throw new Error('Unable to calculate delivery fee based on distance');
+    // Fall back to zone base delivery fee
+    return {
+      fee: zoneBaseDeliveryFee,
+      drivingTime: null,
+      drivingDistance: null,
+      inServiceArea: true,
+      zoneMultiplier: 1.0,
+      usingFallback: true
+    };
   }
 }
 

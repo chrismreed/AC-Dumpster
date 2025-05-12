@@ -3,11 +3,11 @@ import axios from 'axios';
 
 async function testGeofencePricing() {
   try {
-    // Test address inside geofence zone
+    // Test address inside geofence zone - using ZIP code that matches our geofence zone
     const nearbyResponse = await axios.post('http://localhost:5000/api/calculate-price', {
       dumpsterId: 3, // Using the 30 yard dumpster
       rentalDurationId: 1, // 3-day rental
-      deliveryZipCode: '62401',
+      deliveryZipCode: '62411', // This is in our geofence zone
       deliveryAddress: '210 W Jefferson Ave',
       deliveryCity: 'Effingham, IL',
       selectedAddOns: []
@@ -20,9 +20,9 @@ async function testGeofencePricing() {
     const distantResponse = await axios.post('http://localhost:5000/api/calculate-price', {
       dumpsterId: 3,
       rentalDurationId: 1,
-      deliveryZipCode: '62401', // Using same ZIP code but different address
-      deliveryAddress: '1604 S Banker St',
-      deliveryCity: 'Effingham, IL',
+      deliveryZipCode: '62467', // Another ZIP in our geofence zone
+      deliveryAddress: '200 E Main St',
+      deliveryCity: 'Montrose, IL',
       selectedAddOns: []
     });
     
