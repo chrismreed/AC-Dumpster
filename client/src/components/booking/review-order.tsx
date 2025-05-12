@@ -147,10 +147,9 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   });
 
   const createPaymentIntent = (bookingId: number, amount: number) => {
-    // Convert dollars to cents for Stripe
-    const amountInCents = Math.round(amount * 100);
-    console.log(`Converting $${amount} to ${amountInCents} cents for Stripe`);
-    createPaymentIntentMutation.mutate({ bookingId, amount: amountInCents });
+    // The amount is already in cents - no need to multiply by 100 again
+    console.log(`Creating payment intent for booking ${bookingId} with amount ${amount} cents`);
+    createPaymentIntentMutation.mutate({ bookingId, amount });
   };
 
   const handleFormSubmit = (formData: ContactFormValues) => {

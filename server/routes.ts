@@ -494,7 +494,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           metadata: {
             bookingId: bookingId ? String(bookingId) : undefined
           },
-          payment_method_types: ['card'],
+          // Only use one of these options, not both
+          // payment_method_types: ['card'],
           automatic_payment_methods: {
             enabled: true,
           }
