@@ -475,35 +475,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Amount is required" });
       }
 
-      console.log(`Creating payment intent for amount: ${amount} cents, bookingId: ${bookingId || 'none'}`);
+      // Make sure amount is an integer (in cents) for Stripe
+      const amountInteger = Math.round(Number(amount));
       
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Number(amount), // Ensure amount is a number
-        currency: "usd",
-        metadata: {
-          bookingId: bookingId ? String(bookingId) : undefined
-        },
-        payment_method_types: ['card']
-      });
-
-      console.log("Payment intent created successfully:", {
-        id: paymentIntent.id,
-        amount: paymentIntent.amount,
-        status: paymentIntent.status,
-        clientSecret: paymentIntent.client_secret ? "exists" : "missing"
-      });
+      console.log(`Creating payment intent for amount: ${amountInteger} cents, bookingId: ${bookingId || 'none'}`);
       
-      // If bookingId is provided, update the booking with the paymentIntentId
-      if (bookingId) {
-        await storage.updateBookingPaymentStatus(
-          Number(bookingId),
-          "pending",
-          paymentIntent.id
-        );
-        console.log(`Updated booking ${bookingId} with payment intent ${paymentIntent.id}`);
+      if (process.env.STRIPE_SECRET_KEY) {
+        console.log(`Using Stripe secret key starting with: ${process.env.STRIPE_SECRET_KEY.substring(0, 7)}...`);
+      } else {
+        console.error("STRIPE_SECRET_KEY is missing or empty");
       }
+      
+      let paymentIntent;
+      try {
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: amountInteger,
+          currency: "usd",
+          metadata: {
+            bookingId: bookingId ? String(bookingId) : undefined
+          },
+          payment_method_types: ['card'],
+          automatic_payment_methods: {
+            enabled: true,
+          }
+        });
 
-      res.json({ clientSecret: paymentIntent.client_secret });
+        console.log("Payment intent created successfully:", {
+          id: paymentIntent.id,
+          amount: paymentIntent.amount,
+          status: paymentIntent.status,
+          clientSecret: paymentIntent.client_secret ? "exists" : "missing"
+        });
+        
+        // If bookingId is provided, update the booking with the paymentIntentId
+        if (bookingId) {
+          await storage.updateBookingPaymentStatus(
+            Number(bookingId),
+            "pending",
+            paymentIntent.id
+          );
+          console.log(`Updated booking ${bookingId} with payment intent ${paymentIntent.id}`);
+        }
+
+        res.json({ clientSecret: paymentIntent.client_secret });
+      } catch (stripeError: any) {
+        console.error("Stripe API error:", stripeError.message);
+        console.error("Stripe error type:", stripeError.type);
+        
+        return res.status(400).json({
+          message: `Stripe API error: ${stripeError.message}`,
+          type: stripeError.type
+        });
+      }
     } catch (err) {
       console.error("Error creating payment intent:", err);
       res.status(500).json({ message: "Failed to create payment intent" });

@@ -11,9 +11,18 @@ import { Loader2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Load Stripe outside of component to avoid recreating instance on renders
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLIC_KEY || ""
-);
+let stripePromise: ReturnType<typeof loadStripe> | null = null;
+
+try {
+  if (import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+    console.log("Initializing Stripe with public key");
+    stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+  } else {
+    console.error("Missing Stripe public key");
+  }
+} catch (error) {
+  console.error("Error initializing Stripe:", error);
+}
 
 interface PaymentFormContentProps {
   clientSecret: string;
@@ -217,17 +226,41 @@ interface PaymentFormProps {
 
 export function PaymentForm({ clientSecret, onSuccess }: PaymentFormProps) {
   const [isReady, setIsReady] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
+    // Check if Stripe is properly configured
+    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+      console.error("Missing Stripe public key");
+      toast({
+        title: "Configuration Error",
+        description: "Payment system is not properly configured. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Log Stripe public key prefix (first few characters)
+    console.log(`Using Stripe public key: ${import.meta.env.VITE_STRIPE_PUBLIC_KEY.substring(0, 7)}...`);
+
     // Make sure we set the component to ready state
     setIsReady(true);
-  }, []);
+  }, [toast]);
 
   if (!isReady) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2">Loading payment form...</span>
+      </div>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span>Preparing payment form...</span>
       </div>
     );
   }
