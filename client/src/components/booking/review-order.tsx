@@ -217,8 +217,13 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
         description: "Your dumpster rental has been booked successfully.",
       });
       
-      // Reset the form and go back to step 1 with success flag
-      onSubmit({ paymentSuccess: true, bookingId });
+      // Redirect to the confirmation page
+      if (bookingId) {
+        window.location.href = `/booking-confirmation?id=${bookingId}`;
+      } else {
+        // If for some reason we don't have the booking ID, fall back to the original behavior
+        onSubmit({ paymentSuccess: true, bookingId });
+      }
     } else {
       // For failed payments, we'll update the booking on the server
       // but stay on the current screen to let the user try again

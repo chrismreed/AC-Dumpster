@@ -19,9 +19,6 @@ const containerStyle = {
   borderRadius: '8px',
 };
 
-// Animation duration in ms
-const ANIMATION_DURATION = 800;
-
 // Generate a color based on zone's fee multiplier - higher = more intense color
 const getZoneColor = (multiplier: number | null) => {
   if (!multiplier || multiplier <= 1) return '#3b82f6'; // blue
@@ -39,13 +36,11 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
   const [hoveredZone, setHoveredZone] = useState<ServiceZone | null>(null);
   const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
   const [animatingZones, setAnimatingZones] = useState<number[]>([]);
-  const [infoPosition, setInfoPosition] = useState<google.maps.LatLng | null>(null);
 
   // Load the Google Maps JS API
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places', 'geometry'],
   });
 
   // Fetch service zones
@@ -63,24 +58,15 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
     setMap(null);
   }, []);
 
-  // Start animation for a zone when hovered
-  const handleZoneMouseOver = useCallback((zone: ServiceZone, position: google.maps.LatLng) => {
-    if (zone.centerLat && zone.centerLng) {
-      setHoveredZone(zone);
-      setInfoPosition(position);
-      setAnimatingZones(prev => [...prev, zone.id]);
-
-      // Stop animation after duration
-      setTimeout(() => {
-        setAnimatingZones(prev => prev.filter(id => id !== zone.id));
-      }, ANIMATION_DURATION);
-    }
+  // Set hovered zone
+  const handleZoneMouseOver = useCallback((zone: ServiceZone) => {
+    setHoveredZone(zone);
+    setAnimatingZones((prev) => [...prev, zone.id]);
   }, []);
 
   // Reset hover state
   const handleZoneMouseOut = useCallback(() => {
     setHoveredZone(null);
-    setInfoPosition(null);
   }, []);
 
   // Handle click on a zone
@@ -162,15 +148,14 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
               const isAnimating = animatingZones.includes(zone.id);
               const isSelected = selectedZone?.id === zone.id;
               const baseColor = getZoneColor(zone.feeMultiplier);
-              const center = {
-                lat: zone.centerLat as number,
-                lng: zone.centerLng as number,
-              };
               
               return (
                 <React.Fragment key={zone.id}>
                   <Circle
-                    center={center}
+                    center={{
+                      lat: zone.centerLat as number,
+                      lng: zone.centerLng as number,
+                    }}
                     radius={zone.radiusMeters || 10000}
                     options={{
                       fillColor: baseColor,
@@ -180,12 +165,8 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
                       strokeWeight: isSelected ? 3 : 2,
                       clickable: true,
                       editable: isAdmin && isSelected,
-                      zIndex: isSelected ? 2 : isAnimating ? 1 : 0,
                     }}
-                    onMouseOver={() => {
-                      const position = new google.maps.LatLng(center.lat, center.lng);
-                      handleZoneMouseOver(zone, position);
-                    }}
+                    onMouseOver={() => handleZoneMouseOver(zone)}
                     onMouseOut={handleZoneMouseOut}
                     onClick={() => handleZoneClick(zone)}
                   />
@@ -193,30 +174,33 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
               );
             })}
 
-            {/* Info Window for hovering */}
-            {hoveredZone && infoPosition && (
+            {/* Info Window for the selected zone */}
+            {selectedZone && selectedZone.centerLat && selectedZone.centerLng && (
               <InfoWindow
-                position={infoPosition}
-                onCloseClick={handleZoneMouseOut}
+                position={{
+                  lat: selectedZone.centerLat,
+                  lng: selectedZone.centerLng,
+                }}
+                onCloseClick={() => setSelectedZone(null)}
               >
                 <div className="p-2 max-w-xs">
                   <div className="flex items-center gap-2 mb-2">
                     <Globe className="h-4 w-4 text-primary" />
-                    <h4 className="font-medium text-sm">{hoveredZone.name}</h4>
+                    <h4 className="font-medium text-sm">{selectedZone.name}</h4>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-muted-foreground" />
-                      <span>Radius: {((hoveredZone.radiusMeters || 0) / 1000).toFixed(1)} km</span>
+                      <span>Radius: {((selectedZone.radiusMeters || 0) / 1000).toFixed(1)} km</span>
                     </div>
-                    {hoveredZone.feeMultiplier && (
+                    {selectedZone.feeMultiplier && (
                       <div className="flex items-center gap-1">
-                        <span>Fee: {hoveredZone.feeMultiplier}x</span>
+                        <span>Fee: {selectedZone.feeMultiplier}x</span>
                       </div>
                     )}
-                    {hoveredZone.maxDrivingMinutes && (
+                    {selectedZone.maxDrivingMinutes && (
                       <div className="flex items-center gap-1">
-                        <span>Max drive: {hoveredZone.maxDrivingMinutes} min</span>
+                        <span>Max drive: {selectedZone.maxDrivingMinutes} min</span>
                       </div>
                     )}
                   </div>
