@@ -9,7 +9,8 @@ import {
   Calendar,
   LogOut,
   Home,
-  Map
+  Map,
+  Globe
 } from "lucide-react";
 import { Button } from "./button";
 
@@ -37,6 +38,11 @@ export function AdminNav() {
       title: "Service Zones",
       href: "/admin/zones",
       icon: <MapPin className="mr-2 h-4 w-4" />
+    },
+    {
+      title: "Zone Map",
+      href: "/admin/zone-map",
+      icon: <Globe className="mr-2 h-4 w-4" />
     },
     {
       title: "Bookings",

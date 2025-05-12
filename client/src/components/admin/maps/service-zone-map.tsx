@@ -158,7 +158,7 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
 
             {/* Draw circles for geofence zones */}
             {zones?.filter(zone => zone.useGeofencing && zone.centerLat && zone.centerLng).map((zone) => {
-              const isAnimating = animatingZones.has(zone.id);
+              const isAnimating = animatingZones.includes(zone.id);
               const isSelected = selectedZone?.id === zone.id;
               const baseColor = getZoneColor(zone.feeMultiplier);
               
