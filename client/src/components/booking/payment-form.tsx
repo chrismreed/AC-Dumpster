@@ -92,16 +92,31 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
 
     try {
       console.log("Confirming payment with Stripe...");
+      console.log("Using Stripe public key:", import.meta.env.VITE_STRIPE_PUBLIC_KEY?.substring(0, 8) + "...");
+      
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
           // Redirect to the same page to handle the payment result
           return_url: window.location.origin + window.location.pathname,
         },
+        redirect: 'if_required',
       });
       
-      console.log("Stripe confirmPayment result:", result);
-      const { error } = result;
+      console.log("Stripe confirmPayment result:", JSON.stringify(result));
+      const { error, paymentIntent } = result;
+      
+      // If we get a successful payment
+      if (paymentIntent && paymentIntent.status === 'succeeded') {
+        console.log("Payment succeeded!");
+        setPaymentStatus("success");
+        toast({
+          title: "Payment successful!",
+          description: "Your booking is confirmed.",
+        });
+        onSuccess();
+        return;
+      }
 
       if (error) {
         // Handle Stripe specific errors with better messages

@@ -125,16 +125,19 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   // Create payment intent mutation
   const createPaymentIntentMutation = useMutation({
     mutationFn: async ({ bookingId, amount }: { bookingId: number; amount: number }) => {
+      console.log(`Creating payment intent for booking ${bookingId} with amount ${amount} cents`);
       const response = await apiRequest("POST", "/api/create-payment-intent", {
         bookingId,
-        amount,
+        amount: Math.round(amount), // Ensure integer amount
       });
       return response.json();
     },
     onSuccess: (data) => {
+      console.log("Payment intent created successfully, clientSecret received");
       setClientSecret(data.clientSecret);
     },
     onError: (error) => {
+      console.error("Payment intent creation failed:", error);
       toast({
         title: "Error",
         description: `Failed to initialize payment: ${error.message}`,
@@ -144,7 +147,10 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   });
 
   const createPaymentIntent = (bookingId: number, amount: number) => {
-    createPaymentIntentMutation.mutate({ bookingId, amount });
+    // Convert dollars to cents for Stripe
+    const amountInCents = Math.round(amount * 100);
+    console.log(`Converting $${amount} to ${amountInCents} cents for Stripe`);
+    createPaymentIntentMutation.mutate({ bookingId, amount: amountInCents });
   };
 
   const handleFormSubmit = (formData: ContactFormValues) => {
