@@ -184,7 +184,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
               <div className="p-2 max-w-[300px]">
                 <h3 className="font-bold text-lg mb-1">{selectedMarker.booking.customerName}</h3>
                 <p className="text-gray-700 mb-1">
-                  {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryState} {selectedMarker.booking.deliveryZip}
+                  {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryZipCode}
                 </p>
                 <div className="grid grid-cols-2 gap-1 mb-2">
                   <div>
@@ -192,20 +192,18 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                     <p className="text-sm">{formatDate(selectedMarker.booking.deliveryDate)}</p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500">Pickup Date</span>
-                    <p className="text-sm">{formatDate(selectedMarker.booking.pickupDate)}</p>
+                    <span className="text-xs text-gray-500">Created At</span>
+                    <p className="text-sm">{formatDate(selectedMarker.booking.createdAt)}</p>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">{getDumpsterName(selectedMarker.booking.dumpsterId)}</span>
                   <Badge 
-                    className="capitalize" 
-                    variant={
-                      selectedMarker.booking.status === 'scheduled' ? 'default' :
+                    className="capitalize"
+                    variant={selectedMarker.booking.status === 'scheduled' ? 'default' :
                       selectedMarker.booking.status === 'delivered' ? 'success' :
                       selectedMarker.booking.status === 'completed' ? 'secondary' :
-                      'destructive'
-                    }
+                      'destructive'}
                   >
                     {selectedMarker.booking.status}
                   </Badge>
