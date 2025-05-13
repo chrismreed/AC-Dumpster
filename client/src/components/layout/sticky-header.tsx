@@ -131,8 +131,8 @@ function NavLink({
 }) {
   return (
     <Link href={href}>
-      <a 
-        className={`px-3 py-2 rounded-md text-sm font-medium hover:text-primary transition-colors ${
+      <div 
+        className={`px-3 py-2 rounded-md text-sm font-medium hover:text-primary transition-colors cursor-pointer ${
           isActive 
             ? 'text-primary' 
             : isScrolled 
@@ -141,7 +141,7 @@ function NavLink({
         }`}
       >
         {label}
-      </a>
+      </div>
     </Link>
   );
 }
@@ -158,12 +158,12 @@ function MobileNavLink({
 }) {
   return (
     <Link href={href}>
-      <a 
-        className="block px-3 py-2 text-base font-medium text-neutral-800 hover:text-primary hover:bg-neutral-50 rounded-md transition-colors"
+      <div 
+        className="block px-3 py-2 text-base font-medium text-neutral-800 hover:text-primary hover:bg-neutral-50 rounded-md transition-colors cursor-pointer"
         onClick={onClick}
       >
         {label}
-      </a>
+      </div>
     </Link>
   );
 }
