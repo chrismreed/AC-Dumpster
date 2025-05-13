@@ -1,110 +1,129 @@
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Shield, Award, ThumbsUp, ArrowRight } from 'lucide-react';
+import { ArrowRight, TruckIcon, MapPinIcon, CheckCircleIcon } from "lucide-react";
 
 export function ImprovedHero() {
   return (
-    <section className="relative bg-gray-900 pt-32 pb-20 md:pb-32 overflow-hidden">
-      {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/20 opacity-10"></div>
+    <section className="relative bg-black text-white">
+      {/* Background with overlay */}
+      <div className="absolute inset-0 bg-black/80 z-0"></div>
       
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary mb-4">
-              <span className="text-sm font-semibold">Professional Service • Available Now</span>
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
-              Expert Dumpster Rental <span className="text-primary">Made Simple</span>
-            </h1>
-            
-            <p className="text-xl text-gray-300 mb-6 md:pr-12">
-              Get the right size dumpster delivered on time, every time. Transparent pricing with no hidden fees.
-            </p>
-            
-            <div className="flex flex-wrap gap-4 mb-12">
-              <Button size="lg" className="font-semibold">
-                <a href="#booking-form" className="flex items-center">
-                  Book Your Dumpster <ArrowRight className="ml-2 h-5 w-5" />
-                </a>
-              </Button>
-              
-              <Button variant="outline" size="lg" className="font-semibold text-white border-white hover:text-primary hover:bg-white">
-                <a href="#services">View Sizes & Pricing</a>
-              </Button>
-            </div>
-            
-            {/* Quick stats */}
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                <p className="text-2xl font-bold text-primary">100+</p>
-                <p className="text-sm text-gray-300">Happy Customers</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                <p className="text-2xl font-bold text-primary">24h</p>
-                <p className="text-sm text-gray-300">Fast Delivery</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                <p className="text-2xl font-bold text-primary">5★</p>
-                <p className="text-sm text-gray-300">Customer Rating</p>
+      {/* Hero content */}
+      <div className="relative z-10 pt-32 pb-20 lg:pt-40 lg:pb-28">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                <span className="text-primary">Fast</span> &{" "}
+                <span className="text-primary">Reliable</span>{" "}
+                Dumpster Rental
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-300 mt-4 max-w-xl">
+                The right dumpster for your project, delivered when you need it. Simple online booking with transparent pricing.
+              </p>
+              <div className="pt-4 flex flex-wrap gap-4">
+                <Button 
+                  size="lg" 
+                  className="bg-primary text-black hover:bg-primary/90 font-bold text-lg"
+                  asChild
+                >
+                  <a href="#booking-form" className="inline-flex items-center">
+                    RENT NOW <ArrowRight className="ml-2 h-5 w-5" />
+                  </a>
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="border-white text-white hover:bg-white/10 font-bold text-lg"
+                  asChild
+                >
+                  <a href="#services">VIEW SIZES</a>
+                </Button>
               </div>
             </div>
-          </div>
-          
-          <div className="relative hidden md:block">
-            <div className="absolute -top-16 -right-16 w-40 h-40 bg-primary/30 rounded-full blur-3xl"></div>
-            <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 shadow-xl">
-              <img 
-                src="https://images.unsplash.com/photo-1620588280212-bf7b4beb3214?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=764&q=80" 
-                alt="Dumpster rental" 
-                className="w-full h-auto rounded-lg object-cover shadow-lg"
-              />
-              <div className="mt-6 p-4 bg-white/5 backdrop-blur-sm rounded-lg">
-                <h3 className="text-white font-bold text-xl mb-2">Why Customers Choose Us</h3>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <ThumbsUp className="h-5 w-5 text-primary mr-2 mt-0.5" />
-                    <span className="text-gray-300">Easy online booking process</span>
-                  </li>
-                  <li className="flex items-start">
-                    <ThumbsUp className="h-5 w-5 text-primary mr-2 mt-0.5" />
-                    <span className="text-gray-300">Flexible rental periods</span>
-                  </li>
-                  <li className="flex items-start">
-                    <ThumbsUp className="h-5 w-5 text-primary mr-2 mt-0.5" />
-                    <span className="text-gray-300">Transparent pricing, no hidden fees</span>
-                  </li>
-                </ul>
-              </div>
+            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg border border-primary/30">
+              <h3 className="font-bold text-2xl mb-5 flex items-center">
+                <span className="text-primary mr-2">★</span> 
+                Proudly Serving Effingham & Surrounding Areas
+              </h3>
+              <ul className="space-y-4">
+                <li className="flex items-start">
+                  <div className="mr-3 mt-1 text-primary">
+                    <CheckCircleIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Same-day or next-day delivery available</p>
+                    <p className="text-gray-400 text-sm">Get your dumpster when you need it</p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <div className="mr-3 mt-1 text-primary">
+                    <CheckCircleIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">No hidden fees, transparent pricing</p>
+                    <p className="text-gray-400 text-sm">Pay only for what you need</p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <div className="mr-3 mt-1 text-primary">
+                    <CheckCircleIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">7-day standard rental period</p>
+                    <p className="text-gray-400 text-sm">Extensions available if needed</p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <div className="mr-3 mt-1 text-primary">
+                    <CheckCircleIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Multiple sizes available (10-30 yards)</p>
+                    <p className="text-gray-400 text-sm">For any project, big or small</p>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
       
       {/* Trust bar */}
-      <div className="container mx-auto px-4 mt-16">
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6">
-          <h3 className="text-center text-white text-sm font-medium mb-6">TRUSTED BY HOMEOWNERS & CONTRACTORS ACROSS EFFINGHAM</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center">
-            <div className="flex flex-col items-center">
-              <Shield className="h-10 w-10 text-primary mb-2" />
-              <span className="text-gray-300 text-xs md:text-sm text-center">Fully Insured & Licensed</span>
+      <div className="bg-black border-y border-primary/30">
+        <div className="container mx-auto px-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-center md:justify-start">
+              <div className="mr-3 text-primary">
+                <TruckIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-medium">Fast Delivery</p>
+                <p className="text-xs text-gray-400">Within 24 hours in most areas</p>
+              </div>
             </div>
-            <div className="flex flex-col items-center">
-              <Award className="h-10 w-10 text-primary mb-2" />
-              <span className="text-gray-300 text-xs md:text-sm text-center">Top-Rated Local Business</span>
+            <div className="flex items-center justify-center">
+              <div className="mr-3 text-primary">
+                <MapPinIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-medium">Serving All of Effingham</p>
+                <p className="text-xs text-gray-400">And surrounding communities</p>
+              </div>
             </div>
-            <div className="flex flex-col items-center">
-              <ThumbsUp className="h-10 w-10 text-primary mb-2" />
-              <span className="text-gray-300 text-xs md:text-sm text-center">98% Customer Satisfaction</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <svg className="h-10 w-10 text-primary mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                <line x1="4" y1="22" x2="4" y2="15" />
-              </svg>
-              <span className="text-gray-300 text-xs md:text-sm text-center">7+ Years Experience</span>
+            <div className="flex items-center justify-center md:justify-end">
+              <div className="mr-3">
+                <div className="flex">
+                  <span className="text-primary">★</span>
+                  <span className="text-primary">★</span>
+                  <span className="text-primary">★</span>
+                  <span className="text-primary">★</span>
+                  <span className="text-primary">★</span>
+                </div>
+              </div>
+              <div>
+                <p className="font-medium">5-Star Service</p>
+                <p className="text-xs text-gray-400">Based on 200+ reviews</p>
+              </div>
             </div>
           </div>
         </div>

@@ -1,123 +1,140 @@
-import { ArrowRight, ChevronRight, Trash2, Recycle, Building, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CheckIcon } from "lucide-react";
 
 export function ServicesSection() {
   return (
-    <section id="services" className="py-20 bg-white">
+    <section id="services" className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary mb-4">
-            <span className="text-sm font-semibold">Our Services</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            The Right Dumpster for Every Project
+          <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
+            Choose the Right Size for Your Project
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            We offer a variety of dumpster sizes to accommodate any project, from small home cleanouts to large construction jobs.
+            We offer a variety of dumpster sizes to fit your specific needs, whether it's a small home cleanout or a major construction project.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <ServiceCard
-            icon={<Home className="h-10 w-10 text-primary" />}
-            title="Residential"
-            description="Perfect for home renovations, garage cleanouts, and yard waste removal."
-            link="#booking-form"
-          />
-          <ServiceCard
-            icon={<Building className="h-10 w-10 text-primary" />}
-            title="Commercial"
-            description="Ideal for office renovations, retail remodels, and business cleanouts."
-            link="#booking-form"
-          />
-          <ServiceCard
-            icon={<Trash2 className="h-10 w-10 text-primary" />}
-            title="Construction"
-            description="Built to handle heavy debris, concrete, and construction materials."
-            link="#booking-form"
-          />
-          <ServiceCard
-            icon={<Recycle className="h-10 w-10 text-primary" />}
-            title="Junk Removal"
-            description="Let us do the heavy lifting with our full-service junk removal option."
-            link="#booking-form"
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* 10 Yard Dumpster */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105">
+            <div className="bg-black text-white p-6 text-center">
+              <h3 className="text-2xl font-bold">10 Yard Dumpster</h3>
+              <p className="text-gray-300 mt-1">Small Projects</p>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <p className="text-4xl font-bold text-black">$299</p>
+                <p className="text-gray-500">7 Day Rental</p>
+              </div>
+              <div className="space-y-3 mb-8">
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Dimensions: 12' x 8' x 3.5'</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Weight Capacity: 2 tons</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Perfect for: Small remodels, yard waste, garage cleanouts</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Holds approximately: 3 pickup truck loads</p>
+                </div>
+              </div>
+              <Button className="w-full bg-black hover:bg-black/90 text-white" asChild>
+                <a href="#booking-form">Rent Now</a>
+              </Button>
+            </div>
+          </div>
 
-        <div className="bg-gray-50 rounded-xl p-8 shadow-sm">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Not Sure What Size You Need?
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Our experts can help you choose the right dumpster size for your project. We'll consider the type of debris, project duration, and space restrictions to recommend the perfect solution.
-              </p>
-              <Button variant="outline" className="font-medium">
-                <a href="#contact" className="flex items-center">
-                  Get Expert Advice <ChevronRight className="ml-2 h-5 w-5" />
+          {/* 20 Yard Dumpster */}
+          <div className="border-2 border-primary rounded-lg overflow-hidden shadow-xl relative scale-105 z-10">
+            <div className="absolute top-0 right-0 bg-primary text-black font-bold py-1 px-4 text-sm">
+              POPULAR
+            </div>
+            <div className="bg-black text-white p-6 text-center">
+              <h3 className="text-2xl font-bold">20 Yard Dumpster</h3>
+              <p className="text-gray-300 mt-1">Medium Projects</p>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <p className="text-4xl font-bold text-black">$399</p>
+                <p className="text-gray-500">7 Day Rental</p>
+              </div>
+              <div className="space-y-3 mb-8">
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Dimensions: 16' x 8' x 5.5'</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Weight Capacity: 4 tons</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Perfect for: Home renovations, roofing jobs, deck removal</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Holds approximately: 6 pickup truck loads</p>
+                </div>
+              </div>
+              <Button className="w-full bg-primary hover:bg-primary/90 text-black font-bold" asChild>
+                <a href="#booking-form" className="flex justify-center items-center">
+                  Rent Now <ArrowRight className="ml-2 h-5 w-5" />
                 </a>
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-lg p-4 shadow-sm text-center">
-                <h4 className="font-bold text-gray-900 mb-1">10 Yard</h4>
-                <p className="text-primary font-bold text-2xl mb-2">$350</p>
-                <p className="text-gray-500 text-sm">Small projects & cleanouts</p>
-                <p className="text-xs text-gray-400 mt-2">12ft × 8ft × 4ft</p>
+          </div>
+
+          {/* 30 Yard Dumpster */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105">
+            <div className="bg-black text-white p-6 text-center">
+              <h3 className="text-2xl font-bold">30 Yard Dumpster</h3>
+              <p className="text-gray-300 mt-1">Large Projects</p>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <p className="text-4xl font-bold text-black">$499</p>
+                <p className="text-gray-500">7 Day Rental</p>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow-sm text-center">
-                <h4 className="font-bold text-gray-900 mb-1">20 Yard</h4>
-                <p className="text-primary font-bold text-2xl mb-2">$450</p>
-                <p className="text-gray-500 text-sm">Medium renovations</p>
-                <p className="text-xs text-gray-400 mt-2">16ft × 8ft × 4ft</p>
+              <div className="space-y-3 mb-8">
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Dimensions: 20' x 8' x 6'</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Weight Capacity: 6 tons</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Perfect for: Major renovations, new construction, large cleanouts</p>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <p>Holds approximately: 9 pickup truck loads</p>
+                </div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow-sm text-center">
-                <h4 className="font-bold text-gray-900 mb-1">30 Yard</h4>
-                <p className="text-primary font-bold text-2xl mb-2">$550</p>
-                <p className="text-gray-500 text-sm">Large remodels</p>
-                <p className="text-xs text-gray-400 mt-2">22ft × 8ft × 6ft</p>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-sm text-center">
-                <h4 className="font-bold text-gray-900 mb-1">40 Yard</h4>
-                <p className="text-primary font-bold text-2xl mb-2">$650</p>
-                <p className="text-gray-500 text-sm">Construction projects</p>
-                <p className="text-xs text-gray-400 mt-2">22ft × 8ft × 8ft</p>
-              </div>
+              <Button className="w-full bg-black hover:bg-black/90 text-white" asChild>
+                <a href="#booking-form">Rent Now</a>
+              </Button>
             </div>
           </div>
         </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-gray-600 mb-6">
+            Not sure which size is right for your project? Give us a call and our experts will help you choose.
+          </p>
+          <Button className="bg-black hover:bg-black/90 text-white" asChild>
+            <a href="tel:5551234567" className="font-medium">Call (555) 123-4567</a>
+          </Button>
+        </div>
       </div>
     </section>
-  );
-}
-
-function ServiceCard({ 
-  icon, 
-  title, 
-  description, 
-  link 
-}: { 
-  icon: React.ReactNode; 
-  title: string; 
-  description: string; 
-  link: string;
-}) {
-  return (
-    <Card className="h-full transition-all hover:shadow-md">
-      <CardHeader>
-        <div className="mb-4">{icon}</div>
-        <CardTitle className="text-xl">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardFooter>
-        <Button variant="ghost" className="text-primary p-0 hover:bg-transparent hover:text-primary/80">
-          <a href={link} className="flex items-center">
-            Book Now <ArrowRight className="ml-2 h-4 w-4" />
-          </a>
-        </Button>
-      </CardFooter>
-    </Card>
   );
 }
