@@ -1,0 +1,90 @@
+1. Navigation Bar (Top Sticky Header)
+	•	Elements: Logo (left), Navigation Links (center/right), and a standout CTA button (far right)
+	•	Goal: Easy access to different sections, persistent CTA for conversions
+	•	Best Practice: Keep the CTA visually distinct (e.g., different color)
+
+⸻
+
+2. Hero Section
+	•	Headline: Clear, bold statement of value or offer (e.g., “High Converting Heading Comes Here”)
+	•	Subheadline: 1–2 lines of supporting info
+	•	Buttons: Primary CTA (e.g., “Get Started”) and Secondary CTA (e.g., “Learn More”)
+	•	Image/Video Placeholder: Use to reinforce message visually
+	•	Trust Bar: Add logos of companies you’ve worked with to build credibility
+
+⸻
+
+3. Services Section
+	•	Layout: 2 or 4 service blocks with:
+	•	Title
+	•	Short description
+	•	CTA (e.g., “Learn More” or “Get Started”)
+	•	Goal: Clearly state your offerings and allow quick access to each
+
+⸻
+
+4. Process Section
+	•	Steps Format: Visual layout with icons or numbered steps (3–4 steps)
+	•	Title and Brief Description per step
+	•	Optional Visual: Photo of your team, workspace, or behind-the-scenes
+	•	Purpose: Show transparency and ease of working with you
+
+⸻
+
+5. About Company Section
+	•	Content:
+	•	Short paragraph about your mission/vision
+	•	Key metrics or stats (e.g., clients served, satisfaction rate, revenue growth)
+	•	Optional Image: Team photo or company-related visual
+	•	Purpose: Humanize your brand and share what makes you legit
+
+⸻
+
+6. Testimonial Section
+	•	Layout: 3 cards or video-style testimonials with:
+	•	Client photo (optional)
+	•	Quote
+	•	Client name + company/title
+	•	Goal: Leverage social proof to drive trust and conversions
+
+⸻
+
+7. “Why Choose Us” Comparison Table
+	•	Two Columns:
+	•	What Others Provide (Generic Competitor Offerings)
+	•	What We Provide (Your Unique Value Props)
+	•	Highlight differences clearly with icons or standout text
+	•	Goal: Show your differentiator at a glance
+
+⸻
+
+8. FAQ Section
+	•	Accordion Format: Clickable dropdowns for each question
+	•	Example Questions:
+	•	“What is your refund policy?”
+	•	“How does onboarding work?”
+	•	“Is there a free trial?”
+	•	Goal: Preempt objections and reduce hesitation
+
+⸻
+
+9. Final CTA Section
+	•	Headline: Reassuring call to action (e.g., “Ready to get started?”)
+	•	Subtext: Short reassurance or benefit
+	•	Button: One final, bold CTA
+	•	Optional Image/Visual: Reinforce the offer visually
+
+⸻
+
+10. Footer
+	•	Links:
+	•	Navigation (Pages)
+	•	Legal (Privacy Policy, Terms)
+	•	Social Media Icons
+	•	Goal: Provide key info and reinforce brand trust at the bottom
+
+⸻
+
+Design Notes for Replit Implementation
+	•	Mobile Responsive: Ensure each section adapts smoothly to mobile/tablet
+	•	Styling: Clean, modern layout with a consistent color palette and font hierarchy
