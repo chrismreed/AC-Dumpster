@@ -27,7 +27,7 @@ export function StickyHeader() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-5'
+        isScrolled ? 'bg-black shadow-md py-3' : 'bg-transparent py-5'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -35,8 +35,8 @@ export function StickyHeader() {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <div className="text-xl font-bold">
-              <span className="text-primary">ALLEY CAT</span>
-              <span className={`${isScrolled ? 'text-neutral-800' : 'text-white'} ml-1 hidden sm:inline`}>
+              <span className="text-white">ALLEY CAT</span>
+              <span className="text-primary ml-1 hidden sm:inline font-semibold">
                 DUMPSTER RENTAL
               </span>
             </div>
@@ -62,7 +62,7 @@ export function StickyHeader() {
             <Button 
               asChild 
               size="lg"
-              className="font-bold"
+              className="font-bold bg-primary text-black hover:bg-primary/90"
             >
               <a href="#booking-form">RENT NOW</a>
             </Button>
