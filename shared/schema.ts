@@ -21,6 +21,7 @@ export const dumpsters = pgTable("dumpsters", {
   basePrice: integer("base_price").notNull(), // In cents
   weightLimit: integer("weight_limit").notNull(), // In pounds
   availability: integer("availability").notNull(), // Number of units available
+  bestFor: text("best_for"), // What projects this dumpster is best suited for
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

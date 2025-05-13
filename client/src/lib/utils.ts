@@ -14,3 +14,12 @@ export function formatDate(dateString: string | Date) {
     day: 'numeric'
   });
 }
+
+// Format price from cents to dollars
+export function formatPrice(cents: number): string {
+  if (!cents && cents !== 0) return '$0.00';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(cents / 100);
+}
