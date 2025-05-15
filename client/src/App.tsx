@@ -51,7 +51,7 @@ function App() {
           ) : (
             <StickyHeader />
           )}
-          <main className="flex-grow">
+          <main className="flex-grow pt-16 md:pt-20">
             <Router />
           </main>
           {isAdminPage ? (

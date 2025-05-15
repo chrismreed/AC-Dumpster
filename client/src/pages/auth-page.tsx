@@ -131,7 +131,7 @@ export default function AuthPage() {
                       />
                       <Button 
                         type="submit" 
-                        className="w-full bg-[#facc15] hover:bg-[#eab308] text-[#111827] font-medium transition-all duration-300 shadow-md hover:shadow-lg" 
+                        className="w-full bg-[#f9fafb] hover:bg-[#f3f4f6] text-[#111827] font-medium transition-all duration-300 shadow-md hover:shadow-lg border border-[#d1d5db]" 
                         disabled={loginMutation.isPending}
                       >
                         {loginMutation.isPending ? (
@@ -188,7 +188,7 @@ export default function AuthPage() {
                       />
                       <Button 
                         type="submit" 
-                        className="w-full bg-[#facc15] hover:bg-[#eab308] text-[#111827] font-medium transition-all duration-300 shadow-md hover:shadow-lg" 
+                        className="w-full bg-[#f9fafb] hover:bg-[#f3f4f6] text-[#111827] font-medium transition-all duration-300 shadow-md hover:shadow-lg border border-[#d1d5db]" 
                         disabled={registerMutation.isPending}
                       >
                         {registerMutation.isPending ? (
