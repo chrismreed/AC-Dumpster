@@ -3,9 +3,9 @@ import { ArrowRight, TruckIcon, MapPinIcon, CheckCircleIcon } from "lucide-react
 
 export function ImprovedHero() {
   return (
-    <section className="relative bg-black text-white">
+    <section className="relative bg-slate-900 text-white">
       {/* Background with overlay */}
-      <div className="absolute inset-0 bg-black/80 z-0"></div>
+      <div className="absolute inset-0 bg-slate-900/80 z-0"></div>
       
       {/* Hero content */}
       <div className="relative z-10 pt-32 pb-20 lg:pt-40 lg:pb-28">
@@ -40,7 +40,7 @@ export function ImprovedHero() {
                 </Button>
               </div>
             </div>
-            <div className="bg-black/50 backdrop-blur-md p-8 rounded-xl border border-white/10 shadow-lg">
+            <div className="bg-slate-800/50 backdrop-blur-md p-8 rounded-xl border border-white/10 shadow-lg">
               <h3 className="font-bold text-2xl mb-6 flex items-center">
                 <span className="text-primary mr-3">★</span> 
                 Proudly Serving Effingham & Surrounding Areas
@@ -89,7 +89,7 @@ export function ImprovedHero() {
       </div>
       
       {/* Trust bar */}
-      <div className="bg-black/90 backdrop-blur-sm border-y border-white/10 shadow-md">
+      <div className="bg-slate-800/90 backdrop-blur-sm border-y border-white/10 shadow-md">
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-center justify-center md:justify-start">

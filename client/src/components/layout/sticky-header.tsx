@@ -27,7 +27,7 @@ export function StickyHeader() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-black shadow-lg py-4' : 'bg-transparent py-6'
+        isScrolled ? 'bg-slate-900 shadow-lg py-4' : 'bg-transparent py-6'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -85,7 +85,7 @@ export function StickyHeader() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-black/95 shadow-lg backdrop-blur-sm">
+        <div className="md:hidden bg-slate-900/95 shadow-lg backdrop-blur-sm">
           <div className="container mx-auto px-4 py-5">
             <nav className="flex flex-col space-y-4">
               <MobileNavLink href="/" label="Home" onClick={() => setIsMobileMenuOpen(false)} />

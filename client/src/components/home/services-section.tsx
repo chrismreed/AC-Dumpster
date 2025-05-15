@@ -16,8 +16,8 @@ export function ServicesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* 10 Yard Dumpster */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-xl transition-transform hover:scale-105 bg-white">
-            <div className="bg-black text-white p-6 text-center">
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl bg-white">
+            <div className="bg-slate-800 text-white p-6 text-center">
               <h3 className="text-2xl font-bold">10 Yard Dumpster</h3>
               <p className="text-gray-300 mt-1">Small Projects</p>
             </div>
