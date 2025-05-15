@@ -217,32 +217,32 @@ export default function AuthPage() {
           </p>
           <ul className="space-y-2">
             <li className="flex items-center">
-              <div className="bg-[#facc15]/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
-                <svg className="h-4 w-4 text-[#facc15]" viewBox="0 0 20 20" fill="currentColor">
+              <div className="bg-[#f9fafb]/70 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-[#2563eb]" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
               <span>Manage dumpster inventory and pricing</span>
             </li>
             <li className="flex items-center">
-              <div className="bg-[#facc15]/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
-                <svg className="h-4 w-4 text-[#facc15]" viewBox="0 0 20 20" fill="currentColor">
+              <div className="bg-[#f9fafb]/70 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-[#2563eb]" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
               <span>Configure service zones and pricing</span>
             </li>
             <li className="flex items-center">
-              <div className="bg-[#facc15]/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
-                <svg className="h-4 w-4 text-[#facc15]" viewBox="0 0 20 20" fill="currentColor">
+              <div className="bg-[#f9fafb]/70 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-[#2563eb]" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
               <span>View and manage customer bookings</span>
             </li>
             <li className="flex items-center">
-              <div className="bg-[#facc15]/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
-                <svg className="h-4 w-4 text-[#facc15]" viewBox="0 0 20 20" fill="currentColor">
+              <div className="bg-[#f9fafb]/70 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-[#2563eb]" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
