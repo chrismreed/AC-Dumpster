@@ -20,11 +20,11 @@ export function ProcessSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Step 1 */}
           <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10 shadow-lg relative">
-            <div className="absolute -top-5 -left-5 bg-primary text-black w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
+            <div className="absolute -top-5 -left-5 bg-[#facc15] text-[#0f172a] w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
               1
             </div>
             <div className="pt-4">
-              <h3 className="text-xl font-bold mb-4 text-primary">Book Online</h3>
+              <h3 className="text-xl font-bold mb-4 text-[#facc15]">Book Online</h3>
               <p className="text-gray-300 leading-relaxed">
                 Fill out our simple booking form with your project details, location, and preferred delivery date.
               </p>
@@ -33,11 +33,11 @@ export function ProcessSection() {
 
           {/* Step 2 */}
           <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10 shadow-lg relative">
-            <div className="absolute -top-5 -left-5 bg-primary text-black w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
+            <div className="absolute -top-5 -left-5 bg-[#facc15] text-[#0f172a] w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
               2
             </div>
             <div className="pt-4">
-              <h3 className="text-xl font-bold mb-4 text-primary">We Deliver</h3>
+              <h3 className="text-xl font-bold mb-4 text-[#facc15]">We Deliver</h3>
               <p className="text-gray-300 leading-relaxed">
                 Our team will deliver the dumpster to your location on the scheduled date. We'll place it exactly where you need it.
               </p>
@@ -46,11 +46,11 @@ export function ProcessSection() {
 
           {/* Step 3 */}
           <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10 shadow-lg relative">
-            <div className="absolute -top-5 -left-5 bg-primary text-black w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
+            <div className="absolute -top-5 -left-5 bg-[#facc15] text-[#0f172a] w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
               3
             </div>
             <div className="pt-4">
-              <h3 className="text-xl font-bold mb-4 text-primary">Fill It Up</h3>
+              <h3 className="text-xl font-bold mb-4 text-[#facc15]">Fill It Up</h3>
               <p className="text-gray-300 leading-relaxed">
                 Take your time filling the dumpster with your waste materials during your rental period.
               </p>
@@ -59,11 +59,11 @@ export function ProcessSection() {
 
           {/* Step 4 */}
           <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10 shadow-lg relative">
-            <div className="absolute -top-5 -left-5 bg-primary text-black w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
+            <div className="absolute -top-5 -left-5 bg-[#facc15] text-[#0f172a] w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-md">
               4
             </div>
             <div className="pt-4">
-              <h3 className="text-xl font-bold mb-4 text-primary">We Pick Up</h3>
+              <h3 className="text-xl font-bold mb-4 text-[#facc15]">We Pick Up</h3>
               <p className="text-gray-300 leading-relaxed">
                 When you're finished or your rental period ends, we'll come collect the dumpster and properly dispose of the waste.
               </p>
@@ -75,7 +75,7 @@ export function ProcessSection() {
           <p className="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">
             Need your dumpster picked up early or want to extend your rental? No problem! Just give us a call and we'll accommodate your schedule.
           </p>
-          <Button className="bg-primary text-black hover:bg-primary/90 font-bold px-8 py-3 rounded-lg shadow-md" asChild>
+          <Button className="bg-[#facc15] text-[#0f172a] hover:bg-[#eab308] font-bold px-8 py-3 rounded-lg shadow-md" asChild>
             <a href="#booking-form" className="inline-flex items-center text-lg">
               Get Started <ArrowRight className="ml-2 h-5 w-5" />
             </a>
