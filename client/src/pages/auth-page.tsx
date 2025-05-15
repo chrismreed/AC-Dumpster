@@ -79,11 +79,11 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8 mt-16">
       <div className="max-w-5xl w-full flex">
         {/* Left side - Auth forms */}
         <div className="flex-1 p-4">
-          <Card className="w-full">
+          <Card className="w-full shadow-xl rounded-xl overflow-hidden border border-gray-200">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-center">
                 {activeTab === "login" ? "Admin Login" : "Create an Account"}
@@ -131,7 +131,7 @@ export default function AuthPage() {
                       />
                       <Button 
                         type="submit" 
-                        className="w-full" 
+                        className="w-full bg-primary hover:bg-primary/90 text-slate-900 font-medium transition-all duration-300 shadow-md hover:shadow-lg" 
                         disabled={loginMutation.isPending}
                       >
                         {loginMutation.isPending ? (
@@ -188,7 +188,7 @@ export default function AuthPage() {
                       />
                       <Button 
                         type="submit" 
-                        className="w-full" 
+                        className="w-full bg-primary hover:bg-primary/90 text-slate-900 font-medium transition-all duration-300 shadow-md hover:shadow-lg" 
                         disabled={registerMutation.isPending}
                       >
                         {registerMutation.isPending ? (
@@ -210,34 +210,42 @@ export default function AuthPage() {
         </div>
 
         {/* Right side - Hero section */}
-        <div className="flex-1 bg-primary text-white p-12 rounded-lg hidden lg:flex lg:flex-col lg:justify-center">
+        <div className="flex-1 bg-slate-800 text-white p-12 rounded-xl shadow-xl hidden lg:flex lg:flex-col lg:justify-center border border-gray-700">
           <h1 className="text-3xl font-bold mb-6">DumpsterDirect Management Portal</h1>
           <p className="text-lg mb-6">
             Access your admin dashboard to manage dumpster inventory, service zones, bookings, and more.
           </p>
           <ul className="space-y-2">
             <li className="flex items-center">
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+              <div className="bg-primary/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
               <span>Manage dumpster inventory and pricing</span>
             </li>
             <li className="flex items-center">
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+              <div className="bg-primary/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
               <span>Configure service zones and pricing</span>
             </li>
             <li className="flex items-center">
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+              <div className="bg-primary/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
               <span>View and manage customer bookings</span>
             </li>
             <li className="flex items-center">
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+              <div className="bg-primary/20 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                <svg className="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
               <span>Add and edit service add-ons</span>
             </li>
           </ul>
