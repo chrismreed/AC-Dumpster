@@ -27,7 +27,7 @@ export function StickyHeader() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-slate-900 shadow-lg py-4' : 'bg-transparent py-6'
+        isScrolled ? 'bg-slate-800/95 backdrop-blur-sm shadow-lg py-4' : 'bg-transparent py-6'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -62,7 +62,7 @@ export function StickyHeader() {
             <Button 
               asChild 
               size="lg"
-              className="font-bold bg-primary text-black hover:bg-primary/90 px-6 py-3 rounded-lg shadow-md"
+              className="font-bold bg-primary text-slate-900 hover:bg-primary/90 px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
             >
               <a href="#booking-form">RENT NOW</a>
             </Button>
@@ -85,7 +85,7 @@ export function StickyHeader() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-slate-900/95 shadow-lg backdrop-blur-sm">
+        <div className="md:hidden bg-slate-800/95 shadow-lg backdrop-blur-sm border-t border-slate-700">
           <div className="container mx-auto px-4 py-5">
             <nav className="flex flex-col space-y-4">
               <MobileNavLink href="/" label="Home" onClick={() => setIsMobileMenuOpen(false)} />
@@ -103,7 +103,7 @@ export function StickyHeader() {
               <div className="pt-4">
                 <Button 
                   asChild 
-                  className="w-full font-bold bg-primary text-black hover:bg-primary/90 py-3 rounded-lg shadow-md"
+                  className="w-full font-bold bg-primary text-slate-900 hover:bg-primary/90 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <a href="#booking-form">RENT NOW</a>
@@ -132,7 +132,7 @@ function NavLink({
   return (
     <Link href={href}>
       <div 
-        className={`px-4 py-3 mx-1 rounded-md text-sm font-medium hover:text-primary hover:bg-black/10 transition-colors cursor-pointer ${
+        className={`px-4 py-3 mx-1 rounded-md text-sm font-medium hover:text-primary hover:bg-white/5 transition-all duration-300 cursor-pointer ${
           isActive 
             ? 'text-primary font-semibold' 
             : isScrolled 
@@ -159,7 +159,7 @@ function MobileNavLink({
   return (
     <Link href={href}>
       <div 
-        className="block px-4 py-3 text-base font-medium text-white hover:text-primary hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+        className="block px-4 py-3 text-base font-medium text-white hover:text-primary hover:bg-white/5 rounded-lg transition-all duration-300 cursor-pointer"
         onClick={onClick}
       >
         {label}

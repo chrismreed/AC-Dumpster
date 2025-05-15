@@ -99,8 +99,8 @@ export default function BookingConfirmationPage() {
   return (
     <div className="container max-w-4xl mx-auto py-12 px-4">
       <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4 shadow-md">
+          <CheckCircle className="h-8 w-8 text-primary" />
         </div>
         <h1 className="text-3xl font-bold">Booking Confirmed!</h1>
         <p className="text-gray-600 mt-2">
