@@ -39,27 +39,31 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    if (bookings && dumpsters) {
-      // Process bookings data for revenue chart (last 7 days)
-      const today = new Date();
-      const revenueByDay: { [key: string]: number } = {};
-      
-      // Initialize last 7 days
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        revenueByDay[dateStr] = 0;
-      }
+    // Always run this effect, with proper conditional checks inside
+    // Process bookings data for revenue chart (last 7 days)
+    const today = new Date();
+    const revenueByDay: { [key: string]: number } = {};
+    
+    // Initialize last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      revenueByDay[dateStr] = 0;
+    }
 
+    // Only process booking data if it exists
+    if (bookings && dumpsters) {
       // Sum up revenue by day
       bookings.forEach(booking => {
-        const bookingDate = new Date(booking.createdAt);
-        // Check if booking is within last 7 days
-        const daysDiff = Math.floor((today.getTime() - bookingDate.getTime()) / (1000 * 3600 * 24));
-        if (daysDiff <= 6) {
-          const dateStr = bookingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          revenueByDay[dateStr] = (revenueByDay[dateStr] || 0) + booking.totalPrice;
+        if (booking.createdAt) {
+          const bookingDate = new Date(booking.createdAt);
+          // Check if booking is within last 7 days
+          const daysDiff = Math.floor((today.getTime() - bookingDate.getTime()) / (1000 * 3600 * 24));
+          if (daysDiff <= 6) {
+            const dateStr = bookingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            revenueByDay[dateStr] = (revenueByDay[dateStr] || 0) + booking.totalPrice;
+          }
         }
       });
 
@@ -94,6 +98,10 @@ export default function DashboardPage() {
       }));
 
       setDumpsterDistribution(dumpsterDistributionData);
+    } else {
+      // Set default data when bookings/dumpsters aren't available
+      setRevenueData(Object.entries(revenueByDay).map(([date, amount]) => ({ date, amount: 0 })));
+      setDumpsterDistribution([]);
     }
   }, [bookings, dumpsters]);
 
@@ -185,14 +193,14 @@ export default function DashboardPage() {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={revenueData}
+                    data={revenueData || []}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue']}
+                      formatter={(value: number) => [`$${(value || 0).toFixed(2)}`, 'Revenue']}
                       wrapperClassName="recharts-tooltip-custom"
                       itemStyle={{ color: "#333" }}
                       contentStyle={{ background: "white", border: "1px solid #ddd" }}
@@ -214,16 +222,16 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={dumpsterDistribution}
+                      data={dumpsterDistribution || []}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      label={({ name, percent }) => `${name || 'Unknown'} (${((percent || 0) * 100).toFixed(0)}%)`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {dumpsterDistribution.map((entry, index) => (
+                      {(dumpsterDistribution || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -258,26 +266,35 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings?.slice(0, 5).map((booking) => {
-                    const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
-                    return (
-                      <tr key={booking.id} className="bg-white border-b">
-                        <td className="px-6 py-4">{booking.customerName}</td>
-                        <td className="px-6 py-4">{dumpster?.name || `Dumpster #${booking.dumpsterId}`}</td>
-                        <td className="px-6 py-4">{new Date(booking.deliveryDate).toLocaleDateString()}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            booking.status === 'scheduled' ? 'bg-green-100 text-green-800' : 
-                            booking.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">${(booking.totalPrice / 100).toFixed(2)}</td>
-                      </tr>
-                    );
-                  })}
+                  {bookings && bookings.length > 0 ? (
+                    bookings.slice(0, 5).map((booking) => {
+                      const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                      const status = booking.status || 'pending';
+                      const deliveryDate = booking.deliveryDate ? new Date(booking.deliveryDate).toLocaleDateString() : 'Not scheduled';
+                      
+                      return (
+                        <tr key={booking.id} className="bg-white border-b">
+                          <td className="px-6 py-4">{booking.customerName || 'Unknown'}</td>
+                          <td className="px-6 py-4">{dumpster?.name || `Dumpster #${booking.dumpsterId || 'Unknown'}`}</td>
+                          <td className="px-6 py-4">{deliveryDate}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              status === 'scheduled' ? 'bg-green-100 text-green-800' : 
+                              status === 'completed' ? 'bg-blue-100 text-blue-800' : 
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">${((booking.totalPrice || 0) / 100).toFixed(2)}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr className="bg-white border-b">
+                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">No recent bookings</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
