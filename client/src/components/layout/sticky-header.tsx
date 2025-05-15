@@ -27,7 +27,7 @@ export function StickyHeader() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-black shadow-md py-3' : 'bg-transparent py-5'
+        isScrolled ? 'bg-black shadow-lg py-4' : 'bg-transparent py-6'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -62,7 +62,7 @@ export function StickyHeader() {
             <Button 
               asChild 
               size="lg"
-              className="font-bold bg-primary text-black hover:bg-primary/90"
+              className="font-bold bg-primary text-black hover:bg-primary/90 px-6 py-3 rounded-lg shadow-md"
             >
               <a href="#booking-form">RENT NOW</a>
             </Button>
@@ -85,9 +85,9 @@ export function StickyHeader() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white shadow-lg">
-          <div className="container mx-auto px-4 py-3">
-            <nav className="flex flex-col space-y-3">
+        <div className="md:hidden bg-black/95 shadow-lg backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-5">
+            <nav className="flex flex-col space-y-4">
               <MobileNavLink href="/" label="Home" onClick={() => setIsMobileMenuOpen(false)} />
               <MobileNavLink href="/#services" label="Services" onClick={() => setIsMobileMenuOpen(false)} />
               <MobileNavLink href="/#how-it-works" label="How It Works" onClick={() => setIsMobileMenuOpen(false)} />
@@ -100,10 +100,10 @@ export function StickyHeader() {
                 <MobileNavLink href="/admin/dashboard" label="Dashboard" onClick={() => setIsMobileMenuOpen(false)} />
               )}
               
-              <div className="pt-2">
+              <div className="pt-4">
                 <Button 
                   asChild 
-                  className="w-full font-bold"
+                  className="w-full font-bold bg-primary text-black hover:bg-primary/90 py-3 rounded-lg shadow-md"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <a href="#booking-form">RENT NOW</a>
@@ -132,11 +132,11 @@ function NavLink({
   return (
     <Link href={href}>
       <div 
-        className={`px-3 py-2 rounded-md text-sm font-medium hover:text-primary transition-colors cursor-pointer ${
+        className={`px-4 py-3 mx-1 rounded-md text-sm font-medium hover:text-primary hover:bg-black/10 transition-colors cursor-pointer ${
           isActive 
-            ? 'text-primary' 
+            ? 'text-primary font-semibold' 
             : isScrolled 
-              ? 'text-neutral-800' 
+              ? 'text-white' 
               : 'text-white'
         }`}
       >
@@ -159,7 +159,7 @@ function MobileNavLink({
   return (
     <Link href={href}>
       <div 
-        className="block px-3 py-2 text-base font-medium text-neutral-800 hover:text-primary hover:bg-neutral-50 rounded-md transition-colors cursor-pointer"
+        className="block px-4 py-3 text-base font-medium text-white hover:text-primary hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
         onClick={onClick}
       >
         {label}

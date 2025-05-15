@@ -20,10 +20,10 @@ export function ImprovedHero() {
               <p className="text-xl md:text-2xl text-gray-300 mt-4 max-w-xl">
                 The right dumpster for your project, delivered when you need it. Simple online booking with transparent pricing.
               </p>
-              <div className="pt-4 flex flex-wrap gap-4">
+              <div className="pt-6 flex flex-wrap gap-4">
                 <Button 
                   size="lg" 
-                  className="bg-primary text-black hover:bg-primary/90 font-bold text-lg"
+                  className="bg-primary text-black hover:bg-primary/90 font-bold text-lg px-7 py-6 rounded-lg shadow-lg"
                   asChild
                 >
                   <a href="#booking-form" className="inline-flex items-center">
@@ -33,52 +33,52 @@ export function ImprovedHero() {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10 font-bold text-lg"
+                  className="border-white text-white hover:bg-white/20 font-bold text-lg px-7 py-6 rounded-lg"
                   asChild
                 >
                   <a href="#services">VIEW SIZES</a>
                 </Button>
               </div>
             </div>
-            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-lg border border-primary/30">
-              <h3 className="font-bold text-2xl mb-5 flex items-center">
-                <span className="text-primary mr-2">★</span> 
+            <div className="bg-black/50 backdrop-blur-md p-8 rounded-xl border border-white/10 shadow-lg">
+              <h3 className="font-bold text-2xl mb-6 flex items-center">
+                <span className="text-primary mr-3">★</span> 
                 Proudly Serving Effingham & Surrounding Areas
               </h3>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 <li className="flex items-start">
-                  <div className="mr-3 mt-1 text-primary">
-                    <CheckCircleIcon className="h-5 w-5" />
+                  <div className="mr-4 mt-1 text-primary">
+                    <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="font-medium">Same-day or next-day delivery available</p>
+                    <p className="font-medium text-lg">Same-day or next-day delivery available</p>
                     <p className="text-gray-400 text-sm">Get your dumpster when you need it</p>
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <div className="mr-3 mt-1 text-primary">
-                    <CheckCircleIcon className="h-5 w-5" />
+                  <div className="mr-4 mt-1 text-primary">
+                    <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="font-medium">No hidden fees, transparent pricing</p>
+                    <p className="font-medium text-lg">No hidden fees, transparent pricing</p>
                     <p className="text-gray-400 text-sm">Pay only for what you need</p>
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <div className="mr-3 mt-1 text-primary">
-                    <CheckCircleIcon className="h-5 w-5" />
+                  <div className="mr-4 mt-1 text-primary">
+                    <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="font-medium">7-day standard rental period</p>
+                    <p className="font-medium text-lg">7-day standard rental period</p>
                     <p className="text-gray-400 text-sm">Extensions available if needed</p>
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <div className="mr-3 mt-1 text-primary">
-                    <CheckCircleIcon className="h-5 w-5" />
+                  <div className="mr-4 mt-1 text-primary">
+                    <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="font-medium">Multiple sizes available (10-30 yards)</p>
+                    <p className="font-medium text-lg">Multiple sizes available (10-30 yards)</p>
                     <p className="text-gray-400 text-sm">For any project, big or small</p>
                   </div>
                 </li>
