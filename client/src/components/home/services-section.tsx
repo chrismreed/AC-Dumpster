@@ -98,7 +98,7 @@ export function ServicesSection() {
                   <p>Holds approximately: 6 pickup truck loads</p>
                 </div>
               </div>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-black font-bold py-3 rounded-lg shadow-md" asChild>
+              <Button className="w-full bg-primary hover:bg-primary/90 text-slate-900 font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300" asChild>
                 <a href="#booking-form" className="flex justify-center items-center">
                   Rent Now <ArrowRight className="ml-2 h-5 w-5" />
                 </a>

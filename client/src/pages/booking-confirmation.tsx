@@ -89,7 +89,12 @@ export default function BookingConfirmationPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Booking Not Found</h1>
             <p className="text-gray-600 mb-8">We couldn't find the booking details you're looking for.</p>
-            <Button onClick={() => setLocation("/")}>Return to Homepage</Button>
+            <Button 
+              onClick={() => setLocation("/")}
+              className="bg-primary hover:bg-primary/90 text-slate-900 font-medium shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              Return to Homepage
+            </Button>
           </div>
         </div>
       </div>
@@ -108,7 +113,7 @@ export default function BookingConfirmationPage() {
         </p>
       </div>
       
-      <Card className="mb-8">
+      <Card className="mb-8 shadow-xl border-gray-200 rounded-xl overflow-hidden">
         <CardHeader>
           <CardTitle>Booking Details</CardTitle>
           <CardDescription>Reference number: #{booking.id}</CardDescription>
@@ -221,14 +226,14 @@ export default function BookingConfirmationPage() {
         <CardFooter className="flex flex-col sm:flex-row gap-4 justify-between border-t pt-6">
           <Button 
             variant="outline" 
-            className="flex items-center gap-2 w-full sm:w-auto" 
+            className="flex items-center gap-2 w-full sm:w-auto shadow-sm hover:shadow transition-all duration-300" 
             onClick={() => window.print()}
           >
             <FileText className="h-4 w-4" />
             Print Receipt
           </Button>
           <Button 
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-slate-900 font-medium shadow-md hover:shadow-lg transition-all duration-300"
             onClick={() => setLocation("/")}
           >
             Return to Homepage
