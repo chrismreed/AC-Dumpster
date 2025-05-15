@@ -16,73 +16,89 @@ export function ServicesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* 10 Yard Dumpster */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105">
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-xl transition-transform hover:scale-105 bg-white">
             <div className="bg-black text-white p-6 text-center">
               <h3 className="text-2xl font-bold">10 Yard Dumpster</h3>
               <p className="text-gray-300 mt-1">Small Projects</p>
             </div>
-            <div className="p-6">
+            <div className="p-8">
               <div className="text-center mb-6">
                 <p className="text-4xl font-bold text-black">$299</p>
                 <p className="text-gray-500">7 Day Rental</p>
               </div>
-              <div className="space-y-3 mb-8">
+              <div className="space-y-4 mb-8">
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Dimensions: 12' x 8' x 3.5'</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Weight Capacity: 2 tons</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Perfect for: Small remodels, yard waste, garage cleanouts</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Holds approximately: 3 pickup truck loads</p>
                 </div>
               </div>
-              <Button className="w-full bg-black hover:bg-black/90 text-white" asChild>
+              <Button className="w-full bg-black hover:bg-black/90 text-white py-3 rounded-lg shadow-md" asChild>
                 <a href="#booking-form">Rent Now</a>
               </Button>
             </div>
           </div>
 
           {/* 20 Yard Dumpster */}
-          <div className="border-2 border-primary rounded-lg overflow-hidden shadow-xl relative scale-105 z-10">
-            <div className="absolute top-0 right-0 bg-primary text-black font-bold py-1 px-4 text-sm">
+          <div className="border-2 border-primary rounded-xl overflow-hidden shadow-2xl relative scale-105 z-10 bg-white">
+            <div className="absolute -top-1 right-0 bg-primary text-black font-bold py-2 px-6 text-sm rounded-bl-lg shadow-md">
               POPULAR
             </div>
             <div className="bg-black text-white p-6 text-center">
               <h3 className="text-2xl font-bold">20 Yard Dumpster</h3>
               <p className="text-gray-300 mt-1">Medium Projects</p>
             </div>
-            <div className="p-6">
+            <div className="p-8">
               <div className="text-center mb-6">
                 <p className="text-4xl font-bold text-black">$399</p>
                 <p className="text-gray-500">7 Day Rental</p>
               </div>
-              <div className="space-y-3 mb-8">
+              <div className="space-y-4 mb-8">
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Dimensions: 16' x 8' x 5.5'</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Weight Capacity: 4 tons</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Perfect for: Home renovations, roofing jobs, deck removal</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Holds approximately: 6 pickup truck loads</p>
                 </div>
               </div>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-black font-bold" asChild>
+              <Button className="w-full bg-primary hover:bg-primary/90 text-black font-bold py-3 rounded-lg shadow-md" asChild>
                 <a href="#booking-form" className="flex justify-center items-center">
                   Rent Now <ArrowRight className="ml-2 h-5 w-5" />
                 </a>
@@ -91,47 +107,55 @@ export function ServicesSection() {
           </div>
 
           {/* 30 Yard Dumpster */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105">
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-xl transition-transform hover:scale-105 bg-white">
             <div className="bg-black text-white p-6 text-center">
               <h3 className="text-2xl font-bold">30 Yard Dumpster</h3>
               <p className="text-gray-300 mt-1">Large Projects</p>
             </div>
-            <div className="p-6">
+            <div className="p-8">
               <div className="text-center mb-6">
                 <p className="text-4xl font-bold text-black">$499</p>
                 <p className="text-gray-500">7 Day Rental</p>
               </div>
-              <div className="space-y-3 mb-8">
+              <div className="space-y-4 mb-8">
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Dimensions: 20' x 8' x 6'</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Weight Capacity: 6 tons</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Perfect for: Major renovations, new construction, large cleanouts</p>
                 </div>
                 <div className="flex items-start">
-                  <CheckIcon className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="bg-primary/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
+                    <CheckIcon className="h-4 w-4 text-primary" />
+                  </div>
                   <p>Holds approximately: 9 pickup truck loads</p>
                 </div>
               </div>
-              <Button className="w-full bg-black hover:bg-black/90 text-white" asChild>
+              <Button className="w-full bg-black hover:bg-black/90 text-white py-3 rounded-lg shadow-md" asChild>
                 <a href="#booking-form">Rent Now</a>
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-6">
+        <div className="mt-16 text-center">
+          <p className="text-gray-600 mb-6 text-lg">
             Not sure which size is right for your project? Give us a call and our experts will help you choose.
           </p>
-          <Button className="bg-black hover:bg-black/90 text-white" asChild>
-            <a href="tel:5551234567" className="font-medium">Call (555) 123-4567</a>
+          <Button className="bg-black hover:bg-black/90 text-white py-3 px-6 rounded-lg shadow-md" asChild>
+            <a href="tel:5551234567" className="font-medium text-lg">Call (555) 123-4567</a>
           </Button>
         </div>
       </div>

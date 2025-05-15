@@ -89,40 +89,36 @@ export function ImprovedHero() {
       </div>
       
       {/* Trust bar */}
-      <div className="bg-black border-y border-primary/30">
-        <div className="container mx-auto px-4 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-black/90 backdrop-blur-sm border-y border-white/10 shadow-md">
+        <div className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-center justify-center md:justify-start">
-              <div className="mr-3 text-primary">
+              <div className="mr-4 text-primary bg-primary/10 p-3 rounded-full">
                 <TruckIcon className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-medium">Fast Delivery</p>
-                <p className="text-xs text-gray-400">Within 24 hours in most areas</p>
+                <p className="font-medium text-lg">Fast Delivery</p>
+                <p className="text-sm text-gray-400">Within 24 hours in most areas</p>
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <div className="mr-3 text-primary">
+              <div className="mr-4 text-primary bg-primary/10 p-3 rounded-full">
                 <MapPinIcon className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-medium">Serving All of Effingham</p>
-                <p className="text-xs text-gray-400">And surrounding communities</p>
+                <p className="font-medium text-lg">Serving All of Effingham</p>
+                <p className="text-sm text-gray-400">And surrounding communities</p>
               </div>
             </div>
             <div className="flex items-center justify-center md:justify-end">
-              <div className="mr-3">
+              <div className="mr-4 text-primary bg-primary/10 p-3 rounded-full">
                 <div className="flex">
-                  <span className="text-primary">★</span>
-                  <span className="text-primary">★</span>
-                  <span className="text-primary">★</span>
-                  <span className="text-primary">★</span>
                   <span className="text-primary">★</span>
                 </div>
               </div>
               <div>
-                <p className="font-medium">5-Star Service</p>
-                <p className="text-xs text-gray-400">Based on 200+ reviews</p>
+                <p className="font-medium text-lg">5-Star Service</p>
+                <p className="text-sm text-gray-400">Based on 200+ reviews</p>
               </div>
             </div>
           </div>
