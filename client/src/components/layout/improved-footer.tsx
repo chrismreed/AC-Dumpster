@@ -5,7 +5,7 @@ export function ImprovedFooter() {
   const currentYear = new Date().getFullYear();
   
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-[#0f172a] text-[#ffffff]">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           <div className="space-y-4">
@@ -19,13 +19,13 @@ export function ImprovedFooter() {
               Your trusted partner for reliable waste management solutions in Effingham and surrounding areas.
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
+              <a href="https://facebook.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#facc15] transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
+              <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#facc15] transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-primary transition-colors">
+              <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-[#facc15] transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
             </div>
@@ -36,7 +36,7 @@ export function ImprovedFooter() {
             <ul className="space-y-2">
               <li>
                 <Link href="/">
-                  <div className="text-gray-400 hover:text-primary transition-colors cursor-pointer">Home</div>
+                  <div className="text-gray-400 hover:text-[#facc15] transition-colors cursor-pointer">Home</div>
                 </Link>
               </li>
               <li>

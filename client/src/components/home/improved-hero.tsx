@@ -3,9 +3,9 @@ import { ArrowRight, TruckIcon, MapPinIcon, CheckCircleIcon } from "lucide-react
 
 export function ImprovedHero() {
   return (
-    <section className="relative bg-slate-900 text-white">
+    <section className="relative bg-[#0f172a] text-[#ffffff]">
       {/* Background with overlay */}
-      <div className="absolute inset-0 bg-slate-900/80 z-0"></div>
+      <div className="absolute inset-0 bg-[#0f172a]/80 z-0"></div>
       
       {/* Hero content */}
       <div className="relative z-10 pt-32 pb-20 lg:pt-40 lg:pb-28">
@@ -13,8 +13,8 @@ export function ImprovedHero() {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="space-y-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                <span className="text-primary">Fast</span> &{" "}
-                <span className="text-primary">Reliable</span>{" "}
+                <span className="text-[#facc15]">Fast</span> &{" "}
+                <span className="text-[#facc15]">Reliable</span>{" "}
                 Dumpster Rental
               </h1>
               <p className="text-xl md:text-2xl text-gray-300 mt-4 max-w-xl">
@@ -23,7 +23,7 @@ export function ImprovedHero() {
               <div className="pt-6 flex flex-wrap gap-4">
                 <Button 
                   size="lg" 
-                  className="bg-primary text-black hover:bg-primary/90 font-bold text-lg px-7 py-6 rounded-lg shadow-lg"
+                  className="bg-[#facc15] text-[#111827] hover:bg-[#eab308] font-bold text-lg px-7 py-6 rounded-lg shadow-lg transition-all duration-300"
                   asChild
                 >
                   <a href="#booking-form" className="inline-flex items-center">
@@ -33,21 +33,21 @@ export function ImprovedHero() {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="border-white text-white hover:bg-white/20 font-bold text-lg px-7 py-6 rounded-lg"
+                  className="border-[#ffffff] text-[#ffffff] hover:bg-white/20 font-bold text-lg px-7 py-6 rounded-lg transition-all duration-300"
                   asChild
                 >
                   <a href="#services">VIEW SIZES</a>
                 </Button>
               </div>
             </div>
-            <div className="bg-slate-800/50 backdrop-blur-md p-8 rounded-xl border border-white/10 shadow-lg">
+            <div className="bg-[#0f172a]/70 backdrop-blur-md p-8 rounded-xl border border-[#d1d5db]/20 shadow-lg">
               <h3 className="font-bold text-2xl mb-6 flex items-center">
-                <span className="text-primary mr-3">★</span> 
+                <span className="text-[#facc15] mr-3">★</span> 
                 Proudly Serving Effingham & Surrounding Areas
               </h3>
               <ul className="space-y-5">
                 <li className="flex items-start">
-                  <div className="mr-4 mt-1 text-primary">
+                  <div className="mr-4 mt-1 text-[#facc15]">
                     <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
@@ -56,7 +56,7 @@ export function ImprovedHero() {
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <div className="mr-4 mt-1 text-primary">
+                  <div className="mr-4 mt-1 text-[#facc15]">
                     <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
@@ -65,7 +65,7 @@ export function ImprovedHero() {
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <div className="mr-4 mt-1 text-primary">
+                  <div className="mr-4 mt-1 text-[#facc15]">
                     <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
@@ -74,7 +74,7 @@ export function ImprovedHero() {
                   </div>
                 </li>
                 <li className="flex items-start">
-                  <div className="mr-4 mt-1 text-primary">
+                  <div className="mr-4 mt-1 text-[#facc15]">
                     <CheckCircleIcon className="h-6 w-6" />
                   </div>
                   <div>
@@ -89,11 +89,11 @@ export function ImprovedHero() {
       </div>
       
       {/* Trust bar */}
-      <div className="bg-slate-800/90 backdrop-blur-sm border-y border-white/10 shadow-md">
+      <div className="bg-[#0f172a]/90 backdrop-blur-sm border-y border-[#d1d5db]/20 shadow-md">
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-center justify-center md:justify-start">
-              <div className="mr-4 text-primary bg-primary/10 p-3 rounded-full">
+              <div className="mr-4 text-[#facc15] bg-[#facc15]/10 p-3 rounded-full">
                 <TruckIcon className="h-6 w-6" />
               </div>
               <div>
@@ -102,7 +102,7 @@ export function ImprovedHero() {
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <div className="mr-4 text-primary bg-primary/10 p-3 rounded-full">
+              <div className="mr-4 text-[#facc15] bg-[#facc15]/10 p-3 rounded-full">
                 <MapPinIcon className="h-6 w-6" />
               </div>
               <div>
@@ -111,9 +111,9 @@ export function ImprovedHero() {
               </div>
             </div>
             <div className="flex items-center justify-center md:justify-end">
-              <div className="mr-4 text-primary bg-primary/10 p-3 rounded-full">
+              <div className="mr-4 text-[#facc15] bg-[#facc15]/10 p-3 rounded-full">
                 <div className="flex">
-                  <span className="text-primary">★</span>
+                  <span className="text-[#facc15]">★</span>
                 </div>
               </div>
               <div>
