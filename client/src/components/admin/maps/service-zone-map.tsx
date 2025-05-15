@@ -23,7 +23,7 @@ const containerStyle = {
 const getZoneColor = (multiplier: number | null) => {
   if (!multiplier || multiplier <= 1) return '#3b82f6'; // blue
   if (multiplier <= 1.5) return '#10b981'; // green
-  if (multiplier <= 2) return '#f59e0b'; // amber
+  if (multiplier <= 2) return '#facc15'; // yellow
   return '#ef4444'; // red
 };
 
