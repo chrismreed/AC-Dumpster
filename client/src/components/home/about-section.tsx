@@ -7,10 +7,10 @@ export function AboutSection() {
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-black/10 text-black mb-4">
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#0f172a]/10 text-[#0f172a] mb-4">
               <span className="text-sm font-semibold">About Alley Cat</span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-black mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#0f172a] mb-6">
               Your Local Dumpster Rental Specialists
             </h2>
             <p className="text-gray-700 text-lg leading-relaxed mb-4">
@@ -29,7 +29,7 @@ export function AboutSection() {
               </Button>
               <Button 
                 variant="outline" 
-                className="border-black text-black hover:bg-black/5"
+                className="border-[#0f172a] text-[#0f172a] hover:bg-[#0f172a]/5"
                 asChild
               >
                 <a href="#contact">Contact Us</a>
@@ -39,32 +39,32 @@ export function AboutSection() {
           
           <div className="grid grid-cols-2 gap-6">
             {/* Stats Cards */}
-            <div className="bg-black text-white p-6 rounded-lg">
-              <div className="mb-4 text-primary">
+            <div className="bg-[#0f172a] text-[#ffffff] p-6 rounded-lg">
+              <div className="mb-4 text-[#facc15]">
                 <TruckIcon className="h-10 w-10" />
               </div>
               <h3 className="text-4xl font-bold mb-2">300+</h3>
               <p className="text-gray-300">Dumpsters Delivered</p>
             </div>
             
-            <div className="bg-black text-white p-6 rounded-lg">
-              <div className="mb-4 text-primary">
+            <div className="bg-[#0f172a] text-[#ffffff] p-6 rounded-lg">
+              <div className="mb-4 text-[#facc15]">
                 <CalendarIcon className="h-10 w-10" />
               </div>
               <h3 className="text-4xl font-bold mb-2">5+</h3>
               <p className="text-gray-300">Years in Business</p>
             </div>
             
-            <div className="bg-black text-white p-6 rounded-lg">
-              <div className="mb-4 text-primary">
+            <div className="bg-[#0f172a] text-[#ffffff] p-6 rounded-lg">
+              <div className="mb-4 text-[#facc15]">
                 <UserIcon className="h-10 w-10" />
               </div>
               <h3 className="text-4xl font-bold mb-2">1000+</h3>
               <p className="text-gray-300">Happy Customers</p>
             </div>
             
-            <div className="bg-black text-white p-6 rounded-lg">
-              <div className="mb-4 text-primary">
+            <div className="bg-[#0f172a] text-[#ffffff] p-6 rounded-lg">
+              <div className="mb-4 text-[#facc15]">
                 <StarIcon className="h-10 w-10" />
               </div>
               <h3 className="text-4xl font-bold mb-2">4.9</h3>

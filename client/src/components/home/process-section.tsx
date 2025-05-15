@@ -3,10 +3,10 @@ import { ArrowRight } from "lucide-react";
 
 export function ProcessSection() {
   return (
-    <section id="how-it-works" className="py-16 bg-black text-white">
+    <section id="how-it-works" className="py-16 bg-[#0f172a] text-[#ffffff]">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/20 text-primary mb-4">
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#facc15]/20 text-[#facc15] mb-4">
             <span className="text-sm font-semibold">Simple Process</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
