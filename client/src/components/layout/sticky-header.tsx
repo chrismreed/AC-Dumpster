@@ -103,7 +103,7 @@ export function StickyHeader() {
               <div className="pt-4">
                 <Button 
                   asChild 
-                  className="w-full font-bold bg-primary text-[#111827] hover:bg-[#eab308] py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                  className="w-full font-bold bg-white text-[#111827] hover:bg-gray-100 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <a href="#booking-form">RENT NOW</a>
@@ -159,7 +159,7 @@ function MobileNavLink({
   return (
     <Link href={href}>
       <div 
-        className="block px-4 py-3 text-base font-medium text-[#ffffff] hover:text-[#facc15] hover:bg-white/5 rounded-lg transition-all duration-300 cursor-pointer"
+        className="block px-4 py-3 text-base font-medium text-[#ffffff] hover:text-white hover:bg-white/5 rounded-lg transition-all duration-300 cursor-pointer"
         onClick={onClick}
       >
         {label}
