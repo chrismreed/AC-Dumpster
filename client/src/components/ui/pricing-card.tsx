@@ -52,14 +52,14 @@ export function PricingCard({
       className={cn(
         "border rounded-lg overflow-hidden transition-all relative",
         isSelected 
-          ? "border-gray-500 border-2 bg-white shadow-md ring-2 ring-gray-400 ring-opacity-20" 
+          ? "border-[#f7c948] border-2 bg-white shadow-md ring-2 ring-[#f7c948] ring-opacity-20" 
           : "border-neutral-200 bg-white hover:border-neutral-300 shadow-sm"
       )}
       onClick={onClick}
       data-dumpster-id={id}
     >
       {isPopular && (
-        <div className="absolute top-0 right-0 bg-gray-700 text-white text-xs font-bold px-4 py-1">
+        <div className="absolute top-0 right-0 bg-[#f7c948] text-[#2c2c2c] text-xs font-bold px-4 py-1">
           MOST POPULAR
         </div>
       )}

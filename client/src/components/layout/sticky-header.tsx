@@ -62,7 +62,7 @@ export function StickyHeader() {
             <Button 
               asChild 
               size="lg"
-              className="font-bold bg-white text-dark hover:bg-gray-100 px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+              className="font-bold bg-[#f7c948] text-dark hover:bg-[#f8d468] px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
             >
               <a href="#booking-form">RENT NOW</a>
             </Button>
