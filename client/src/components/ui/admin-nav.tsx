@@ -70,7 +70,7 @@ export function AdminNav() {
   return (
     <aside className="bg-white w-64 min-h-screen hidden md:block shadow-sm border-r">
       <div className="p-6">
-        <h1 className="text-xl font-bold text-[#ffdd33]">DumpsterDirect</h1>
+        <h1 className="text-xl font-bold text-white">DumpsterDirect</h1>
         <p className="text-sm text-gray-500 mt-1">Admin Dashboard</p>
       </div>
       <nav className="mt-4">
@@ -81,7 +81,7 @@ export function AdminNav() {
             className={cn(
               "flex items-center px-6 py-3 text-sm z-10 relative",
               location === item.href
-                ? "bg-[#ffdd33] bg-opacity-15 text-[#ffdd33] font-medium"
+                ? "bg-gray-200 bg-opacity-15 text-gray-800 font-medium"
                 : "text-gray-600 hover:bg-gray-50"
             )}
           >
@@ -94,7 +94,7 @@ export function AdminNav() {
         <div className="flex flex-col space-y-2">
           <Link 
             href="/"
-            className="flex items-center text-sm text-gray-600 hover:text-[#ffdd33]"
+            className="flex items-center text-sm text-gray-600 hover:text-gray-900"
           >
             <Home className="mr-2 h-4 w-4" />
             Back to Website

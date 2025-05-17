@@ -62,7 +62,7 @@ export function StickyHeader() {
             <Button 
               asChild 
               size="lg"
-              className="font-bold bg-primary text-dark hover:bg-[#fde68a] px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+              className="font-bold bg-white text-dark hover:bg-gray-100 px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
             >
               <a href="#booking-form">RENT NOW</a>
             </Button>
@@ -132,9 +132,9 @@ function NavLink({
   return (
     <Link href={href}>
       <div 
-        className={`px-4 py-3 mx-1 rounded-md text-sm font-medium hover:text-[#facc15] hover:bg-white/5 transition-all duration-300 cursor-pointer ${
+        className={`px-4 py-3 mx-1 rounded-md text-sm font-medium hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer ${
           isActive 
-            ? 'text-[#facc15] font-semibold' 
+            ? 'text-white font-semibold' 
             : isScrolled 
               ? 'text-[#ffffff]' 
               : 'text-[#ffffff]'
