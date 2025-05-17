@@ -22,9 +22,9 @@ export function Header() {
   };
 
   return (
-    <header className="bg-[#2c2c2c] sticky top-0 z-50">
-      {/* Top yellow bar with contact info */}
-      <div className="bg-[#ffdd33] py-2 px-4 text-black flex justify-center md:justify-between">
+    <header className="bg-black sticky top-0 z-50">
+      {/* Top contact info bar with black background */}
+      <div className="bg-black py-2 px-4 text-white flex justify-center md:justify-between">
         <div className="container mx-auto flex flex-col md:flex-row justify-center md:justify-between items-center">
           <a href="tel:+12179942582" className="text-sm font-medium flex items-center">
             <span className="mr-2">📞</span> 217-994-2582
