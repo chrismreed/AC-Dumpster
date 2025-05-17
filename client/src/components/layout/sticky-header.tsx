@@ -27,7 +27,7 @@ export function StickyHeader() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-black backdrop-blur-sm shadow-lg py-4' : 'bg-transparent py-6'
+        isScrolled ? 'bg-dark backdrop-blur-sm shadow-lg py-4' : 'bg-dark py-6'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -62,7 +62,7 @@ export function StickyHeader() {
             <Button 
               asChild 
               size="lg"
-              className="font-bold bg-primary text-[#111827] hover:bg-[#eab308] px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+              className="font-bold bg-primary text-dark hover:bg-[#fde68a] px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
             >
               <a href="#booking-form">RENT NOW</a>
             </Button>
