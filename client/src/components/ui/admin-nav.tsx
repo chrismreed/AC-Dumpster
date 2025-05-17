@@ -10,7 +10,9 @@ import {
   LogOut,
   Home,
   Map,
-  Globe
+  Globe,
+  CreditCard,
+  Settings
 } from "lucide-react";
 import { Button } from "./button";
 
@@ -53,6 +55,11 @@ export function AdminNav() {
       title: "Delivery Map",
       href: "/admin/delivery-map",
       icon: <Map className="mr-2 h-4 w-4" />
+    },
+    {
+      title: "Payment Settings",
+      href: "/admin/payment-settings",
+      icon: <CreditCard className="mr-2 h-4 w-4" />
     }
   ];
 

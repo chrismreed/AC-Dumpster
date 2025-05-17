@@ -17,6 +17,7 @@ import ZonesPage from "@/pages/admin/zones";
 import ZoneMapPage from "@/pages/admin/zone-map";
 import BookingsPage from "@/pages/admin/bookings";
 import DeliveryMapPage from "@/pages/admin/delivery-map";
+import PaymentSettingsPage from "@/pages/admin/payment-settings";
 import BookingConfirmationPage from "@/pages/booking-confirmation";
 import { StickyHeader } from "@/components/layout/sticky-header";
 import { ImprovedFooter } from "@/components/layout/improved-footer";
@@ -34,6 +35,7 @@ function Router() {
       <ProtectedRoute path="/admin/zone-map" component={ZoneMapPage} adminOnly />
       <ProtectedRoute path="/admin/bookings" component={BookingsPage} adminOnly />
       <ProtectedRoute path="/admin/delivery-map" component={DeliveryMapPage} adminOnly />
+      <ProtectedRoute path="/admin/payment-settings" component={PaymentSettingsPage} adminOnly />
       <Route component={NotFound} />
     </Switch>
   );
