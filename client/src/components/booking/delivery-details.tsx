@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +17,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Calendar, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 // Define form schema
 const formSchema = z.object({
@@ -39,6 +44,19 @@ interface DeliveryDetailsProps {
 export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
   const { toast } = useToast();
   const [isValidatingZip, setIsValidatingZip] = useState(false);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const datePickerRef = useRef<HTMLButtonElement>(null);
+
+  // Fetch dumpster inventory to check availability
+  const { data: dumpsters, isLoading: isLoadingDumpsters } = useQuery({
+    queryKey: ["/api/dumpsters"],
+  });
+
+  // Fetch existing bookings to determine availability
+  const { data: bookings, isLoading: isLoadingBookings } = useQuery({
+    queryKey: ["/api/bookings"],
+  });
 
   // Initialize form
   const form = useForm<FormValues>({
@@ -53,6 +71,55 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
       deliveryTimePreference: "anytime",
     },
   });
+
+  // Calculate minimum delivery date (tomorrow)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Calculate available dates based on dumpster inventory and existing bookings
+  useEffect(() => {
+    if (!dumpsters || !bookings) return;
+    
+    setIsLoadingAvailability(true);
+    
+    // Helper function to check if a date has available dumpsters
+    const isDumpsterAvailable = (date: Date) => {
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Count total dumpsters
+      const totalDumpsters = Array.isArray(dumpsters) 
+        ? dumpsters.reduce((total: number, dumpster: any) => 
+            total + (dumpster.quantity || 0), 0)
+        : 0;
+      
+      // Count booked dumpsters for this date
+      const bookedOnDate = Array.isArray(bookings) 
+        ? bookings.filter((booking: any) => {
+            if (booking.status === 'cancelled') return false;
+            
+            const bookingDate = new Date(booking.deliveryDate).toISOString().split('T')[0];
+            return bookingDate === dateStr;
+          }).length
+        : 0;
+      
+      // Return true if there are dumpsters available
+      return totalDumpsters > bookedOnDate;
+    };
+    
+    // Generate next 30 days and filter by availability
+    const dates: Date[] = [];
+    const endDate = new Date();
+    endDate.setDate(tomorrow.getDate() + 30);
+    
+    for (let d = new Date(tomorrow); d <= endDate; d.setDate(d.getDate() + 1)) {
+      if (isDumpsterAvailable(new Date(d))) {
+        dates.push(new Date(d));
+      }
+    }
+    
+    setAvailableDates(dates);
+    setIsLoadingAvailability(false);
+  }, [dumpsters, bookings, tomorrow]);
 
   const handleZipCodeChange = async (zipCode: string) => {
     if (zipCode.length === 5) {
@@ -74,11 +141,6 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
       }
     }
   };
-
-  // Calculate minimum delivery date (tomorrow)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const minDate = tomorrow.toISOString().split('T')[0];
 
   const onSubmit = (data: FormValues) => {
     onNext(data);
@@ -203,15 +265,63 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
               control={form.control}
               name="deliveryDate"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Delivery Date</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="date" 
-                      min={minDate}
-                      {...field} 
-                    />
-                  </FormControl>
+                  <Popover>
+                    <PopoverTrigger asChild ref={datePickerRef}>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Select a delivery date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      {isLoadingAvailability || isLoadingDumpsters || isLoadingBookings ? (
+                        <div className="p-6 flex items-center justify-center">
+                          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mr-2" />
+                          <span>Loading available dates...</span>
+                        </div>
+                      ) : availableDates.length > 0 ? (
+                        <CalendarComponent
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              field.onChange(date.toISOString().split('T')[0]);
+                            }
+                          }}
+                          disabled={(date) => {
+                            return !availableDates.some(
+                              availableDate => 
+                                availableDate.getDate() === date.getDate() && 
+                                availableDate.getMonth() === date.getMonth() && 
+                                availableDate.getFullYear() === date.getFullYear()
+                            );
+                          }}
+                          initialFocus
+                        />
+                      ) : (
+                        <div className="p-6 text-center">
+                          <p className="text-sm text-muted-foreground">No available dates found.</p>
+                          <p className="text-xs mt-1 text-muted-foreground">All dumpsters are booked.</p>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                  {availableDates.length === 0 && !isLoadingAvailability && !isLoadingDumpsters && !isLoadingBookings && (
+                    <p className="text-xs text-red-500 mt-1">No dumpsters available for the next 30 days.</p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
