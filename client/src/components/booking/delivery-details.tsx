@@ -17,11 +17,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, CalendarIcon } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Dumpster, Booking } from "@shared/schema";
 
 // Define form schema
 const formSchema = z.object({
@@ -88,13 +89,13 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
       
       // Count total dumpsters
       const totalDumpsters = Array.isArray(dumpsters) 
-        ? dumpsters.reduce((total: number, dumpster: any) => 
-            total + (dumpster.quantity || 0), 0)
+        ? dumpsters.reduce((total: number, dumpster: Dumpster) => 
+            total + (dumpster.availability || 0), 0)
         : 0;
       
       // Count booked dumpsters for this date
       const bookedOnDate = Array.isArray(bookings) 
-        ? bookings.filter((booking: any) => {
+        ? bookings.filter((booking: Booking) => {
             if (booking.status === 'cancelled') return false;
             
             const bookingDate = new Date(booking.deliveryDate).toISOString().split('T')[0];
