@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Booking, Dumpster } from "@shared/schema";
-import { disableRuntimeErrorOverlay } from "./hooks-workaround";
 import { 
   BarChart, 
   Bar, 
@@ -41,9 +40,9 @@ export default function DashboardPage() {
     queryKey: ["/api/dumpsters"],
   });
 
-  // Call our workaround function to disable the error overlay
+  // Effect to handle initial setup
   useEffect(() => {
-    disableRuntimeErrorOverlay();
+    // Nothing needed here now
   }, []);
 
   useEffect(() => {
