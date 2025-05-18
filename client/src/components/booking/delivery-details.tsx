@@ -299,7 +299,11 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
                           selected={field.value ? new Date(field.value) : undefined}
                           onSelect={(date) => {
                             if (date) {
-                              field.onChange(date.toISOString().split('T')[0]);
+                              // Fix timezone issues by using local date format
+                              const year = date.getFullYear();
+                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                              const day = String(date.getDate()).padStart(2, '0');
+                              field.onChange(`${year}-${month}-${day}`);
                             }
                           }}
                           disabled={(date) => {
