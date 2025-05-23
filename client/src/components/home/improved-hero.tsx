@@ -33,7 +33,7 @@ export function ImprovedHero() {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="border-[#ffffff] text-[#ffffff] hover:bg-white/20 font-bold text-lg px-7 py-6 rounded-lg transition-all duration-300"
+                  className="border-white bg-gray-800/70 text-white hover:bg-gray-800 font-bold text-lg px-7 py-6 rounded-lg transition-all duration-300"
                   asChild
                 >
                   <a href="#services">VIEW SIZES</a>

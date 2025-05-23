@@ -87,21 +87,27 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     const isDumpsterAvailable = (date: Date) => {
       const dateStr = date.toISOString().split('T')[0];
       
-      // Count total dumpsters
-      const totalDumpsters = Array.isArray(dumpsters) 
-        ? dumpsters.reduce((total: number, dumpster: Dumpster) => 
-            total + (dumpster.availability || 0), 0)
+      // Count total dumpsters - default to at least 1 available if dumpsters exist
+      const totalDumpsters = Array.isArray(dumpsters) && dumpsters.length > 0
+        ? Math.max(1, dumpsters.reduce((total: number, dumpster: Dumpster) => 
+            total + (dumpster.availability || 1), 0))
         : 0;
       
       // Count booked dumpsters for this date
       const bookedOnDate = Array.isArray(bookings) 
         ? bookings.filter((booking: Booking) => {
-            if (booking.status === 'cancelled') return false;
+            if (booking.status === 'cancelled' || booking.status === 'completed') return false;
+            
+            // Only count active bookings
+            if (!booking.deliveryDate) return false;
             
             const bookingDate = new Date(booking.deliveryDate).toISOString().split('T')[0];
             return bookingDate === dateStr;
           }).length
         : 0;
+      
+      // For debugging
+      console.log(`Date ${dateStr}: Total=${totalDumpsters}, Booked=${bookedOnDate}, Available=${totalDumpsters > bookedOnDate}`);
       
       // Return true if there are dumpsters available
       return totalDumpsters > bookedOnDate;
