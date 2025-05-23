@@ -305,11 +305,19 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
                           selected={field.value ? new Date(field.value) : undefined}
                           onSelect={(date) => {
                             if (date) {
-                              // Fix timezone issues by using local date format
-                              const year = date.getFullYear();
-                              const month = String(date.getMonth() + 1).padStart(2, '0');
-                              const day = String(date.getDate()).padStart(2, '0');
-                              field.onChange(`${year}-${month}-${day}`);
+                              // Create a new date and set it to noon to avoid timezone issues
+                              const localDate = new Date(date);
+                              localDate.setHours(12, 0, 0, 0);
+                              
+                              // Use the date at noon to ensure consistent day selection
+                              const year = localDate.getFullYear();
+                              const month = String(localDate.getMonth() + 1).padStart(2, '0');
+                              const day = String(localDate.getDate()).padStart(2, '0');
+                              
+                              // Format the date and update the field
+                              const formattedDate = `${year}-${month}-${day}`;
+                              console.log(`Selected date (fixed timezone): ${formattedDate}`);
+                              field.onChange(formattedDate);
                             }
                           }}
                           disabled={(date) => {
