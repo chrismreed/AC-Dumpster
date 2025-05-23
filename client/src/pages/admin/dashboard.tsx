@@ -112,8 +112,8 @@ export default function DashboardPage() {
     }
   }, [bookings, dumpsters]);
 
-  // Chart colors
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  // Chart colors matching our black/gray/yellow/white theme
+  const COLORS = ['#f7c948', '#333333', '#888888', '#555555'];
 
   if (isLoadingBookings || isLoadingDumpsters) {
     return (
@@ -143,8 +143,8 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <CalendarDays className="h-6 w-6 text-blue-600" />
+              <div className="bg-gray-100 p-3 rounded-full">
+                <CalendarDays className="h-6 w-6 text-gray-600" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Total Bookings</p>
@@ -155,8 +155,8 @@ export default function DashboardPage() {
           
           <Card>
             <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-green-100 p-3 rounded-full">
-                <Truck className="h-6 w-6 text-green-600" />
+              <div className="bg-gray-100 p-3 rounded-full">
+                <Truck className="h-6 w-6 text-gray-700" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Active Deliveries</p>
@@ -167,8 +167,8 @@ export default function DashboardPage() {
           
           <Card>
             <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-amber-100 p-3 rounded-full">
-                <DollarSign className="h-6 w-6 text-amber-600" />
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <DollarSign className="h-6 w-6 text-yellow-600" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Total Revenue</p>
@@ -179,8 +179,8 @@ export default function DashboardPage() {
           
           <Card>
             <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-purple-100 p-3 rounded-full">
-                <MapPin className="h-6 w-6 text-purple-600" />
+              <div className="bg-gray-100 p-3 rounded-full">
+                <MapPin className="h-6 w-6 text-gray-700" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Service Zones</p>
@@ -213,7 +213,7 @@ export default function DashboardPage() {
                       contentStyle={{ background: "white", border: "1px solid #ddd" }}
                       labelStyle={{ fontWeight: "bold" }}
                     />
-                    <Bar dataKey="amount" fill="#2563EB" />
+                    <Bar dataKey="amount" fill="#f7c948" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -229,11 +229,11 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={dumpsterDistribution || []}
+                      data={dumpsterDistribution.length ? dumpsterDistribution : [{ name: 'No Data', value: 1 }]}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name || 'Unknown'} (${((percent || 0) * 100).toFixed(0)}%)`}
+                      label={({ name, percent }) => name ? `${name} (${((percent || 0) * 100).toFixed(0)}%)` : ''}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
@@ -286,9 +286,9 @@ export default function DashboardPage() {
                           <td className="px-6 py-4">{deliveryDate}</td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 rounded text-xs ${
-                              status === 'scheduled' ? 'bg-green-100 text-green-800' : 
-                              status === 'completed' ? 'bg-blue-100 text-blue-800' : 
-                              'bg-gray-100 text-gray-800'
+                              status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' : 
+                              status === 'completed' ? 'bg-gray-100 text-gray-800' : 
+                              'bg-gray-100 text-gray-600'
                             }`}>
                               {status.charAt(0).toUpperCase() + status.slice(1)}
                             </span>
