@@ -112,8 +112,8 @@ export default function DashboardPage() {
     }
   }, [bookings, dumpsters]);
 
-  // Chart colors matching our black/gray/yellow/white theme
-  const COLORS = ['#f7c948', '#333333', '#888888', '#555555'];
+  // Chart colors in blue/teal palette that shows better against white background
+  const COLORS = ['#3b82f6', '#0d9488', '#6366f1', '#8b5cf6'];
 
   if (isLoadingBookings || isLoadingDumpsters) {
     return (
@@ -213,7 +213,7 @@ export default function DashboardPage() {
                       contentStyle={{ background: "white", border: "1px solid #ddd" }}
                       labelStyle={{ fontWeight: "bold" }}
                     />
-                    <Bar dataKey="amount" fill="#f7c948" />
+                    <Bar dataKey="amount" fill="#3b82f6" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
