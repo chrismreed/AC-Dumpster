@@ -150,31 +150,34 @@ export default function PaymentSettingsPage() {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Payment Settings</h1>
+      <div className="max-w-6xl mx-auto py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-slate-800">Payment Settings</h1>
+          <div className="text-sm text-slate-500">Configure how your business accepts payments</div>
+        </div>
         
         <Tabs defaultValue="stripe" className="mb-8">
-          <TabsList className="mb-4">
-            <TabsTrigger value="stripe">Stripe Settings</TabsTrigger>
-            <TabsTrigger value="general">General Settings</TabsTrigger>
+          <TabsList className="mb-6 bg-gray">
+            <TabsTrigger value="stripe" className="data-[state=active]:bg-white">Stripe Settings</TabsTrigger>
+            <TabsTrigger value="general" className="data-[state=active]:bg-white">General Settings</TabsTrigger>
           </TabsList>
           
           {/* Stripe Settings Tab */}
           <TabsContent value="stripe">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CreditCard className="mr-2 h-5 w-5" />
+            <Card className="admin-card border-subtle">
+              <CardHeader className="pb-4 border-b border-subtle">
+                <CardTitle className="flex items-center text-slate-800">
+                  <CreditCard className="mr-3 h-5 w-5 text-primary" />
                   Stripe Payment Gateway
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-slate-500">
                   Configure your Stripe payment gateway settings. These settings 
                   are used to process payments through Stripe.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <Form {...stripeForm}>
-                  <form onSubmit={stripeForm.handleSubmit(onStripeSubmit)} className="space-y-6">
+                  <form onSubmit={stripeForm.handleSubmit(onStripeSubmit)} className="space-y-6 admin-form">
                     <div className="flex items-center space-x-2 mb-6">
                       <FormField
                         control={stripeForm.control}
