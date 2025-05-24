@@ -239,10 +239,6 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
                 options={{
                   drawingMode: null,
                   drawingControl: true,
-                  drawingControlOptions: {
-                    position: google.maps.ControlPosition.TOP_CENTER,
-                    drawingModes: [google.maps.drawing.OverlayType.POLYGON],
-                  },
                   polygonOptions: {
                     fillColor: "#F7C948",
                     fillOpacity: 0.3,
