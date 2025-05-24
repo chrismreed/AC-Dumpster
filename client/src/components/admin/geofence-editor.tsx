@@ -18,7 +18,7 @@ const DEFAULT_ZOOM = 5;
 // Map container styles
 const mapContainerStyle = {
   width: "100%",
-  height: "350px",
+  height: "300px",
 };
 
 interface GeofenceEditorProps {
@@ -206,15 +206,14 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
   };
   
   return (
-    <div className="space-y-4">
-      <div className="bg-muted rounded-lg p-3 text-xs">
+    <div className="space-y-2">
+      <div className="bg-muted rounded-lg p-2 text-xs">
         <p className="font-medium">How to draw a geofence:</p>
-        <ul className="list-disc list-inside mt-1 text-muted-foreground space-y-0.5">
-          <li>Click the "Draw Boundary" button to start</li>
-          <li>Click on the map to create points for your boundary</li>
-          <li>Complete the shape by clicking on the first point</li>
-          <li>Edit the shape by dragging the points</li>
-          <li>Click "Save Geofence" when you're finished</li>
+        <ul className="list-disc list-inside mt-0.5 text-muted-foreground text-[10px] space-y-0">
+          <li>Use the polygon tool in the map to draw your boundary</li>
+          <li>Click points on the map to create your service area</li>
+          <li>Complete the shape by clicking the first point again</li>
+          <li>Edit by dragging the points after drawing is complete</li>
         </ul>
       </div>
       
@@ -239,7 +238,11 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
                 onLoad={onDrawingManagerLoad}
                 options={{
                   drawingMode: null,
-                  drawingControl: false,
+                  drawingControl: true,
+                  drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_CENTER,
+                    drawingModes: [google.maps.drawing.OverlayType.POLYGON],
+                  },
                   polygonOptions: {
                     fillColor: "#F7C948",
                     fillOpacity: 0.3,
@@ -255,24 +258,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-3 gap-2">
-        <Button
-          onClick={toggleDrawing}
-          variant={isDrawing ? "secondary" : "default"}
-          size="sm"
-          className="text-xs"
-        >
-          {isDrawing ? (
-            <>
-              <Check className="mr-1 h-3 w-3" /> Drawing On
-            </>
-          ) : (
-            <>
-              <Map className="mr-1 h-3 w-3" /> Draw
-            </>
-          )}
-        </Button>
-        
+      <div className="flex justify-between space-x-3 pt-2 border-t">
         <Button
           onClick={clearPolygon}
           variant="outline"
@@ -283,33 +269,18 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
           <Trash className="mr-1 h-3 w-3" /> Clear
         </Button>
         
-        <Button
-          onClick={() => {
-            if (mapRef.current && zone?.centerLat && zone?.centerLng) {
-              const center = {lat: zone.centerLat, lng: zone.centerLng};
-              mapRef.current.setCenter(center);
-              mapRef.current.setZoom(10);
-            }
-          }}
-          variant="outline"
-          size="sm"
-          className="text-xs"
-        >
-          <Navigation className="mr-1 h-3 w-3" /> Center
-        </Button>
-      </div>
-      
-      <div className="flex justify-end space-x-3 pt-2 border-t">
-        <Button variant="outline" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleSave}
-          disabled={!polygonPath}
-          size="sm"
-        >
-          Save Geofence
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave}
+            disabled={!polygonPath}
+            size="sm"
+          >
+            Save Geofence
+          </Button>
+        </div>
       </div>
     </div>
   );
