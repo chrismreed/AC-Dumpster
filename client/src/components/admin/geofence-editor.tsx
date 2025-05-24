@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ServiceZone } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, Check, Map, Navigation, Trash } from "lucide-react";
+import { Trash } from "lucide-react";
 import {
   GoogleMap,
-  LoadScript,
+  useJsApiLoader,
   DrawingManager,
 } from "@react-google-maps/api";
 
@@ -18,7 +17,7 @@ const DEFAULT_ZOOM = 5;
 // Map container styles
 const mapContainerStyle = {
   width: "100%",
-  height: "300px",
+  height: "500px",
 };
 
 interface GeofenceEditorProps {
@@ -27,28 +26,32 @@ interface GeofenceEditorProps {
   onCancel: () => void;
 }
 
+// List of required libraries for Google Maps
+const libraries = ["drawing"];
+
 export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) {
   const { toast } = useToast();
   const mapRef = useRef<google.maps.Map | null>(null);
   const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
   
-  const [center, setCenter] = useState(DEFAULT_CENTER);
+  const [center, setCenter] = useState(
+    zone?.centerLat && zone?.centerLng
+      ? { lat: zone.centerLat, lng: zone.centerLng }
+      : DEFAULT_CENTER
+  );
   const [polygonPath, setPolygonPath] = useState<string | null>(zone?.polygonPath || null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [zoom, setZoom] = useState(zone?.centerLat && zone?.centerLng ? 10 : DEFAULT_ZOOM);
   
-  // We'll handle loading directly through the LoadScript component
-
-  // Initialize map and drawing manager
+  // Load Google Maps API using the hook
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
+    libraries: libraries as any,
+  });
+  
+  // Initialize map
   const onMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
-    
-    // Try to center map on zone location if available
-    if (zone?.centerLat && zone?.centerLng) {
-      setCenter({ lat: zone.centerLat, lng: zone.centerLng });
-      map.setCenter({ lat: zone.centerLat, lng: zone.centerLng });
-      map.setZoom(10); // Zoom in more for a specific zone
-    }
     
     // If we have a polygon path, draw it on the map
     if (polygonPath) {
@@ -69,7 +72,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         
         // Add listener to capture path changes when polygon is edited
         google.maps.event.addListener(polygon.getPath(), "set_at", () => {
-          const paths = polygon.getPath().getArray().map(latLng => ({
+          const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
             lat: latLng.lat(),
             lng: latLng.lng()
           }));
@@ -77,7 +80,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         });
         
         google.maps.event.addListener(polygon.getPath(), "insert_at", () => {
-          const paths = polygon.getPath().getArray().map(latLng => ({
+          const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
             lat: latLng.lat(),
             lng: latLng.lng()
           }));
@@ -108,6 +111,9 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
       // Store the new polygon
       polygonRef.current = polygon;
       
+      // Make the polygon editable
+      polygon.setEditable(true);
+      
       // Capture polygon path
       const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
         lat: latLng.lat(),
@@ -117,7 +123,6 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
       
       // Turn off drawing mode
       drawingManager.setDrawingMode(null);
-      setIsDrawing(false);
       
       // Add listeners for editing the polygon
       google.maps.event.addListener(polygon.getPath(), "set_at", () => {
@@ -142,19 +147,6 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         description: "Your service area boundary has been created. You can edit it by dragging the points.",
       });
     });
-  };
-  
-  // Toggle drawing mode
-  const toggleDrawing = () => {
-    if (!drawingManagerRef.current) return;
-    
-    if (isDrawing) {
-      drawingManagerRef.current.setDrawingMode(null);
-      setIsDrawing(false);
-    } else {
-      drawingManagerRef.current.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
-      setIsDrawing(true);
-    }
   };
   
   // Clear the current polygon
@@ -217,16 +209,23 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         </ul>
       </div>
       
-      <Card>
-        <CardContent className="p-0 overflow-hidden rounded-lg">
-          <LoadScript
-            googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""}
-            libraries={["drawing"]}
-          >
+      {loadError && (
+        <div className="bg-destructive/10 p-3 rounded-md text-destructive text-sm">
+          Error loading Google Maps: {loadError.message}
+        </div>
+      )}
+      
+      {!isLoaded ? (
+        <div className="flex items-center justify-center h-[500px] bg-muted rounded-lg">
+          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-0 overflow-hidden rounded-lg">
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
               center={center}
-              zoom={DEFAULT_ZOOM}
+              zoom={zoom}
               onLoad={onMapLoad}
               options={{
                 streetViewControl: false,
@@ -239,6 +238,10 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
                 options={{
                   drawingMode: null,
                   drawingControl: true,
+                  drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_CENTER,
+                    drawingModes: [google.maps.drawing.OverlayType.POLYGON],
+                  },
                   polygonOptions: {
                     fillColor: "#F7C948",
                     fillOpacity: 0.3,
@@ -250,15 +253,15 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
                 }}
               />
             </GoogleMap>
-          </LoadScript>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
       
       <div className="flex justify-between space-x-3 pt-2 border-t">
         <Button
           onClick={clearPolygon}
           variant="outline"
-          disabled={!polygonPath}
+          disabled={!polygonPath || !isLoaded}
           size="sm"
           className="text-xs"
         >
@@ -271,7 +274,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={!polygonPath}
+            disabled={!polygonPath || !isLoaded}
             size="sm"
           >
             Save Geofence
