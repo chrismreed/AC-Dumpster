@@ -9,7 +9,6 @@ import {
   GoogleMap,
   useJsApiLoader,
   DrawingManager,
-  Libraries
 } from "@react-google-maps/api";
 
 // Default map center coordinates (USA center)
@@ -23,7 +22,7 @@ const mapContainerStyle = {
 };
 
 // Libraries needed for drawing and advanced features
-const libraries: Libraries = ["drawing"];
+const libraries = ["drawing"];
 
 interface GeofenceEditorProps {
   zone?: ServiceZone;
@@ -43,7 +42,8 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
   
   // Load Google Maps API
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: String(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""),
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
 
