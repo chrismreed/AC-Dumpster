@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
 import { GeofenceEditor } from "@/components/admin/geofence-editor";
+import { ZonesMap } from "@/components/admin/zones-map";
 import {
   Card,
   CardContent,
