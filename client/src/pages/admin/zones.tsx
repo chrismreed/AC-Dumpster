@@ -927,7 +927,7 @@ export default function ZonesPage() {
               Draw custom boundaries on the map to define your service area
             </DrawerDescription>
           </DrawerHeader>
-          <div className="p-4 pb-6">
+          <div className="p-4 pb-12 max-h-[80vh] overflow-y-auto">
             {selectedZone && (
               <GeofenceEditor 
                 zone={selectedZone}

@@ -17,7 +17,7 @@ const DEFAULT_ZOOM = 5;
 // Map container styles
 const mapContainerStyle = {
   width: "100%",
-  height: "500px",
+  height: "350px",
 };
 
 interface GeofenceEditorProps {
