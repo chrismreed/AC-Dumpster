@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
-import { GeofenceEditor } from "@/components/admin/geofence-editor";
+import { GeofenceEditor } from "@/components/admin/google-map-drawer";
 import {
   Card,
   CardContent,
