@@ -450,10 +450,10 @@ export default function ZonesNewLayoutPage() {
                         <div className="relative min-h-[400px] bg-muted/30 rounded-lg flex items-center justify-center">
                           {selectedZone.polygonPath ? (
                             <div className="absolute inset-0">
-                              <iframe
-                                src={`/api/zone-preview/${selectedZone.id}`}
-                                className="w-full h-full border-0 rounded-lg"
-                                title={`Preview of ${selectedZone.name} boundaries`}
+                              <GeofenceEditor
+                                zone={selectedZone}
+                                readOnly={!mapEditMode}
+                                onSave={handleSaveGeofence}
                               />
                             </div>
                           ) : (
