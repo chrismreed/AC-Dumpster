@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
-import { SimpleGeofenceEditor } from "@/components/admin/simple-geofence-editor";
+import { GeofenceEditor } from "@/components/admin/geofence-editor";
 import {
   Card,
   CardContent,
@@ -929,7 +929,7 @@ export default function ZonesPage() {
           </DrawerHeader>
           <div className="p-4 pb-6">
             {selectedZone && (
-              <SimpleGeofenceEditor 
+              <GeofenceEditor 
                 zone={selectedZone}
                 onSave={handleSaveGeofence}
                 onCancel={() => setIsGeofenceEditorOpen(false)}

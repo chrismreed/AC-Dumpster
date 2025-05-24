@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Check, Map, Navigation, Trash } from "lucide-react";
 import {
   GoogleMap,
-  useJsApiLoader,
+  LoadScript,
   DrawingManager,
 } from "@react-google-maps/api";
 
@@ -20,9 +20,6 @@ const mapContainerStyle = {
   width: "100%",
   height: "500px",
 };
-
-// Libraries needed for drawing and advanced features
-const libraries = ["drawing"];
 
 interface GeofenceEditorProps {
   zone?: ServiceZone;
@@ -40,12 +37,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
   const [polygonPath, setPolygonPath] = useState<string | null>(zone?.polygonPath || null);
   const [isDrawing, setIsDrawing] = useState(false);
   
-  // Load Google Maps API
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    libraries,
-  });
+  // We'll handle loading directly through the LoadScript component
 
   // Initialize map and drawing manager
   const onMapLoad = (map: google.maps.Map) => {
@@ -213,29 +205,6 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
     }
   };
   
-  // Handle API loading error
-  if (loadError) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Google Maps Error</AlertTitle>
-        <AlertDescription>
-          Failed to load Google Maps API. Please check your API key and try again.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  // Show loading state
-  if (!isLoaded) {
-    return (
-      <div className="h-96 w-full flex items-center justify-center bg-muted rounded-lg">
-        <div className="animate-spin mr-2 h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-        <span>Loading Google Maps...</span>
-      </div>
-    );
-  }
-  
   return (
     <div className="space-y-4">
       <div className="bg-muted rounded-lg p-4 text-sm">
@@ -251,33 +220,38 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
       
       <Card>
         <CardContent className="p-0 overflow-hidden rounded-lg">
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={center}
-            zoom={DEFAULT_ZOOM}
-            onLoad={onMapLoad}
-            options={{
-              streetViewControl: false,
-              mapTypeControl: true,
-              fullscreenControl: true,
-            }}
+          <LoadScript
+            googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""}
+            libraries={["drawing"]}
           >
-            <DrawingManager
-              onLoad={onDrawingManagerLoad}
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={center}
+              zoom={DEFAULT_ZOOM}
+              onLoad={onMapLoad}
               options={{
-                drawingMode: null,
-                drawingControl: false,
-                polygonOptions: {
-                  fillColor: "#F7C948",
-                  fillOpacity: 0.3,
-                  strokeWeight: 2,
-                  strokeColor: "#F7C948",
-                  editable: true,
-                  draggable: false,
-                },
+                streetViewControl: false,
+                mapTypeControl: true,
+                fullscreenControl: true,
               }}
-            />
-          </GoogleMap>
+            >
+              <DrawingManager
+                onLoad={onDrawingManagerLoad}
+                options={{
+                  drawingMode: null,
+                  drawingControl: false,
+                  polygonOptions: {
+                    fillColor: "#F7C948",
+                    fillOpacity: 0.3,
+                    strokeWeight: 2,
+                    strokeColor: "#F7C948",
+                    editable: true,
+                    draggable: false,
+                  },
+                }}
+              />
+            </GoogleMap>
+          </LoadScript>
         </CardContent>
       </Card>
       
