@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ServiceZone } from "@shared/schema";
@@ -8,6 +8,7 @@ import {
   GoogleMap,
   useJsApiLoader,
   DrawingManager,
+  Polygon
 } from "@react-google-maps/api";
 
 // Default map center coordinates (USA center)
@@ -24,12 +25,22 @@ interface GeofenceEditorProps {
   zone?: ServiceZone;
   onSave: (data: any) => void;
   onCancel: () => void;
+  readOnly?: boolean;
+  showAllZones?: boolean;
+  allZones?: ServiceZone[];
 }
 
 // List of required libraries for Google Maps
 const libraries = ["drawing"];
 
-export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) {
+export function GeofenceEditor({ 
+  zone, 
+  onSave, 
+  onCancel, 
+  readOnly = false,
+  showAllZones = false,
+  allZones = []
+}: GeofenceEditorProps) {
   const { toast } = useToast();
   const mapRef = useRef<google.maps.Map | null>(null);
   const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
