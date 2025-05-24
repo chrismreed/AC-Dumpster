@@ -100,7 +100,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         drawingManagerRef.current = drawingManager;
         
         // Add listener for polygon complete
-        google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
+        google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon: google.maps.Polygon) => {
           // Clear any existing polygon
           if (polygonRef.current) {
             polygonRef.current.setMap(null);
@@ -114,7 +114,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
           
           // Extract path data
           const pathArray = polygon.getPath().getArray();
-          const path = Array.from(pathArray).map(latLng => ({
+          const path = Array.from(pathArray).map((latLng: google.maps.LatLng) => ({
             lat: latLng.lat(),
             lng: latLng.lng()
           }));
@@ -159,7 +159,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
             
             // Fit map to polygon bounds
             const bounds = new google.maps.LatLngBounds();
-            path.forEach(point => {
+            path.forEach((point: {lat: number, lng: number}) => {
               bounds.extend(new google.maps.LatLng(point.lat, point.lng));
             });
             map.fitBounds(bounds);
