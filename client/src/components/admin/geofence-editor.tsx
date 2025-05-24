@@ -75,28 +75,31 @@ export function GeofenceEditor({
           strokeWeight: 3,
           fillColor: "#F7C948",
           fillOpacity: 0.35,
-          editable: true,
+          editable: !readOnly,
+          zIndex: 10, // Higher zIndex to make sure it's on top of other polygons
         });
         
         polygon.setMap(map);
         polygonRef.current = polygon;
         
-        // Add listener to capture path changes when polygon is edited
-        google.maps.event.addListener(polygon.getPath(), "set_at", () => {
-          const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
-            lat: latLng.lat(),
-            lng: latLng.lng()
-          }));
-          setPolygonPath(JSON.stringify(paths));
-        });
-        
-        google.maps.event.addListener(polygon.getPath(), "insert_at", () => {
-          const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
-            lat: latLng.lat(),
-            lng: latLng.lng()
-          }));
-          setPolygonPath(JSON.stringify(paths));
-        });
+        // Add listener to capture path changes when polygon is edited (only if not readOnly)
+        if (!readOnly) {
+          google.maps.event.addListener(polygon.getPath(), "set_at", () => {
+            const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
+              lat: latLng.lat(),
+              lng: latLng.lng()
+            }));
+            setPolygonPath(JSON.stringify(paths));
+          });
+          
+          google.maps.event.addListener(polygon.getPath(), "insert_at", () => {
+            const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
+              lat: latLng.lat(),
+              lng: latLng.lng()
+            }));
+            setPolygonPath(JSON.stringify(paths));
+          });
+        }
       } catch (error) {
         console.error("Error parsing polygon path:", error);
         toast({
@@ -210,15 +213,17 @@ export function GeofenceEditor({
   
   return (
     <div className="space-y-2">
-      <div className="bg-muted rounded-lg p-2 text-xs">
-        <p className="font-medium">How to draw a geofence:</p>
-        <ul className="list-disc list-inside mt-0.5 text-muted-foreground text-[10px] space-y-0">
-          <li>Use the polygon tool in the map to draw your boundary</li>
-          <li>Click points on the map to create your service area</li>
-          <li>Complete the shape by clicking the first point again</li>
-          <li>Edit by dragging the points after drawing is complete</li>
-        </ul>
-      </div>
+      {!readOnly && (
+        <div className="bg-muted rounded-lg p-2 text-xs">
+          <p className="font-medium">How to draw a geofence:</p>
+          <ul className="list-disc list-inside mt-0.5 text-muted-foreground text-[10px] space-y-0">
+            <li>Use the polygon tool in the map to draw your boundary</li>
+            <li>Click points on the map to create your service area</li>
+            <li>Complete the shape by clicking the first point again</li>
+            <li>Edit by dragging the points after drawing is complete</li>
+          </ul>
+        </div>
+      )}
       
       {loadError && (
         <div className="bg-destructive/10 p-3 rounded-md text-destructive text-sm">
@@ -244,54 +249,91 @@ export function GeofenceEditor({
                 fullscreenControl: true,
               }}
             >
-              <DrawingManager
-                onLoad={onDrawingManagerLoad}
-                options={{
-                  drawingMode: null,
-                  drawingControl: true,
-                  drawingControlOptions: {
-                    position: google.maps.ControlPosition.TOP_CENTER,
-                    drawingModes: [google.maps.drawing.OverlayType.POLYGON],
-                  },
-                  polygonOptions: {
-                    fillColor: "#F7C948",
-                    fillOpacity: 0.3,
-                    strokeWeight: 2,
-                    strokeColor: "#F7C948",
-                    editable: true,
-                    draggable: false,
-                  },
-                }}
-              />
+              {/* Display all other zones if enabled */}
+              {showAllZones && allZones && allZones.map((otherZone, index) => {
+                if (otherZone.id !== zone?.id && otherZone.polygonPath) {
+                  try {
+                    const paths = JSON.parse(otherZone.polygonPath);
+                    if (paths && paths.length > 0) {
+                      // Define a set of colors for different zones
+                      const zoneColors = ["#FF5733", "#33FF57", "#3357FF", "#F033FF", "#33FFF5"];
+                      const colorIndex = index % zoneColors.length;
+                      
+                      return (
+                        <Polygon
+                          key={otherZone.id}
+                          paths={paths}
+                          options={{
+                            fillColor: zoneColors[colorIndex],
+                            fillOpacity: 0.3,
+                            strokeColor: zoneColors[colorIndex],
+                            strokeWeight: 1.5,
+                            clickable: false,
+                            editable: false,
+                            draggable: false,
+                            zIndex: 1
+                          }}
+                        />
+                      );
+                    }
+                  } catch (e) {
+                    console.error("Error parsing zone path:", e);
+                  }
+                }
+                return null;
+              })}
+              {!readOnly && (
+                <DrawingManager
+                  onLoad={onDrawingManagerLoad}
+                  options={{
+                    drawingMode: null,
+                    drawingControl: true,
+                    drawingControlOptions: {
+                      position: google.maps.ControlPosition.TOP_CENTER,
+                      drawingModes: [google.maps.drawing.OverlayType.POLYGON],
+                    },
+                    polygonOptions: {
+                      fillColor: "#F7C948",
+                      fillOpacity: 0.3,
+                      strokeWeight: 2,
+                      strokeColor: "#F7C948",
+                      editable: true,
+                      draggable: false,
+                    },
+                  }}
+                />
+              )}
             </GoogleMap>
           </CardContent>
         </Card>
       )}
       
-      <div className="flex justify-between space-x-3 pt-2 border-t">
-        <Button
-          onClick={clearPolygon}
-          variant="outline"
-          disabled={!polygonPath || !isLoaded}
-          size="sm"
-          className="text-xs"
-        >
-          <Trash className="mr-1 h-3 w-3" /> Clear
-        </Button>
-        
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSave}
+      {!readOnly && (
+        <div className="flex justify-between space-x-3 pt-2 border-t">
+          <Button
+            onClick={clearPolygon}
+            variant="outline"
             disabled={!polygonPath || !isLoaded}
             size="sm"
+            className="text-xs"
           >
-            Save Geofence
+            <Trash className="mr-1 h-3 w-3" /> Clear
           </Button>
+          
+          <div className="flex space-x-2">
+            <Button variant="outline" size="sm" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={!polygonPath || !isLoaded}
+              size="sm"
+            >
+              Save Geofence
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

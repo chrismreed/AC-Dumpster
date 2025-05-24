@@ -452,10 +452,13 @@ export default function ZonesNewLayoutPage() {
                       ) : (
                         <div className="relative min-h-[400px] bg-muted/30 rounded-lg flex items-center justify-center">
                           <div className="absolute inset-0">
-                            <ZonesOverviewMap 
-                              zones={zones || []} 
-                              activeZoneId={selectedZone.id}
-                              onEditZone={() => setMapEditMode(true)}
+                            <GeofenceEditor
+                              zone={selectedZone}
+                              onSave={handleSaveGeofence}
+                              onCancel={() => {}}
+                              readOnly={true}
+                              showAllZones={true}
+                              allZones={zones || []}
                             />
                           </div>
                           {!selectedZone.polygonPath && (
