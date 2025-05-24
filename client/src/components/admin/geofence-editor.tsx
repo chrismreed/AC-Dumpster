@@ -106,7 +106,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
     drawingManagerRef.current = drawingManager;
     
     // Add listener for when polygon is complete
-    google.maps.event.addListener(drawingManager, "polygoncomplete", (polygon) => {
+    google.maps.event.addListener(drawingManager, "polygoncomplete", (polygon: google.maps.Polygon) => {
       // Clear any existing polygon
       if (polygonRef.current) {
         polygonRef.current.setMap(null);
@@ -116,7 +116,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
       polygonRef.current = polygon;
       
       // Capture polygon path
-      const paths = polygon.getPath().getArray().map(latLng => ({
+      const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
         lat: latLng.lat(),
         lng: latLng.lng()
       }));
@@ -128,7 +128,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
       
       // Add listeners for editing the polygon
       google.maps.event.addListener(polygon.getPath(), "set_at", () => {
-        const newPaths = polygon.getPath().getArray().map(latLng => ({
+        const newPaths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
           lat: latLng.lat(),
           lng: latLng.lng()
         }));
@@ -136,7 +136,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
       });
       
       google.maps.event.addListener(polygon.getPath(), "insert_at", () => {
-        const newPaths = polygon.getPath().getArray().map(latLng => ({
+        const newPaths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
           lat: latLng.lat(),
           lng: latLng.lng()
         }));

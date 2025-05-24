@@ -82,6 +82,7 @@ export default function ZonesPage() {
     centerLat: z.number().nullable().optional(),
     centerLng: z.number().nullable().optional(),
     radiusMeters: z.number().nullable().optional(),
+    polygonPath: z.string().nullable().optional(),
     feeMultiplier: z.number().default(1.0),
     maxDrivingMinutes: z.number().nullable().optional()
   });
@@ -251,6 +252,7 @@ export default function ZonesPage() {
       centerLat: zone.centerLat || null,
       centerLng: zone.centerLng || null,
       radiusMeters: zone.radiusMeters || null,
+      polygonPath: zone.polygonPath || null,
       feeMultiplier: zone.feeMultiplier || 1.0,
       maxDrivingMinutes: zone.maxDrivingMinutes || null
     });
@@ -872,6 +874,16 @@ export default function ZonesPage() {
                         onClick={() => handleEdit(zone)}
                       >
                         <Edit className="mr-1 h-4 w-4" /> Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedZone(zone);
+                          setIsGeofenceEditorOpen(true);
+                        }}
+                      >
+                        <Map className="mr-1 h-4 w-4" /> Map
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
