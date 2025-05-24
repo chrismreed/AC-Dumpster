@@ -8,6 +8,7 @@ import { Edit } from "lucide-react";
 interface ZonesOverviewMapProps {
   zones: ServiceZone[];
   onEditZone?: (zone: ServiceZone) => void;
+  activeZoneId?: number;
 }
 
 // Define map styles
@@ -35,7 +36,7 @@ const zoneColors = [
   "#33FFB8", // Teal
 ];
 
-export function ZonesOverviewMap({ zones, onEditZone }: ZonesOverviewMapProps) {
+export function ZonesOverviewMap({ zones, onEditZone, activeZoneId }: ZonesOverviewMapProps) {
   const [libraries] = useState(["drawing", "geometry"]);
   const [activeZone, setActiveZone] = useState<ServiceZone | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -127,14 +128,14 @@ export function ZonesOverviewMap({ zones, onEditZone }: ZonesOverviewMapProps) {
                       onClick={() => handlePolygonClick(zone)}
                       options={{
                         fillColor: zoneColors[colorIndex],
-                        fillOpacity: 0.5,
-                        strokeColor: zoneColors[colorIndex],
+                        fillOpacity: activeZoneId === zone.id ? 0.7 : 0.5,
+                        strokeColor: activeZoneId === zone.id ? "#000000" : zoneColors[colorIndex],
                         strokeOpacity: 1,
-                        strokeWeight: 2,
+                        strokeWeight: activeZoneId === zone.id ? 3 : 2,
                         clickable: true,
                         draggable: false,
                         editable: false,
-                        zIndex: activeZone?.id === zone.id ? 2 : 1,
+                        zIndex: (activeZoneId === zone.id || activeZone?.id === zone.id) ? 2 : 1,
                       }}
                     />
                   ) : null;

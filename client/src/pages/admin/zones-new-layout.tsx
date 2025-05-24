@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
 import { GeofenceEditor } from "@/components/admin/geofence-editor";
+import { ZonesOverviewMap } from "@/components/admin/zones-overview-map";
 import {
   Card,
   CardContent,
@@ -445,31 +446,34 @@ export default function ZonesNewLayoutPage() {
                           zone={selectedZone}
                           onSave={handleSaveGeofence}
                           onCancel={() => setMapEditMode(false)}
+                          showAllZones={true}
+                          allZones={zones || []}
                         />
                       ) : (
                         <div className="relative min-h-[400px] bg-muted/30 rounded-lg flex items-center justify-center">
-                          {selectedZone.polygonPath ? (
-                            <div className="absolute inset-0">
-                              <GeofenceEditor
-                                zone={selectedZone}
-                                readOnly={!mapEditMode}
-                                onSave={handleSaveGeofence}
-                              />
-                            </div>
-                          ) : (
-                            <div className="text-center p-8">
-                              <MapPin className="h-10 w-10 text-muted mx-auto mb-3" />
-                              <h3 className="text-lg font-medium">No Boundary Defined</h3>
-                              <p className="text-muted-foreground text-sm max-w-md mx-auto mt-1">
-                                Click "Edit Boundary" to draw a service area boundary for this zone.
-                                This helps calculate accurate delivery fees.
-                              </p>
-                              <Button 
-                                className="mt-4" 
-                                onClick={() => setMapEditMode(true)}
-                              >
-                                Draw Boundary
-                              </Button>
+                          <div className="absolute inset-0">
+                            <ZonesOverviewMap 
+                              zones={zones || []} 
+                              activeZoneId={selectedZone.id}
+                              onEditZone={() => setMapEditMode(true)}
+                            />
+                          </div>
+                          {!selectedZone.polygonPath && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/5 backdrop-blur-[2px] rounded-lg">
+                              <div className="text-center p-8 bg-white/90 rounded-lg shadow-lg">
+                                <MapPin className="h-10 w-10 text-muted mx-auto mb-3" />
+                                <h3 className="text-lg font-medium">No Boundary Defined</h3>
+                                <p className="text-muted-foreground text-sm max-w-md mx-auto mt-1">
+                                  Draw a service area boundary for this zone to help
+                                  calculate accurate delivery fees.
+                                </p>
+                                <Button 
+                                  className="mt-4" 
+                                  onClick={() => setMapEditMode(true)}
+                                >
+                                  Draw Boundary
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </div>
