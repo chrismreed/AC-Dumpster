@@ -920,7 +920,7 @@ export default function ZonesPage() {
 
       {/* Geofence Editor Drawer */}
       <Drawer open={isGeofenceEditorOpen} onOpenChange={setIsGeofenceEditorOpen}>
-        <DrawerContent className="max-h-[95vh]">
+        <DrawerContent className="max-h-[85vh]">
           <DrawerHeader>
             <DrawerTitle>Geofence Editor - {selectedZone?.name}</DrawerTitle>
             <DrawerDescription>

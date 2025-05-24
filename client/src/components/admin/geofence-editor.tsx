@@ -18,7 +18,7 @@ const DEFAULT_ZOOM = 5;
 // Map container styles
 const mapContainerStyle = {
   width: "100%",
-  height: "500px",
+  height: "350px",
 };
 
 interface GeofenceEditorProps {
@@ -207,9 +207,9 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
   
   return (
     <div className="space-y-4">
-      <div className="bg-muted rounded-lg p-4 text-sm">
+      <div className="bg-muted rounded-lg p-3 text-xs">
         <p className="font-medium">How to draw a geofence:</p>
-        <ul className="list-disc list-inside mt-1 text-muted-foreground space-y-1">
+        <ul className="list-disc list-inside mt-1 text-muted-foreground space-y-0.5">
           <li>Click the "Draw Boundary" button to start</li>
           <li>Click on the map to create points for your boundary</li>
           <li>Complete the shape by clicking on the first point</li>
@@ -255,18 +255,20 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         </CardContent>
       </Card>
       
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-3 gap-2">
         <Button
           onClick={toggleDrawing}
           variant={isDrawing ? "secondary" : "default"}
+          size="sm"
+          className="text-xs"
         >
           {isDrawing ? (
             <>
-              <Check className="mr-2 h-4 w-4" /> Drawing Mode On
+              <Check className="mr-1 h-3 w-3" /> Drawing On
             </>
           ) : (
             <>
-              <Map className="mr-2 h-4 w-4" /> Draw Boundary
+              <Map className="mr-1 h-3 w-3" /> Draw
             </>
           )}
         </Button>
@@ -275,8 +277,10 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
           onClick={clearPolygon}
           variant="outline"
           disabled={!polygonPath}
+          size="sm"
+          className="text-xs"
         >
-          <Trash className="mr-2 h-4 w-4" /> Clear Boundary
+          <Trash className="mr-1 h-3 w-3" /> Clear
         </Button>
         
         <Button
@@ -288,18 +292,21 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
             }
           }}
           variant="outline"
+          size="sm"
+          className="text-xs"
         >
-          <Navigation className="mr-2 h-4 w-4" /> Center Map
+          <Navigation className="mr-1 h-3 w-3" /> Center
         </Button>
       </div>
       
-      <div className="flex justify-end space-x-3 pt-4 border-t">
-        <Button variant="outline" onClick={onCancel}>
+      <div className="flex justify-end space-x-3 pt-2 border-t">
+        <Button variant="outline" size="sm" onClick={onCancel}>
           Cancel
         </Button>
         <Button 
           onClick={handleSave}
           disabled={!polygonPath}
+          size="sm"
         >
           Save Geofence
         </Button>
