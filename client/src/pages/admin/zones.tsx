@@ -3,7 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
 import { GeofenceEditor } from "@/components/admin/geofence-editor";
-import { CombinedMap } from "@/components/admin/combined-map";
+import { ZonesOverviewMap } from "@/components/admin/zones-overview-map";
+import { Link } from "wouter";
 import {
   Card,
   CardContent,
@@ -39,6 +40,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -50,96 +59,63 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { z } from "zod";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import * as z from "zod";
+
+// Extended schema for the form
+const extendedZoneSchema = insertServiceZoneSchema.extend({
+  baseFee: z.coerce.number().min(0, { message: "Base fee must be a positive number" }),
+});
 
 export default function ZonesPage() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isGeofenceEditorOpen, setIsGeofenceEditorOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
+  const [isGeofenceEditorOpen, setIsGeofenceEditorOpen] = useState(false);
 
-  // Fetch service zones
   const { data: zones, isLoading } = useQuery<ServiceZone[]>({
     queryKey: ["/api/zones"],
   });
 
-  // Extended schema for form with geofencing fields
-  const extendedZoneSchema = insertServiceZoneSchema.extend({
-    useGeofencing: z.boolean().default(false),
-    centerLat: z.number().nullable().optional(),
-    centerLng: z.number().nullable().optional(),
-    radiusMeters: z.number().nullable().optional(),
-    polygonPath: z.string().nullable().optional(),
-    feeMultiplier: z.number().default(1.0),
-    maxDrivingMinutes: z.number().nullable().optional()
-  });
-  
-  type ExtendedZoneForm = z.infer<typeof extendedZoneSchema>;
-
-  // Create form for adding new service zone
-  const addForm = useForm<ExtendedZoneForm>({
+  const addForm = useForm<z.infer<typeof extendedZoneSchema>>({
     resolver: zodResolver(extendedZoneSchema),
     defaultValues: {
       name: "",
       zipCodes: "",
-      deliveryFee: 0,
-      useGeofencing: false,
-      centerLat: null,
-      centerLng: null,
-      radiusMeters: null,
-      feeMultiplier: 1.0,
-      maxDrivingMinutes: null
+      description: "",
+      baseFee: 0,
     },
   });
 
-  // Create form for editing service zone
-  const editForm = useForm<ExtendedZoneForm>({
+  const editForm = useForm<z.infer<typeof extendedZoneSchema>>({
     resolver: zodResolver(extendedZoneSchema),
     defaultValues: {
       name: "",
       zipCodes: "",
-      deliveryFee: 0,
-      useGeofencing: false,
-      centerLat: null,
-      centerLng: null,
-      radiusMeters: null,
-      feeMultiplier: 1.0,
-      maxDrivingMinutes: null
+      description: "",
+      baseFee: 0,
     },
   });
 
-  // Add zone mutation
-  const addZoneMutation = useMutation({
-    mutationFn: async (data: ExtendedZoneForm) => {
-      // Convert fee from dollars to cents
-      // Format geofencing data based on whether it's enabled
-      const formattedData = {
-        ...data,
-        deliveryFee: data.deliveryFee * 100,
-        // Include geofencing fields only if geofencing is enabled
-        useGeofencing: data.useGeofencing,
-        centerLat: data.useGeofencing ? data.centerLat : null,
-        centerLng: data.useGeofencing ? data.centerLng : null,
-        radiusMeters: data.useGeofencing ? data.radiusMeters : null,
-        feeMultiplier: data.useGeofencing ? data.feeMultiplier : 1.0,
-        maxDrivingMinutes: data.useGeofencing ? data.maxDrivingMinutes : null
-      };
-      
-      const response = await apiRequest("POST", "/api/zones", formattedData);
+  const createZoneMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof extendedZoneSchema>) => {
+      const response = await apiRequest("POST", "/api/zones", data);
       return response.json();
     },
     onSuccess: () => {
@@ -147,115 +123,84 @@ export default function ZonesPage() {
       setIsAddDialogOpen(false);
       addForm.reset();
       toast({
-        title: "Service zone added",
-        description: "The service zone has been added successfully.",
+        title: "Zone Created",
+        description: "The service zone has been successfully created.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to add service zone: ${error.message}`,
+        description: `Failed to create zone: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 
-  // Edit zone mutation
-  const editZoneMutation = useMutation({
-    mutationFn: async (data: ExtendedZoneForm & { id: number }) => {
+  const updateZoneMutation = useMutation({
+    mutationFn: async (data: ServiceZone) => {
       const { id, ...rest } = data;
-      // Convert fee from dollars to cents
-      const formattedData = {
-        ...rest,
-        deliveryFee: rest.deliveryFee * 100,
-        // Include geofencing fields only if geofencing is enabled
-        useGeofencing: rest.useGeofencing,
-        centerLat: rest.useGeofencing ? rest.centerLat : null,
-        centerLng: rest.useGeofencing ? rest.centerLng : null,
-        radiusMeters: rest.useGeofencing ? rest.radiusMeters : null,
-        feeMultiplier: rest.useGeofencing ? rest.feeMultiplier : 1.0,
-        maxDrivingMinutes: rest.useGeofencing ? rest.maxDrivingMinutes : null
-      };
-      
-      const response = await apiRequest("PUT", `/api/zones/${id}`, formattedData);
+      const response = await apiRequest("PUT", `/api/zones/${id}`, rest);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/zones"] });
       setIsEditDialogOpen(false);
-      setSelectedZone(null);
+      editForm.reset();
       toast({
-        title: "Service zone updated",
-        description: "The service zone has been updated successfully.",
+        title: "Zone Updated",
+        description: "The service zone has been successfully updated.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to update service zone: ${error.message}`,
+        description: `Failed to update zone: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 
-  // Delete zone mutation
   const deleteZoneMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/zones/${id}`);
+      const response = await apiRequest("DELETE", `/api/zones/${id}`);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/zones"] });
       toast({
-        title: "Service zone deleted",
-        description: "The service zone has been deleted successfully.",
+        title: "Zone Deleted",
+        description: "The service zone has been successfully deleted.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to delete service zone: ${error.message}`,
+        description: `Failed to delete zone: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 
-  const onAddSubmit = (data: ExtendedZoneForm) => {
-    // Ensure useGeofencing is always a boolean
-    const formData = {
-      ...data,
-      useGeofencing: Boolean(data.useGeofencing),
-      feeMultiplier: data.feeMultiplier || 1.0
-    };
-    addZoneMutation.mutate(formData);
+  const onAddSubmit = (data: z.infer<typeof extendedZoneSchema>) => {
+    createZoneMutation.mutate(data);
   };
 
-  const onEditSubmit = (data: ExtendedZoneForm) => {
+  const onEditSubmit = (data: z.infer<typeof extendedZoneSchema>) => {
     if (selectedZone) {
-      // Ensure useGeofencing is always a boolean
-      const formData = {
+      updateZoneMutation.mutate({
+        ...selectedZone,
         ...data,
-        useGeofencing: Boolean(data.useGeofencing),
-        feeMultiplier: data.feeMultiplier || 1.0,
-        id: selectedZone.id
-      };
-      editZoneMutation.mutate(formData);
+      });
     }
   };
 
   const handleEdit = (zone: ServiceZone) => {
     setSelectedZone(zone);
-    // Convert fee from cents to dollars for form display
-    // Handle geofencing fields
     editForm.reset({
-      ...zone,
-      deliveryFee: zone.deliveryFee / 100,
-      useGeofencing: zone.useGeofencing || false,
-      centerLat: zone.centerLat || null,
-      centerLng: zone.centerLng || null,
-      radiusMeters: zone.radiusMeters || null,
-      polygonPath: zone.polygonPath || null,
-      feeMultiplier: zone.feeMultiplier || 1.0,
-      maxDrivingMinutes: zone.maxDrivingMinutes || null
+      name: zone.name,
+      zipCodes: zone.zipCodes || "",
+      description: zone.description || "",
+      baseFee: zone.baseFee || 0,
     });
     setIsEditDialogOpen(true);
   };
@@ -264,40 +209,19 @@ export default function ZonesPage() {
     deleteZoneMutation.mutate(id);
   };
 
-  if (isLoading) {
-    return (
-      <AdminLayout>
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </AdminLayout>
-    );
-  }
+  const handleOpenGeofenceEditor = (zone: ServiceZone) => {
+    setSelectedZone(zone);
+    setIsGeofenceEditorOpen(true);
+  };
 
-  // Handle saving geofence data
-  const handleSaveGeofence = async (geofenceData: any) => {
+  const handleSaveGeofence = (polygonPath: string) => {
     if (selectedZone) {
-      try {
-        const updatedZone = {
-          ...selectedZone,
-          ...geofenceData,
-          id: selectedZone.id
-        };
-        
-        await editZoneMutation.mutateAsync(updatedZone);
-        setIsGeofenceEditorOpen(false);
-        toast({
-          title: "Geofence Updated",
-          description: "The service zone geofence has been updated successfully.",
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to update geofence. Please try again.",
-          variant: "destructive"
-        });
-      }
+      updateZoneMutation.mutate({
+        ...selectedZone,
+        polygonPath,
+      });
     }
+    setIsGeofenceEditorOpen(false);
   };
 
   return (
@@ -308,629 +232,342 @@ export default function ZonesPage() {
             <h1 className="text-3xl font-bold">Service Zones</h1>
             <p className="text-gray-500">Manage your service areas and location-based pricing</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Zone
+          <div className="flex space-x-2">
+            <Link href="/admin/zones-map">
+              <Button variant="outline">
+                <Map className="mr-2 h-4 w-4" /> View All Zones Map
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Add New Service Zone</DialogTitle>
-                <DialogDescription>
-                  Define a new service area with associated ZIP codes and delivery fee.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...addForm}>
-                <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
-                  <Tabs defaultValue="basic" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="basic">Basic Information</TabsTrigger>
-                      <TabsTrigger value="geofence">Geofencing</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="basic" className="space-y-4 pt-4">
-                      <FormField
-                        control={addForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Zone Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Zone A - City Center" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={addForm.control}
-                        name="zipCodes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>ZIP Codes</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="10001,10002,10003,10004,10005" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <p className="text-sm text-muted-foreground">
-                              Enter ZIP codes separated by commas
-                            </p>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={addForm.control}
-                        name="deliveryFee"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Base Delivery Fee</FormLabel>
-                            <FormControl>
-                              <PriceInput
-                                {...field}
-                                onValueChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="geofence" className="space-y-4 pt-4">
-                      <FormField
-                        control={addForm.control}
-                        name="useGeofencing"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">Enable Geofencing</FormLabel>
-                              <FormDescription>
-                                Calculate delivery fees based on actual driving distance using Google Maps
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+            </Link>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Add Zone
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Service Zone</DialogTitle>
+                  <DialogDescription>
+                    Define a new service area with associated ZIP codes and delivery fee.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...addForm}>
+                  <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
+                    <Tabs defaultValue="basic" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                        <TabsTrigger value="geofence">Geofencing</TabsTrigger>
+                      </TabsList>
                       
-                      {addForm.watch("useGeofencing") && (
-                        <>
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={addForm.control}
-                              name="centerLat"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Center Latitude</FormLabel>
-                                  <FormControl>
-                                    <Input 
-                                      type="number" 
-                                      step="0.000001"
-                                      placeholder="39.1200"
-                                      value={field.value === null ? "" : field.value}
-                                      onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={addForm.control}
-                              name="centerLng"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Center Longitude</FormLabel>
-                                  <FormControl>
-                                    <Input 
-                                      type="number" 
-                                      step="0.000001"
-                                      placeholder="-88.5434"
-                                      value={field.value === null ? "" : field.value}
-                                      onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          
-                          <FormField
-                            control={addForm.control}
-                            name="radiusMeters"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Service Radius (meters)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    placeholder="20000"
-                                    value={field.value === null ? "" : field.value}
-                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  Maximum distance from center point in meters (e.g., 20000 = 20km)
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={addForm.control}
-                            name="feeMultiplier"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Fee Multiplier</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    step="0.1"
-                                    placeholder="1.5"
-                                    value={field.value}
-                                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  Multiply the base fee by this amount (e.g., 1.5 = 150% of base fee)
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={addForm.control}
-                            name="maxDrivingMinutes"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Max Driving Time (minutes)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    placeholder="45"
-                                    value={field.value === null ? "" : field.value}
-                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  Maximum acceptable driving time for delivery in this zone
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                  
-                  <DialogFooter>
-                    <Button 
-                      type="submit" 
-                      disabled={addZoneMutation.isPending}
-                    >
-                      {addZoneMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Add Zone
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                      <TabsContent value="basic" className="space-y-4 pt-4">
+                        <FormField
+                          control={addForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Zone Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Zone A - City Center" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={addForm.control}
+                          name="zipCodes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>ZIP Codes</FormLabel>
+                              <FormControl>
+                                <Input placeholder="12345, 23456, 34567" {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                Comma-separated list of ZIP codes in this zone
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={addForm.control}
+                          name="baseFee"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Base Delivery Fee</FormLabel>
+                              <FormControl>
+                                <PriceInput
+                                  value={field.value.toString()}
+                                  onValueChange={(value) => field.onChange(parseFloat(value))}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Standard delivery fee for this zone
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={addForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Details about this service zone"
+                                  className="resize-none"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TabsContent>
+                      
+                      <TabsContent value="geofence" className="space-y-4 pt-4">
+                        <div className="text-sm text-gray-500">
+                          <p>Geofencing allows you to define custom service boundaries.</p>
+                          <p className="mt-2">You can add geofencing after creating the zone.</p>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                    
+                    <DialogFooter>
+                      <Button type="submit" disabled={createZoneMutation.isPending}>
+                        {createZoneMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Add Zone
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        {/* Edit Dialog */}
+        {isLoading ? (
+          <div className="flex justify-center items-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Service Zones</CardTitle>
+                <CardDescription>
+                  Manage your delivery areas and pricing
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>ZIP Codes</TableHead>
+                      <TableHead>Base Fee</TableHead>
+                      <TableHead>Geofencing</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {zones && zones.length > 0 ? (
+                      zones.map((zone) => (
+                        <TableRow key={zone.id}>
+                          <TableCell className="font-medium">{zone.name}</TableCell>
+                          <TableCell>{zone.zipCodes || "—"}</TableCell>
+                          <TableCell>${zone.baseFee?.toFixed(2) || "0.00"}</TableCell>
+                          <TableCell>
+                            {zone.polygonPaths ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenGeofenceEditor(zone)}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Boundary
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenGeofenceEditor(zone)}
+                              >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Boundary
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <span className="sr-only">Open menu</span>
+                                  <Navigation className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEdit(zone)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                      className="text-red-600"
+                                      onSelect={(e) => e.preventDefault()}
+                                    >
+                                      <Trash className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete the service zone. This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDelete(zone.id)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          No service zones found. Add your first zone to get started.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Edit Service Zone</DialogTitle>
               <DialogDescription>
-                Update the details of this service zone.
+                Update this service area's information
               </DialogDescription>
             </DialogHeader>
             <Form {...editForm}>
               <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-                <Tabs defaultValue="basic" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="basic">Basic Information</TabsTrigger>
-                    <TabsTrigger value="geofence">Geofencing</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="basic" className="space-y-4 pt-4">
-                    <FormField
-                      control={editForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Zone Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={editForm.control}
-                      name="zipCodes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ZIP Codes</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} />
-                          </FormControl>
-                          <p className="text-sm text-muted-foreground">
-                            Enter ZIP codes separated by commas
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={editForm.control}
-                      name="deliveryFee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Base Delivery Fee</FormLabel>
-                          <FormControl>
-                            <PriceInput
-                              {...field}
-                              onValueChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="geofence" className="space-y-4 pt-4">
-                    <FormField
-                      control={editForm.control}
-                      name="useGeofencing"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Enable Geofencing</FormLabel>
-                            <FormDescription>
-                              Calculate delivery fees based on actual driving distance using Google Maps
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {editForm.watch("useGeofencing") && (
-                      <>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={editForm.control}
-                            name="centerLat"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Center Latitude</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    step="0.000001"
-                                    placeholder="39.1200"
-                                    value={field.value === null ? "" : field.value}
-                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={editForm.control}
-                            name="centerLng"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Center Longitude</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    step="0.000001"
-                                    placeholder="-88.5434"
-                                    value={field.value === null ? "" : field.value}
-                                    onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        <FormField
-                          control={editForm.control}
-                          name="radiusMeters"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Service Radius (meters)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  placeholder="20000"
-                                  value={field.value === null ? "" : field.value}
-                                  onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Maximum distance from center point in meters (e.g., 20000 = 20km)
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Zone Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="zipCodes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ZIP Codes</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Comma-separated list of ZIP codes in this zone
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="baseFee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base Delivery Fee</FormLabel>
+                      <FormControl>
+                        <PriceInput
+                          value={field.value.toString()}
+                          onValueChange={(value) => field.onChange(parseFloat(value))}
                         />
-                        
-                        <FormField
-                          control={editForm.control}
-                          name="feeMultiplier"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Fee Multiplier</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.1"
-                                  placeholder="1.5"
-                                  value={field.value}
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Multiply the base fee by this amount (e.g., 1.5 = 150% of base fee)
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                      </FormControl>
+                      <FormDescription>
+                        Standard delivery fee for this zone
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="resize-none"
+                          {...field}
                         />
-                        
-                        <FormField
-                          control={editForm.control}
-                          name="maxDrivingMinutes"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Max Driving Time (minutes)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  placeholder="45"
-                                  value={field.value === null ? "" : field.value}
-                                  onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value))}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Maximum acceptable driving time for delivery in this zone
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <DialogFooter>
-                  <Button 
-                    type="submit" 
-                    disabled={editZoneMutation.isPending}
-                  >
-                    {editZoneMutation.isPending && (
+                  <Button type="submit" disabled={updateZoneMutation.isPending}>
+                    {updateZoneMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Update Zone
+                    Save Changes
                   </Button>
                 </DialogFooter>
               </form>
             </Form>
           </DialogContent>
         </Dialog>
-
-        {/* Service Zones Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {zones?.map((zone) => {
-            const zipCodeCount = zone.zipCodes ? zone.zipCodes.split(',').filter(Boolean).length : 0;
-            
-            return (
-              <Card key={zone.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center">
-                    {zone.useGeofencing ? (
-                      <Globe className="mr-2 h-5 w-5 text-primary" />
-                    ) : (
-                      <MapPin className="mr-2 h-5 w-5 text-primary" />
-                    )}
-                    {zone.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium">Zone Type</p>
-                      <p className="text-sm font-medium mt-1">
-                        {zone.useGeofencing ? (
-                          <span className="flex items-center text-emerald-600">
-                            <Map className="mr-1 h-4 w-4" /> 
-                            Geofence-based pricing
-                          </span>
-                        ) : (
-                          <span className="flex items-center text-blue-600">
-                            <MapPin className="mr-1 h-4 w-4" /> 
-                            ZIP code-based pricing
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    
-                    {!zone.useGeofencing && (
-                      <div>
-                        <p className="text-sm font-medium">ZIP Codes</p>
-                        <p className="text-sm text-neutral-600 mt-1">
-                          {zipCodeCount > 0 ? (
-                            zipCodeCount > 5 
-                              ? zone.zipCodes.split(',').slice(0, 5).join(', ') + ` +${zipCodeCount - 5} more`
-                              : zone.zipCodes.split(',').join(', ')
-                          ) : (
-                            <span className="text-neutral-400">No ZIP codes defined</span>
-                          )}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {zone.useGeofencing && (
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <p className="font-medium">Center Point</p>
-                          <p className="text-neutral-600">
-                            {zone.centerLat && zone.centerLng ? (
-                              <span>{zone.centerLat.toFixed(4)}, {zone.centerLng.toFixed(4)}</span>
-                            ) : (
-                              <span className="text-neutral-400">Not set</span>
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-medium">Radius</p>
-                          <p className="text-neutral-600">
-                            {zone.radiusMeters ? (
-                              <span>{(zone.radiusMeters / 1000).toFixed(1)} km</span>
-                            ) : (
-                              <span className="text-neutral-400">Not set</span>
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-medium">Fee Multiplier</p>
-                          <p className="text-neutral-600">
-                            {zone.feeMultiplier ? (
-                              <span>{zone.feeMultiplier.toFixed(1)}x</span>
-                            ) : (
-                              <span>1.0x</span>
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-medium">Max Drive Time</p>
-                          <p className="text-neutral-600">
-                            {zone.maxDrivingMinutes ? (
-                              <span>{zone.maxDrivingMinutes} mins</span>
-                            ) : (
-                              <span className="text-neutral-400">No limit</span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-medium">Delivery Fee</p>
-                        <p className="text-lg font-bold text-primary">${(zone.deliveryFee / 100).toFixed(2)}</p>
-                      </div>
-                      {!zone.useGeofencing && (
-                        <div>
-                          <p className="text-sm font-medium">Coverage</p>
-                          <p className="text-lg font-bold">{zipCodeCount} ZIP codes</p>
-                        </div>
-                      )}
-                      {zone.useGeofencing && (
-                        <div>
-                          <p className="text-sm font-medium">Dynamic Pricing</p>
-                          <div className="flex items-center">
-                            <Navigation className="h-4 w-4 mr-1 text-orange-500" />
-                            <p className="text-sm font-medium">Distance-based</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex space-x-2 pt-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleEdit(zone)}
-                      >
-                        <Edit className="mr-1 h-4 w-4" /> Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedZone(zone);
-                          setIsGeofenceEditorOpen(true);
-                        }}
-                      >
-                        <Map className="mr-1 h-4 w-4" /> Map
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
-                            <Trash className="mr-1 h-4 w-4" /> Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete the "{zone.name}" service zone. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(zone.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
       </div>
 
-      {/* Geofence Editor Drawer */}
       <Drawer open={isGeofenceEditorOpen} onOpenChange={setIsGeofenceEditorOpen}>
-        <DrawerContent className="max-h-[85vh]">
+        <DrawerContent className="max-h-[90vh]">
           <DrawerHeader>
-            <DrawerTitle>Geofence Editor - {selectedZone?.name}</DrawerTitle>
+            <DrawerTitle>Edit Service Zone Boundary</DrawerTitle>
             <DrawerDescription>
-              Draw custom boundaries on the map to define your service area
+              Draw the precise boundary for {selectedZone?.name}
             </DrawerDescription>
           </DrawerHeader>
-          <div className="p-4 pb-12 max-h-[80vh] overflow-y-auto">
+          <div className="px-4 overflow-y-auto max-h-[calc(90vh-10rem)]">
             {selectedZone && (
-              <GeofenceEditor 
+              <GeofenceEditor
                 zone={selectedZone}
                 onSave={handleSaveGeofence}
                 onCancel={() => setIsGeofenceEditorOpen(false)}
