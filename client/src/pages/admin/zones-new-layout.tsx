@@ -198,12 +198,43 @@ export default function ZonesNewLayoutPage() {
     deleteZoneMutation.mutate(id);
   };
 
-  const handleSaveGeofence = (polygonPath: string) => {
+  const handleSaveGeofence = async (polygonPath: any) => {
     if (selectedZone) {
-      updateZoneMutation.mutate({
-        ...selectedZone,
-        polygonPath,
-      });
+      try {
+        // Make direct API call with proper credentials
+        const response = await fetch(`/api/zones/${selectedZone.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            // Include credentials to ensure the session cookie is sent
+            'credentials': 'include'
+          },
+          body: JSON.stringify({
+            ...selectedZone,
+            polygonPath: polygonPath.polygonPath || polygonPath,
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to save boundary');
+        }
+        
+        // Success - refresh the zones data
+        queryClient.invalidateQueries({ queryKey: ["/api/zones"] });
+        setMapEditMode(false);
+        
+        toast({
+          title: "Boundary Saved",
+          description: "The service zone boundary has been updated successfully.",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: `Failed to save boundary: ${error.message}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 

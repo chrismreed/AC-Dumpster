@@ -253,6 +253,7 @@ export function GeofenceEditor({
             <li>Click points on the map to create your service area</li>
             <li>Complete the shape by clicking the first point again</li>
             <li>Edit by dragging the points after drawing is complete</li>
+            <li className="font-semibold text-primary">Right-click on any point to delete it</li>
           </ul>
         </div>
       )}
