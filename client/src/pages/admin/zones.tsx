@@ -49,6 +49,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
   Tabs,
   TabsContent,
   TabsList,
@@ -263,6 +270,32 @@ export default function ZonesPage() {
       </AdminLayout>
     );
   }
+
+  // Handle saving geofence data
+  const handleSaveGeofence = async (geofenceData: any) => {
+    if (selectedZone) {
+      try {
+        const updatedZone = {
+          ...selectedZone,
+          ...geofenceData,
+          id: selectedZone.id
+        };
+        
+        await editZoneMutation.mutateAsync(updatedZone);
+        setIsGeofenceEditorOpen(false);
+        toast({
+          title: "Geofence Updated",
+          description: "The service zone geofence has been updated successfully.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update geofence. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
 
   return (
     <AdminLayout>
@@ -872,6 +905,27 @@ export default function ZonesPage() {
           })}
         </div>
       </div>
+
+      {/* Geofence Editor Drawer */}
+      <Drawer open={isGeofenceEditorOpen} onOpenChange={setIsGeofenceEditorOpen}>
+        <DrawerContent className="max-h-[95vh]">
+          <DrawerHeader>
+            <DrawerTitle>Geofence Editor - {selectedZone?.name}</DrawerTitle>
+            <DrawerDescription>
+              Draw custom boundaries on the map to define your service area
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 pb-6">
+            {selectedZone && (
+              <GeofenceEditor 
+                zone={selectedZone}
+                onSave={handleSaveGeofence}
+                onCancel={() => setIsGeofenceEditorOpen(false)}
+              />
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AdminLayout>
   );
 }
