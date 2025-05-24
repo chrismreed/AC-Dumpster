@@ -84,6 +84,38 @@ export function GeofenceEditor({
         
         // Add listener to capture path changes when polygon is edited (only if not readOnly)
         if (!readOnly) {
+          // Add delete functionality - right click to remove a vertex
+          google.maps.event.addListener(polygon, "rightclick", (event: any) => {
+            // Check if the click is on a vertex
+            if (event.vertex !== undefined) {
+              // Get the path
+              const path = polygon.getPath();
+              // Remove the vertex
+              if (path.getLength() > 3) { // Keep at least 3 points to maintain a valid polygon
+                path.removeAt(event.vertex);
+                
+                // Update the polygon path in state
+                const paths = path.getArray().map((latLng: google.maps.LatLng) => ({
+                  lat: latLng.lat(),
+                  lng: latLng.lng()
+                }));
+                setPolygonPath(JSON.stringify(paths));
+                
+                // Show a toast to confirm deletion
+                toast({
+                  title: "Vertex Deleted",
+                  description: "Right-click on any vertex to delete it."
+                });
+              } else {
+                toast({
+                  title: "Cannot Delete Vertex",
+                  description: "A polygon must have at least 3 vertices.",
+                  variant: "destructive"
+                });
+              }
+            }
+          });
+          
           google.maps.event.addListener(polygon.getPath(), "set_at", () => {
             const paths = polygon.getPath().getArray().map((latLng: google.maps.LatLng) => ({
               lat: latLng.lat(),
