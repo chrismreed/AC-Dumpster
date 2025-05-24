@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
+import { GeofenceEditor } from "@/components/admin/geofence-editor";
 import {
   Card,
   CardContent,
@@ -60,6 +61,7 @@ export default function ZonesPage() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isGeofenceEditorOpen, setIsGeofenceEditorOpen] = useState(false);
   const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
 
   // Fetch service zones

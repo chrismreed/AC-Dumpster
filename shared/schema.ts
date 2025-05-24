@@ -45,6 +45,7 @@ export const serviceZones = pgTable("service_zones", {
   centerLat: doublePrecision("center_lat"), // Center latitude for geofencing
   centerLng: doublePrecision("center_lng"), // Center longitude for geofencing
   radiusMeters: integer("radius_meters"), // Radius in meters for circular geofencing
+  polygonPath: text("polygon_path"), // JSON string containing polygon vertices for custom geofencing
   feeMultiplier: doublePrecision("fee_multiplier").default(1.0), // Multiplier for the base fee
   maxDrivingMinutes: integer("max_driving_minutes"), // Maximum driving time in minutes
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -101,6 +102,9 @@ export const insertAddOnSchema = createInsertSchema(addOns).omit({
 export const insertServiceZoneSchema = createInsertSchema(serviceZones).omit({
   id: true,
   createdAt: true,
+}).extend({
+  // Make polygonPath optional since it will be set by the geofence editor
+  polygonPath: z.string().optional(),
 });
 
 export const insertRentalDurationSchema = createInsertSchema(rentalDurations).omit({
