@@ -302,21 +302,44 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
                       ) : availableDates.length > 0 ? (
                         <CalendarComponent
                           mode="single"
-                          selected={field.value ? new Date(field.value) : undefined}
+                          selected={field.value ? (() => {
+                            // Create a date object for display in the calendar
+                            // Log the current value for debugging
+                            console.log("Current field value:", field.value);
+                            const dateParts = field.value.split('-');
+                            const year = parseInt(dateParts[0]);
+                            const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+                            const day = parseInt(dateParts[2]);
+                            // Create date at noon to avoid timezone issues
+                            const selectedDate = new Date(year, month, day, 12, 0, 0, 0);
+                            console.log("Display date in calendar:", selectedDate);
+                            return selectedDate;
+                          })() : undefined}
                           onSelect={(date) => {
                             if (date) {
-                              // Create a new date and set it to noon to avoid timezone issues
-                              const localDate = new Date(date);
-                              localDate.setHours(12, 0, 0, 0);
+                              // The fundamental issue is that new Date() in JS uses the timezone offset
+                              // We need to create a date that doesn't shift when converted to ISO string
                               
-                              // Use the date at noon to ensure consistent day selection
-                              const year = localDate.getFullYear();
-                              const month = String(localDate.getMonth() + 1).padStart(2, '0');
-                              const day = String(localDate.getDate()).padStart(2, '0');
+                              // Create a date string in YYYY-MM-DD format from the selected date's components
+                              const selectedDay = date.getDate();
+                              const selectedMonth = date.getMonth() + 1;
+                              const selectedYear = date.getFullYear();
                               
-                              // Format the date and update the field
-                              const formattedDate = `${year}-${month}-${day}`;
-                              console.log(`Selected date (fixed timezone): ${formattedDate}`);
+                              // Log the raw selected date for debugging
+                              console.log('User clicked on date:', date);
+                              console.log(`Raw selection - Year: ${selectedYear}, Month: ${selectedMonth}, Day: ${selectedDay}`);
+                              
+                              // Format the date parts with leading zeros as needed
+                              const formattedDay = String(selectedDay).padStart(2, '0');
+                              const formattedMonth = String(selectedMonth).padStart(2, '0');
+                              
+                              // Create the final date string in YYYY-MM-DD format
+                              const formattedDate = `${selectedYear}-${formattedMonth}-${formattedDay}`;
+                              
+                              // Log the final formatted date
+                              console.log(`Final formatted date: ${formattedDate}`);
+                              
+                              // Update the form field with this exact string value
                               field.onChange(formattedDate);
                             }
                           }}
