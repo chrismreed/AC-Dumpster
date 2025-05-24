@@ -40,13 +40,7 @@ export default function DashboardPage() {
     queryKey: ["/api/dumpsters"],
   });
 
-  // Effect to handle initial setup
   useEffect(() => {
-    // Nothing needed here now
-  }, []);
-
-  useEffect(() => {
-    // Always run this effect, with proper conditional checks inside
     // Process bookings data for revenue chart (last 7 days)
     const today = new Date();
     const revenueByDay: { [key: string]: number } = {};
@@ -114,6 +108,12 @@ export default function DashboardPage() {
 
   // Chart colors in blue/teal palette that shows better against white background
   const COLORS = ['#3b82f6', '#0d9488', '#6366f1', '#8b5cf6'];
+  
+  // Calculate summary statistics before any return statements to avoid hook order issues
+  const totalBookings = bookings?.length || 0;
+  const activeBookings = bookings?.filter(b => b.status === 'scheduled').length || 0;
+  const totalRevenue = bookings?.reduce((sum, booking) => sum + booking.totalPrice, 0) || 0;
+  const serviceZoneCount = new Set(bookings?.map(b => b.serviceZoneId)).size || 0;
 
   if (isLoadingBookings || isLoadingDumpsters) {
     return (
@@ -124,12 +124,6 @@ export default function DashboardPage() {
       </AdminLayout>
     );
   }
-
-  // Calculate summary statistics
-  const totalBookings = bookings?.length || 0;
-  const activeBookings = bookings?.filter(b => b.status === 'scheduled').length || 0;
-  const totalRevenue = bookings?.reduce((sum, booking) => sum + booking.totalPrice, 0) || 0;
-  const serviceZoneCount = new Set(bookings?.map(b => b.serviceZoneId)).size || 0;
 
   return (
     <AdminLayout>
