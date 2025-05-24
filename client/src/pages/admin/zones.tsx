@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
 import { ServiceZone, InsertServiceZone, insertServiceZoneSchema } from "@shared/schema";
-import { Loader2, Plus, Edit, Trash, MapPin, Globe, Map, Navigation } from "lucide-react";
+import { Loader2, Plus, Edit, Trash, MapPin, Globe, Map, Navigation, Layout } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -236,6 +236,11 @@ export default function ZonesPage() {
             <Link href="/admin/zones-map">
               <Button variant="outline">
                 <Map className="mr-2 h-4 w-4" /> View All Zones Map
+              </Button>
+            </Link>
+            <Link href="/admin/zones-new">
+              <Button variant="outline" className="bg-amber-100 hover:bg-amber-200 border-amber-300">
+                <Layout className="mr-2 h-4 w-4" /> Try New Layout
               </Button>
             </Link>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
