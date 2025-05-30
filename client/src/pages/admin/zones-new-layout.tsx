@@ -146,7 +146,12 @@ export default function ZonesNewLayoutPage() {
   const deleteZoneMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await apiRequest("DELETE", `/api/zones/${id}`);
-      return response.json();
+      // DELETE requests typically return 204 with no content, so don't try to parse JSON
+      if (response.ok) {
+        return { success: true };
+      } else {
+        throw new Error('Failed to delete zone');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/zones"] });
