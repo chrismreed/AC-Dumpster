@@ -44,31 +44,37 @@ function Router() {
 }
 
 function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+        <Toaster />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
+function AppContent() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith('/admin');
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <div className="flex flex-col min-h-screen">
-          {isAdminPage ? (
-            <Header />
-          ) : (
-            <StickyHeader />
-          )}
-          <main className="flex-grow pt-16 md:pt-20">
-            <Router />
-          </main>
-          {isAdminPage ? (
-            <Footer />
-          ) : (
-            <ImprovedFooter />
-          )}
-          <AdminStylesOverride />
-        </div>
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+    <div className="flex flex-col min-h-screen">
+      {isAdminPage ? (
+        <Header />
+      ) : (
+        <StickyHeader />
+      )}
+      <main className="flex-grow pt-16 md:pt-20">
+        <Router />
+      </main>
+      {isAdminPage ? (
+        <Footer />
+      ) : (
+        <ImprovedFooter />
+      )}
+      <AdminStylesOverride />
+    </div>
   );
 }
 
