@@ -32,6 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
+import { Switch } from "@/components/ui/switch";
 import { ServiceZone, insertServiceZoneSchema } from "@shared/schema";
 import { Loader2, Plus, Edit, Trash, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -55,6 +56,22 @@ import { cn } from "@/lib/utils";
 // Extended schema for the form
 const extendedZoneSchema = insertServiceZoneSchema.extend({
   deliveryFee: z.coerce.number().min(0, { message: "Delivery fee must be a positive number" }),
+  useGeofencing: z.boolean().optional(),
+}).refine((data) => {
+  // Ensure either zip codes or geofencing is used, but not both
+  const hasZipCodes = data.zipCodes && data.zipCodes.trim().length > 0;
+  const hasGeofencing = data.useGeofencing;
+  
+  if (!hasZipCodes && !hasGeofencing) {
+    return false; // Must have either zip codes or geofencing
+  }
+  if (hasZipCodes && hasGeofencing) {
+    return false; // Cannot have both
+  }
+  return true;
+}, {
+  message: "Please choose either ZIP codes OR boundary-based service area, not both",
+  path: ["zipCodes"], // Show error on zip codes field
 });
 
 export default function ZonesNewLayoutPage() {
@@ -81,6 +98,7 @@ export default function ZonesNewLayoutPage() {
       name: "",
       zipCodes: "",
       deliveryFee: 0,
+      useGeofencing: false,
     },
   });
 
@@ -90,6 +108,7 @@ export default function ZonesNewLayoutPage() {
       name: "",
       zipCodes: "",
       deliveryFee: 0,
+      useGeofencing: false,
     },
   });
 
@@ -195,6 +214,7 @@ export default function ZonesNewLayoutPage() {
       name: zone.name,
       zipCodes: zone.zipCodes || "",
       deliveryFee: zone.deliveryFee || 0,
+      useGeofencing: !!(zone.polygonPath && zone.polygonPath.trim().length > 0),
     });
     setIsEditDialogOpen(true);
   };
@@ -225,8 +245,18 @@ export default function ZonesNewLayoutPage() {
           throw new Error(errorData.message || 'Failed to save boundary');
         }
         
-        // Success - refresh the zones data
-        queryClient.invalidateQueries({ queryKey: ["/api/zones"] });
+        // Success - refresh the zones data and update selected zone
+        await queryClient.invalidateQueries({ queryKey: ["/api/zones"] });
+        
+        // Refetch zones to get updated data with new boundary
+        const updatedZones = await queryClient.fetchQuery({ queryKey: ["/api/zones"] });
+        if (updatedZones && Array.isArray(updatedZones)) {
+          const updatedZone = updatedZones.find((z: ServiceZone) => z.id === selectedZone.id);
+          if (updatedZone) {
+            setSelectedZone(updatedZone);
+          }
+        }
+        
         setMapEditMode(false);
         
         toast({
@@ -287,20 +317,50 @@ export default function ZonesNewLayoutPage() {
                   
                   <FormField
                     control={addForm.control}
-                    name="zipCodes"
+                    name="useGeofencing"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ZIP Codes</FormLabel>
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Use Custom Boundary
+                          </FormLabel>
+                          <FormDescription>
+                            Enable to draw a custom service area boundary instead of using ZIP codes
+                          </FormDescription>
+                        </div>
                         <FormControl>
-                          <Input placeholder="12345, 23456, 34567" {...field} />
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              if (checked) {
+                                addForm.setValue("zipCodes", "");
+                              }
+                            }}
+                          />
                         </FormControl>
-                        <FormDescription>
-                          Comma-separated list of ZIP codes in this zone
-                        </FormDescription>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
+                  {!addForm.watch("useGeofencing") && (
+                    <FormField
+                      control={addForm.control}
+                      name="zipCodes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ZIP Codes</FormLabel>
+                          <FormControl>
+                            <Input placeholder="12345, 23456, 34567" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Comma-separated list of ZIP codes in this zone
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   
                   <FormField
                     control={addForm.control}
