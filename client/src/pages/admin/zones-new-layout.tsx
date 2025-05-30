@@ -209,7 +209,7 @@ export default function ZonesNewLayoutPage() {
 
   const onEditSubmit = (data: z.infer<typeof extendedZoneSchema>) => {
     if (selectedZone) {
-      // Filter out useGeofencing field since it's not part of the database schema
+      // Filter out useGeofencing field and null/undefined values
       const { useGeofencing, ...updateData } = data;
       
       // If using geofencing, clear zip codes
@@ -217,9 +217,18 @@ export default function ZonesNewLayoutPage() {
         updateData.zipCodes = "";
       }
       
+      // Remove null/undefined values and fields that shouldn't be sent
+      const cleanData = Object.fromEntries(
+        Object.entries(updateData).filter(([key, value]) => {
+          // Keep only the fields we want to update
+          const allowedFields = ['name', 'zipCodes', 'deliveryFee'];
+          return allowedFields.includes(key) && value !== null && value !== undefined;
+        })
+      );
+      
       updateZoneMutation.mutate({
         ...selectedZone,
-        ...updateData,
+        ...cleanData,
       });
     }
   };
