@@ -196,14 +196,30 @@ export default function ZonesNewLayoutPage() {
   });
 
   const onAddSubmit = (data: z.infer<typeof extendedZoneSchema>) => {
-    createZoneMutation.mutate(data);
+    // Filter out useGeofencing field since it's not part of the database schema
+    const { useGeofencing, ...createData } = data;
+    
+    // If using geofencing, clear zip codes
+    if (useGeofencing) {
+      createData.zipCodes = "";
+    }
+    
+    createZoneMutation.mutate(createData);
   };
 
   const onEditSubmit = (data: z.infer<typeof extendedZoneSchema>) => {
     if (selectedZone) {
+      // Filter out useGeofencing field since it's not part of the database schema
+      const { useGeofencing, ...updateData } = data;
+      
+      // If using geofencing, clear zip codes
+      if (useGeofencing) {
+        updateData.zipCodes = "";
+      }
+      
       updateZoneMutation.mutate({
         ...selectedZone,
-        ...data,
+        ...updateData,
       });
     }
   };
