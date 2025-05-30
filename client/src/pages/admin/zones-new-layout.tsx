@@ -456,9 +456,13 @@ export default function ZonesNewLayoutPage() {
                       <div>
                         <CardTitle>{selectedZone.name}</CardTitle>
                         <CardDescription>
-                          {selectedZone.zipCodes
-                            ? `Covers ZIP codes: ${selectedZone.zipCodes}`
-                            : "No ZIP codes defined"}
+                          {selectedZone.polygonPath ? (
+                            "Uses custom boundary area"
+                          ) : selectedZone.zipCodes ? (
+                            `Covers ZIP codes: ${selectedZone.zipCodes}`
+                          ) : (
+                            "No service area defined"
+                          )}
                         </CardDescription>
                       </div>
                       <div className="flex space-x-2">
@@ -621,20 +625,50 @@ export default function ZonesNewLayoutPage() {
                 
                 <FormField
                   control={editForm.control}
-                  name="zipCodes"
+                  name="useGeofencing"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ZIP Codes</FormLabel>
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Use Custom Boundary
+                        </FormLabel>
+                        <FormDescription>
+                          Enable to draw a custom service area boundary instead of using ZIP codes
+                        </FormDescription>
+                      </div>
                       <FormControl>
-                        <Input {...field} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            if (checked) {
+                              editForm.setValue("zipCodes", "");
+                            }
+                          }}
+                        />
                       </FormControl>
-                      <FormDescription>
-                        Comma-separated list of ZIP codes in this zone
-                      </FormDescription>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
+                
+                {!editForm.watch("useGeofencing") && (
+                  <FormField
+                    control={editForm.control}
+                    name="zipCodes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ZIP Codes</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Comma-separated list of ZIP codes in this zone
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 
                 <FormField
                   control={editForm.control}
