@@ -244,11 +244,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Service zone not found" });
       }
       
+      console.log("Updating zone with data:", req.body);
       const validatedData = insertServiceZoneSchema.partial().parse(req.body);
       const updatedZone = await storage.updateServiceZone(id, validatedData);
       res.json(updatedZone);
     } catch (err) {
       if (err instanceof z.ZodError) {
+        console.log("Validation errors:", err.errors);
         return res.status(400).json({ message: "Invalid service zone data", errors: err.errors });
       }
       console.error("Error updating service zone:", err);
