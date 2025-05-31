@@ -186,6 +186,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dumpster pricing routes
+  app.get("/api/dumpster-pricing/:dumpsterId", isAdmin, async (req, res) => {
+    try {
+      const dumpsterId = parseInt(req.params.dumpsterId);
+      const pricing = await storage.getDumpsterPricing(dumpsterId);
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error fetching dumpster pricing:", error);
+      res.status(500).json({ message: "Failed to fetch dumpster pricing" });
+    }
+  });
+
+  app.post("/api/dumpster-pricing", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertDumpsterPricingSchema.parse(req.body);
+      const pricing = await storage.createDumpsterPricing(validatedData);
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error creating dumpster pricing:", error);
+      res.status(500).json({ message: "Failed to create dumpster pricing" });
+    }
+  });
+
+  app.put("/api/dumpster-pricing/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertDumpsterPricingSchema.partial().parse(req.body);
+      const pricing = await storage.updateDumpsterPricing(id, validatedData);
+      if (!pricing) {
+        return res.status(404).json({ message: "Dumpster pricing not found" });
+      }
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error updating dumpster pricing:", error);
+      res.status(500).json({ message: "Failed to update dumpster pricing" });
+    }
+  });
+
+  app.delete("/api/dumpster-pricing/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDumpsterPricing(id);
+      if (!success) {
+        return res.status(404).json({ message: "Dumpster pricing not found" });
+      }
+      res.json({ message: "Dumpster pricing deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting dumpster pricing:", error);
+      res.status(500).json({ message: "Failed to delete dumpster pricing" });
+    }
+  });
+
   // Service zone routes
   app.get("/api/zones", async (_req, res) => {
     try {

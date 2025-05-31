@@ -76,6 +76,8 @@ export interface IStorage {
   updateDumpsterPricing(id: number, pricing: Partial<InsertDumpsterPricing>): Promise<DumpsterPricing | undefined>;
   deleteDumpsterPricing(id: number): Promise<boolean>;
 
+
+
   // Session store
   sessionStore: session.SessionStore;
 }
@@ -778,6 +780,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBooking(id: number): Promise<boolean> {
     const result = await db.delete(bookings).where(eq(bookings.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Dumpster pricing methods
+  async getDumpsterPricing(dumpsterId: number): Promise<DumpsterPricing[]> {
+    return await db.select().from(dumpsterPricing).where(eq(dumpsterPricing.dumpsterId, dumpsterId));
+  }
+
+  async createDumpsterPricing(insertPricing: InsertDumpsterPricing): Promise<DumpsterPricing> {
+    const [pricing] = await db
+      .insert(dumpsterPricing)
+      .values(insertPricing)
+      .returning();
+    return pricing;
+  }
+
+  async updateDumpsterPricing(id: number, pricingUpdate: Partial<InsertDumpsterPricing>): Promise<DumpsterPricing | undefined> {
+    const [updated] = await db
+      .update(dumpsterPricing)
+      .set(pricingUpdate)
+      .where(eq(dumpsterPricing.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteDumpsterPricing(id: number): Promise<boolean> {
+    const result = await db.delete(dumpsterPricing).where(eq(dumpsterPricing.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 }
