@@ -76,7 +76,7 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
         <h2 className="text-3xl font-bold text-[#2c2c2c] mb-4">Our Dumpster Sizes</h2>
         <p className="text-neutral-600">
           We offer a variety of dumpster sizes to fit your specific needs. All rentals include 
-          delivery, pickup, and 7 days of usage.
+          delivery, pickup, and 24 hours of usage.
         </p>
       </div>
       
