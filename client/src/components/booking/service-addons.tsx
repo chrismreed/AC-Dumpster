@@ -105,7 +105,7 @@ export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
                       value={selectedAddOns[addon.id]?.quantity.toString()}
                       onValueChange={(value) => handleQuantityChange(addon.id, parseInt(value))}
                     >
-                      <SelectTrigger className="w-[280px] max-w-full">
+                      <SelectTrigger className="w-[280px] max-w-full bg-white text-gray-900 border-gray-300">
                         <SelectValue placeholder="Select quantity" />
                       </SelectTrigger>
                       <SelectContent>
