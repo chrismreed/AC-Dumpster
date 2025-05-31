@@ -78,6 +78,13 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
 
   // Calculate price based on selections
   useEffect(() => {
+    console.log("BookingData received:", bookingData);
+    console.log("Missing fields check:", {
+      dumpsterId: bookingData.dumpsterId,
+      rentalDurationId: bookingData.rentalDurationId,
+      deliveryZipCode: bookingData.deliveryZipCode
+    });
+    
     if (bookingData.dumpsterId && bookingData.rentalDurationId && bookingData.deliveryZipCode) {
       const calculatePriceMutation = async () => {
         try {
