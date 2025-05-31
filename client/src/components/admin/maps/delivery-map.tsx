@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { GoogleMap, useJsApiLoader, InfoWindow } from '@react-google-maps/api';
 import { Booking, Dumpster } from '@shared/schema';
 import { formatDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,106 +39,127 @@ async function geocodeAddress(address: string): Promise<google.maps.LatLngLitera
         lng: location.lng(),
       };
     }
-    return null;
   } catch (error) {
-    console.error('Error geocoding address:', error);
-    return null;
+    console.error('Geocoding error:', error);
   }
+  
+  return null;
 }
 
 // Get status color for markers
 function getStatusColor(status: string): string {
-  switch (status) {
-    case 'scheduled':
-      return '#3B82F6'; // blue-500
+  switch (status.toLowerCase()) {
+    case 'confirmed':
+      return '#10b981'; // green
     case 'delivered':
-      return '#10B981'; // green-500
-    case 'completed':
-      return '#8B5CF6'; // purple-500
+      return '#3b82f6'; // blue
+    case 'picked_up':
+      return '#8b5cf6'; // purple
     case 'cancelled':
-      return '#EF4444'; // red-500
+      return '#ef4444'; // red
+    case 'pending':
     default:
-      return '#6B7280'; // gray-500
+      return '#f59e0b'; // yellow
   }
 }
 
 export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const [markers, setMarkers] = useState<Array<{ booking: Booking; position: google.maps.LatLngLiteral }>>([]);
   const [selectedMarker, setSelectedMarker] = useState<{ booking: Booking; position: google.maps.LatLngLiteral } | null>(null);
-  const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(defaultCenter);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [customMarkers, setCustomMarkers] = useState<any[]>([]);
 
-  // Load Google Maps API with consistent options
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-    libraries: ['places'], // Add libraries consistently
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries: ['places', 'drawing'],
   });
 
-  // Function to get dumpster name by ID
-  const getDumpsterName = useCallback((dumpsterId: number) => {
-    const dumpster = dumpsters.find(d => d.id === dumpsterId);
-    return dumpster ? dumpster.name : 'Unknown Dumpster';
-  }, [dumpsters]);
+  // Function to create custom markers on the map
+  const createCustomMarkers = useCallback((map: google.maps.Map, markers: Array<{ booking: Booking; position: google.maps.LatLngLiteral }>) => {
+    // Clear existing markers
+    customMarkers.forEach(marker => {
+      if (marker.setMap) marker.setMap(null);
+    });
 
-  // Geocode all booking addresses
+    const newMarkers = markers.map(({ booking, position }) => {
+      // Create a simple circle marker using a Circle overlay
+      const marker = new google.maps.Circle({
+        strokeColor: '#FFFFFF',
+        strokeOpacity: 1,
+        strokeWeight: 2,
+        fillColor: getStatusColor(booking.status),
+        fillOpacity: 1,
+        map,
+        center: position,
+        radius: 100, // Small radius for marker appearance
+        clickable: true,
+      });
+
+      // Add click listener
+      marker.addListener('click', () => {
+        setSelectedMarker({ booking, position });
+      });
+
+      return marker;
+    });
+
+    setCustomMarkers(newMarkers);
+  }, [customMarkers]);
+
+  // Load map and set up markers
+  const onLoad = useCallback((map: google.maps.Map) => {
+    setMap(map);
+  }, []);
+
+  // Geocode addresses and create markers
   useEffect(() => {
     if (!isLoaded || !bookings.length) return;
 
     const geocodeBookings = async () => {
-      const geocodedMarkers = [];
-      
-      for (const booking of bookings) {
-        // Skip bookings without delivery address
-        if (!booking.deliveryAddress) continue;
-        
-        const fullAddress = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
-        const position = await geocodeAddress(fullAddress);
+      const markerPromises = bookings.map(async (booking) => {
+        const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+        const position = await geocodeAddress(address);
         
         if (position) {
-          geocodedMarkers.push({ booking, position });
+          return { booking, position };
         }
+        return null;
+      });
+
+      const resolvedMarkers = (await Promise.all(markerPromises)).filter(Boolean) as Array<{ booking: Booking; position: google.maps.LatLngLiteral }>;
+      setMarkers(resolvedMarkers);
+
+      // Calculate center based on markers
+      if (resolvedMarkers.length > 0) {
+        const avgLat = resolvedMarkers.reduce((sum, marker) => sum + marker.position.lat, 0) / resolvedMarkers.length;
+        const avgLng = resolvedMarkers.reduce((sum, marker) => sum + marker.position.lng, 0) / resolvedMarkers.length;
+        setMapCenter({ lat: avgLat, lng: avgLng });
       }
-      
-      setMarkers(geocodedMarkers);
-      
-      // If we have markers, center the map on the first one
-      if (geocodedMarkers.length > 0) {
-        setMapCenter(geocodedMarkers[0].position);
-      }
-      
-      setMapLoaded(true);
     };
 
     geocodeBookings();
-  }, [isLoaded, bookings]);
+  }, [bookings, isLoaded]);
 
-  // Handle map load
-  const onLoad = useCallback((map: google.maps.Map) => {
-    if (markers.length > 0) {
-      // Create bounds to contain all markers
-      const bounds = new google.maps.LatLngBounds();
-      markers.forEach(marker => bounds.extend(marker.position));
-      map.fitBounds(bounds);
+  // Create custom markers when map and markers are ready
+  useEffect(() => {
+    if (map && markers.length > 0) {
+      createCustomMarkers(map, markers);
     }
-  }, [markers]);
+  }, [map, markers, createCustomMarkers]);
 
   if (!isLoaded) {
     return (
       <Card>
-        <CardContent className="flex justify-center items-center h-[500px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading Google Maps...</span>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (mapLoaded && markers.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex justify-center items-center h-[500px]">
-          <p className="text-muted-foreground">No valid delivery addresses found to display</p>
+        <CardHeader>
+          <CardTitle>Delivery Locations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[500px]">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading map...</span>
+          </div>
         </CardContent>
       </Card>
     );
@@ -161,22 +182,6 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
             fullscreenControl: true,
           }}
         >
-          {markers.map((marker, index) => (
-            <Marker
-              key={`${marker.booking.id}-${index}`}
-              position={marker.position}
-              icon={{
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: getStatusColor(marker.booking.status),
-                fillOpacity: 1,
-                strokeWeight: 1,
-                strokeColor: '#FFFFFF',
-                scale: 10,
-              }}
-              onClick={() => setSelectedMarker(marker)}
-            />
-          ))}
-
           {selectedMarker && (
             <InfoWindow
               position={selectedMarker.position}
@@ -198,21 +203,39 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{getDumpsterName(selectedMarker.booking.dumpsterId)}</span>
-                  <Badge 
-                    className="capitalize"
-                    variant={selectedMarker.booking.status === 'scheduled' ? 'default' :
-                      selectedMarker.booking.status === 'delivered' ? 'success' :
-                      selectedMarker.booking.status === 'completed' ? 'secondary' :
-                      'destructive'}
-                  >
+                  <Badge variant={selectedMarker.booking.status === 'confirmed' ? 'default' : 'secondary'}>
                     {selectedMarker.booking.status}
                   </Badge>
+                  <span className="text-sm font-medium">${selectedMarker.booking.totalPrice}</span>
                 </div>
               </div>
             </InfoWindow>
           )}
         </GoogleMap>
+
+        {/* Legend */}
+        <div className="mt-4 flex flex-wrap gap-4 text-sm">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <span>Pending</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <span>Confirmed</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <span>Delivered</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+            <span>Picked Up</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <span>Cancelled</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
