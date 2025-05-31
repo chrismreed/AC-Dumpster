@@ -38,12 +38,8 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
   const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
   const [animatingZones, setAnimatingZones] = useState<number[]>([]);
 
-  // Load the Google Maps JS API
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places'],
-  });
+  // Load the Google Maps JS API from shared provider
+  const { isLoaded } = useGoogleMaps();
 
   // Fetch service zones
   const { data: zones } = useQuery<ServiceZone[]>({

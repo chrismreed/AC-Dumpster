@@ -14,8 +14,8 @@ import {
 import { GeofenceEditor } from "./geofence-editor";
 import {
   GoogleMap,
-  useJsApiLoader,
 } from "@react-google-maps/api";
+import { useGoogleMaps } from "@/providers/google-maps-provider";
 
 // Default map center coordinates (USA center)
 const DEFAULT_CENTER = { lat: 39.8283, lng: -98.5795 };
@@ -40,12 +40,8 @@ export function ZonesMap({ zones, onSaveZone }: ZonesMapProps) {
   const [editingZone, setEditingZone] = useState<ServiceZone | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
-  // Load Google Maps API
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places'],
-  });
+  // Load Google Maps API from shared provider
+  const { isLoaded, loadError } = useGoogleMaps();
   
   // Draw all zone polygons on the map
   const drawZones = () => {
