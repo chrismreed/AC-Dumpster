@@ -191,12 +191,14 @@ export default function BookingsPage() {
   // Get status badge style
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return <Badge className="bg-blue-500">Scheduled</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-500">Pending</Badge>;
+      case 'confirmed':
+        return <Badge className="bg-green-500">Confirmed</Badge>;
       case 'delivered':
-        return <Badge className="bg-green-500">Delivered</Badge>;
-      case 'completed':
-        return <Badge className="bg-purple-500">Completed</Badge>;
+        return <Badge className="bg-blue-500">Delivered</Badge>;
+      case 'picked_up':
+        return <Badge className="bg-purple-500">Picked Up</Badge>;
       case 'cancelled':
         return <Badge className="bg-red-500">Cancelled</Badge>;
       default:
@@ -233,9 +235,10 @@ export default function BookingsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Bookings</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="picked_up">Picked Up</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
@@ -322,9 +325,10 @@ export default function BookingsPage() {
                                   <SelectValue placeholder="Change status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
                                   <SelectItem value="delivered">Delivered</SelectItem>
-                                  <SelectItem value="completed">Completed</SelectItem>
+                                  <SelectItem value="picked_up">Picked Up</SelectItem>
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                               </Select>
