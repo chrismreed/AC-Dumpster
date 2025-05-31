@@ -1,5 +1,8 @@
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { DumpsterPricing } from "@shared/schema";
 
 interface PricingCardProps {
   id: number;
@@ -24,11 +27,33 @@ export function PricingCard({
   onClick,
   isPopular = false
 }: PricingCardProps) {
+  // Fetch pricing options for this dumpster
+  const { data: pricingOptions } = useQuery<DumpsterPricing[]>({
+    queryKey: ["/api/dumpster-pricing", id],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/dumpster-pricing/${id}`);
+      return response.json();
+    },
+  });
+
   // Convert pounds to tons for display
   const weightLimitInTons = weightLimit / 2000;
   
   // Get the dumpster size in yards from the name (e.g., "10 Yard Dumpster" -> "10 Yard")
   const yardSize = name.split(" ")[0] + " Yard";
+
+  // Calculate the minimum price from custom pricing options
+  const getMinPrice = () => {
+    if (pricingOptions && pricingOptions.length > 0) {
+      const minPricing = pricingOptions.reduce((min, current) => 
+        current.price < min.price ? current : min
+      );
+      return minPricing.price;
+    }
+    return basePrice;
+  };
+
+  const minPrice = getMinPrice();
   
   // Determine the best use case based on size
   let bestFor = "Small residential projects";
@@ -69,8 +94,7 @@ export function PricingCard({
         <p className="text-neutral-600 mb-4">{description}</p>
         
         <div className="mb-5">
-          <span className="text-3xl font-bold text-[#2c2c2c]">${(basePrice / 100).toFixed(0)}</span>
-          <div className="text-sm text-neutral-500">7-day rental included</div>
+          <span className="text-3xl font-bold text-[#2c2c2c]">Starting at ${(minPrice / 100).toFixed(0)}</span>
         </div>
         
         <div className="mb-4">
@@ -87,7 +111,7 @@ export function PricingCard({
             </li>
             <li className="flex items-center text-sm">
               <span className="text-green-500 mr-2">✓</span>
-              <span className="text-neutral-600">7-day rental included</span>
+              <span className="text-neutral-600">Multiple rental duration options</span>
             </li>
           </ul>
           
