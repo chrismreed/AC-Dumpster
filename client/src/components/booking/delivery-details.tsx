@@ -113,8 +113,8 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     
     // Generate next 30 days and filter by availability
     const dates: Date[] = [];
-    const endDate = new Date();
-    endDate.setDate(tomorrow.getDate() + 30);
+    const endDate = new Date(tomorrow);
+    endDate.setDate(endDate.getDate() + 30);
     
     console.log('Starting availability calculation...');
     console.log('Tomorrow:', tomorrow);
