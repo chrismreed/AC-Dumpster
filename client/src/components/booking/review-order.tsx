@@ -81,13 +81,22 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
     if (bookingData.dumpsterId && bookingData.rentalDurationId && bookingData.deliveryZipCode) {
       const calculatePriceMutation = async () => {
         try {
+          console.log("Calculating price with data:", {
+            dumpsterId: bookingData.dumpsterId,
+            rentalDurationId: bookingData.rentalDurationId,
+            deliveryZipCode: bookingData.deliveryZipCode,
+            selectedAddOns: bookingData.selectedAddOns || [],
+          });
+          
           const response = await apiRequest("POST", "/api/calculate-price", {
             dumpsterId: bookingData.dumpsterId,
             rentalDurationId: bookingData.rentalDurationId,
             deliveryZipCode: bookingData.deliveryZipCode,
             selectedAddOns: bookingData.selectedAddOns || [],
           });
+          
           const data = await response.json();
+          console.log("Price calculation response:", data);
           setCalculatedPrice(data.totalPrice);
         } catch (error) {
           console.error("Error calculating price:", error);
