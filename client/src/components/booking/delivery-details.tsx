@@ -73,13 +73,13 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     },
   });
 
-  // Calculate minimum delivery date (tomorrow)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
   // Calculate available dates based on dumpster inventory and existing bookings
   useEffect(() => {
     if (!dumpsters) return;
+    
+    // Calculate minimum delivery date (tomorrow)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
     setIsLoadingAvailability(true);
     
@@ -126,7 +126,7 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     }
     setAvailableDates(dates);
     setIsLoadingAvailability(false);
-  }, [dumpsters, bookings, tomorrow]);
+  }, [dumpsters, bookings]);
 
   const handleZipCodeChange = async (zipCode: string) => {
     if (zipCode.length === 5) {
