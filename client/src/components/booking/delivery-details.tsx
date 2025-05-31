@@ -116,12 +116,21 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     const endDate = new Date();
     endDate.setDate(tomorrow.getDate() + 30);
     
+    console.log('Starting availability calculation...');
+    console.log('Tomorrow:', tomorrow);
+    console.log('End date:', endDate);
+    
     for (let d = new Date(tomorrow); d <= endDate; d.setDate(d.getDate() + 1)) {
-      if (isDumpsterAvailable(new Date(d))) {
+      const currentDate = new Date(d);
+      const isAvailable = isDumpsterAvailable(currentDate);
+      console.log(`Checking date ${currentDate.toISOString().split('T')[0]}: ${isAvailable}`);
+      
+      if (isAvailable) {
         dates.push(new Date(d));
       }
     }
     
+    console.log('Final available dates:', dates);
     setAvailableDates(dates);
     setIsLoadingAvailability(false);
   }, [dumpsters, bookings, tomorrow]);
