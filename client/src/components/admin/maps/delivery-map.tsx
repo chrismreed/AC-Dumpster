@@ -3,6 +3,11 @@ import { GoogleMap, InfoWindow } from '@react-google-maps/api';
 import { useGoogleMaps } from '@/providers/google-maps-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Booking, Dumpster } from '@shared/schema';
 
 interface DeliveryMapProps {
@@ -61,6 +66,16 @@ function getMarkerColor(status: string): string {
   }
 }
 
+// Get badge style based on booking status to match legend colors
+function getBadgeStyle(status: string): React.CSSProperties {
+  const color = getMarkerColor(status);
+  return {
+    backgroundColor: color,
+    color: 'white',
+    border: 'none'
+  };
+}
+
 export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const [markers, setMarkers] = useState<Array<{ booking: Booking; position: google.maps.LatLngLiteral }>>([]);
   const [selectedMarker, setSelectedMarker] = useState<{ booking: Booking; position: google.maps.LatLngLiteral } | null>(null);
@@ -69,6 +84,41 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const customMarkersRef = useRef<google.maps.Marker[]>([]);
 
   const { isLoaded } = useGoogleMaps();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Mutation to update booking status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
+      return await apiRequest('PATCH', `/api/bookings/${bookingId}`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      toast({
+        title: "Status Updated",
+        description: "Booking status has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update booking status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleStatusChange = (bookingId: number, newStatus: string) => {
+    updateStatusMutation.mutate({ bookingId, status: newStatus });
+    
+    // Update the selected marker to reflect the new status immediately
+    if (selectedMarker && selectedMarker.booking.id === bookingId) {
+      setSelectedMarker({
+        ...selectedMarker,
+        booking: { ...selectedMarker.booking, status: newStatus }
+      });
+    }
+  };
 
   // Load map
   const onLoad = useCallback((mapInstance: google.maps.Map) => {
@@ -205,12 +255,12 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
               position={selectedMarker.position}
               onCloseClick={() => setSelectedMarker(null)}
             >
-              <div className="p-2 max-w-[300px]">
-                <h3 className="font-bold text-lg mb-1">{selectedMarker.booking.customerName}</h3>
-                <p className="text-gray-700 mb-1">
+              <div className="p-3 max-w-[350px]">
+                <h3 className="font-bold text-lg mb-2">{selectedMarker.booking.customerName}</h3>
+                <p className="text-gray-700 mb-2">
                   {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryZipCode}
                 </p>
-                <div className="grid grid-cols-2 gap-1 mb-2">
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   <div>
                     <span className="text-xs text-gray-500">Delivery Date</span>
                     <p className="text-sm">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
@@ -220,11 +270,34 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                     <p className="text-sm">{formatDate(selectedMarker.booking.createdAt.toString())}</p>
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <Badge variant={selectedMarker.booking.status === 'confirmed' ? 'default' : 'secondary'}>
-                    {selectedMarker.booking.status}
-                  </Badge>
-                  <span className="text-sm font-medium">${selectedMarker.booking.totalPrice}</span>
+                
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge style={getBadgeStyle(selectedMarker.booking.status)}>
+                      {selectedMarker.booking.status}
+                    </Badge>
+                    <span className="text-sm font-medium">${selectedMarker.booking.totalPrice}</span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500">Update Status:</label>
+                    <Select 
+                      value={selectedMarker.booking.status} 
+                      onValueChange={(value) => handleStatusChange(selectedMarker.booking.id, value)}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="picked_up">Picked Up</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </InfoWindow>
