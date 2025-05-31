@@ -81,23 +81,23 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
     console.log("BookingData received:", bookingData);
     console.log("Missing fields check:", {
       dumpsterId: bookingData.dumpsterId,
-      rentalDurationId: bookingData.rentalDurationId,
+      pricingId: bookingData.pricingId,
       deliveryZipCode: bookingData.deliveryZipCode
     });
     
-    if (bookingData.dumpsterId && bookingData.rentalDurationId && bookingData.deliveryZipCode) {
+    if (bookingData.dumpsterId && bookingData.pricingId && bookingData.deliveryZipCode) {
       const calculatePriceMutation = async () => {
         try {
           console.log("Calculating price with data:", {
             dumpsterId: bookingData.dumpsterId,
-            rentalDurationId: bookingData.rentalDurationId,
+            pricingId: bookingData.pricingId,
             deliveryZipCode: bookingData.deliveryZipCode,
             selectedAddOns: bookingData.selectedAddOns || [],
           });
           
           const response = await apiRequest("POST", "/api/calculate-price", {
             dumpsterId: bookingData.dumpsterId,
-            rentalDurationId: bookingData.rentalDurationId,
+            pricingId: bookingData.pricingId,
             deliveryZipCode: bookingData.deliveryZipCode,
             selectedAddOns: bookingData.selectedAddOns || [],
           });

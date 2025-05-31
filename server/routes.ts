@@ -530,13 +530,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { 
         dumpsterId, 
         rentalDurationId, 
+        pricingId,
         deliveryZipCode, 
         deliveryAddress, 
         deliveryCity, 
         selectedAddOns 
       } = req.body;
       
-      if (!dumpsterId || !rentalDurationId || !deliveryZipCode) {
+      if (!dumpsterId || (!rentalDurationId && !pricingId) || !deliveryZipCode) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
@@ -546,10 +547,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Dumpster not found" });
       }
 
-      // Get rental duration
-      const duration = await storage.getRentalDuration(Number(rentalDurationId));
-      if (!duration) {
-        return res.status(404).json({ message: "Rental duration not found" });
+      let duration;
+      if (pricingId) {
+        // Get rental duration from dumpster pricing
+        const pricingOptions = await storage.getDumpsterPricing(Number(dumpsterId));
+        const selectedPricing = pricingOptions.find(p => p.id === Number(pricingId));
+        if (!selectedPricing) {
+          return res.status(404).json({ message: "Pricing option not found" });
+        }
+        // Create a duration object with the pricing data
+        duration = {
+          id: selectedPricing.id,
+          days: selectedPricing.days,
+          additionalPrice: selectedPricing.price
+        };
+      } else {
+        // Get rental duration directly
+        duration = await storage.getRentalDuration(Number(rentalDurationId));
+        if (!duration) {
+          return res.status(404).json({ message: "Rental duration not found" });
+        }
       }
 
       // Get service zone
