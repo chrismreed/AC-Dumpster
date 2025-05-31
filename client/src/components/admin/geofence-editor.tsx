@@ -6,10 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Trash } from "lucide-react";
 import {
   GoogleMap,
-  useJsApiLoader,
   DrawingManager,
   Polygon
 } from "@react-google-maps/api";
+import { useGoogleMaps } from "@/providers/google-maps-provider";
 
 // Default map center coordinates (USA center)
 const DEFAULT_CENTER = { lat: 39.8283, lng: -98.5795 };
@@ -54,12 +54,8 @@ export function GeofenceEditor({
   const [polygonPath, setPolygonPath] = useState<string | null>(zone?.polygonPath || null);
   const [zoom, setZoom] = useState(zone?.centerLat && zone?.centerLng ? 10 : DEFAULT_ZOOM);
   
-  // Load Google Maps API using the hook
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places'],
-  });
+  // Load Google Maps API using the shared provider
+  const { isLoaded, loadError } = useGoogleMaps();
   
   // Initialize map
   const onMapLoad = (map: google.maps.Map) => {

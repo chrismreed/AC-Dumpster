@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Circle, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, Circle, Marker, InfoWindow } from '@react-google-maps/api';
+import { useGoogleMaps } from '@/providers/google-maps-provider';
 import { useQuery } from '@tanstack/react-query';
 import { ServiceZone } from '@shared/schema';
 import { Card, CardContent } from '@/components/ui/card';
