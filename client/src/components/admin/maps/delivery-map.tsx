@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { GoogleMap, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, InfoWindow } from '@react-google-maps/api';
+import { useGoogleMaps } from '@/providers/google-maps-provider';
 import { Booking, Dumpster } from '@shared/schema';
 import { formatDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,11 +71,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [customMarkers, setCustomMarkers] = useState<any[]>([]);
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places'],
-  });
+  const { isLoaded } = useGoogleMaps();
 
   // Function to create custom markers on the map
   const createCustomMarkers = useCallback((map: google.maps.Map, markers: Array<{ booking: Booking; position: google.maps.LatLngLiteral }>) => {
