@@ -67,6 +67,10 @@ export function DumpsterPricingManager({ dumpsterId, dumpsterName }: DumpsterPri
   // Fetch pricing for this dumpster
   const { data: pricing, isLoading } = useQuery<DumpsterPricing[]>({
     queryKey: ["/api/dumpster-pricing", dumpsterId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/dumpster-pricing/${dumpsterId}`);
+      return response.json();
+    },
   });
 
   // Create form for adding new pricing
