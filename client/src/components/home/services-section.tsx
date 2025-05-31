@@ -72,12 +72,7 @@ export function ServicesSection() {
                       </div>
                       <p className="text-[#111827]">{dumpster.description}</p>
                     </div>
-                    <div className="flex items-start">
-                      <div className="bg-[#facc15]/10 p-1 rounded-full mr-3 mt-0.5 flex-shrink-0">
-                        <CheckIcon className="h-4 w-4 text-[#facc15]" />
-                      </div>
-                      <p className="text-[#111827]">Available: {dumpster.availability} units</p>
-                    </div>
+
                   </div>
                   <Button 
                     className={`w-full ${index === 1 ? 'bg-[#facc15] hover:bg-[#eab308] text-[#111827] font-bold' : 'bg-[#0f172a] hover:bg-[#0f172a]/90 text-[#ffffff]'} py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300`} 

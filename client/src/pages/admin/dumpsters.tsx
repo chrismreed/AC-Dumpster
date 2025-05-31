@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
-import { Dumpster, InsertDumpster, insertDumpsterSchema } from "@shared/schema";
+import { Dumpster, InsertDumpster, insertDumpsterSchema, Booking } from "@shared/schema";
 import { Loader2, Plus, Edit, Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,6 +57,19 @@ export default function DumpstersPage() {
   const { data: dumpsters, isLoading } = useQuery<Dumpster[]>({
     queryKey: ["/api/dumpsters"],
   });
+
+  // Fetch bookings to calculate deployed units
+  const { data: bookings } = useQuery<Booking[]>({
+    queryKey: ["/api/bookings"],
+  });
+
+  // Calculate deployed units for each dumpster
+  const getDeployedCount = (dumpsterId: number) => {
+    if (!bookings) return 0;
+    return bookings.filter(booking => 
+      booking.dumpsterId === dumpsterId && booking.status === 'delivered'
+    ).length;
+  };
 
   // Create form for adding new dumpster
   const addForm = useForm<InsertDumpster>({
@@ -502,8 +515,8 @@ export default function DumpstersPage() {
                       <p className="text-lg font-bold">{dumpster.weightLimit / 2000} tons</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Available</p>
-                      <p className="text-lg font-bold">{dumpster.availability} units</p>
+                      <p className="text-sm font-medium">Deployed</p>
+                      <p className="text-lg font-bold">{getDeployedCount(dumpster.id)} units</p>
                     </div>
                   </div>
                   <div className="flex space-x-2 pt-4">
