@@ -59,6 +59,15 @@ export const rentalDurations = pgTable("rental_durations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Dumpster pricing tiers (custom pricing per dumpster per duration)
+export const dumpsterPricing = pgTable("dumpster_pricing", {
+  id: serial("id").primaryKey(),
+  dumpsterId: integer("dumpster_id").notNull(),
+  days: integer("days").notNull(),
+  price: integer("price").notNull(), // In cents, total price for this duration
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Customer bookings
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
@@ -112,6 +121,11 @@ export const insertRentalDurationSchema = createInsertSchema(rentalDurations).om
   createdAt: true,
 });
 
+export const insertDumpsterPricingSchema = createInsertSchema(dumpsterPricing).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertBookingSchema = createInsertSchema(bookings)
   .omit({
     id: true,
@@ -146,6 +160,9 @@ export type InsertServiceZone = z.infer<typeof insertServiceZoneSchema>;
 
 export type RentalDuration = typeof rentalDurations.$inferSelect;
 export type InsertRentalDuration = z.infer<typeof insertRentalDurationSchema>;
+
+export type DumpsterPricing = typeof dumpsterPricing.$inferSelect;
+export type InsertDumpsterPricing = z.infer<typeof insertDumpsterPricingSchema>;
 
 export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;

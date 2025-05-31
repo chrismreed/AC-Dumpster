@@ -16,7 +16,10 @@ import {
   type InsertRentalDuration,
   bookings,
   type Booking,
-  type InsertBooking
+  type InsertBooking,
+  dumpsterPricing,
+  type DumpsterPricing,
+  type InsertDumpsterPricing
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
