@@ -188,22 +188,28 @@ export default function BookingsPage() {
     });
   };
 
-  // Get status badge style
-  const getStatusBadge = (status: string) => {
+  // Get badge style based on booking status to match map colors
+  const getBadgeStyle = (status: string): React.CSSProperties => {
     switch (status) {
       case 'pending':
-        return <Badge className="bg-yellow-500">Pending</Badge>;
+        return { backgroundColor: '#f59e0b', color: 'white', border: 'none' };
       case 'confirmed':
-        return <Badge className="bg-green-500">Confirmed</Badge>;
+        return { backgroundColor: '#10b981', color: 'white', border: 'none' };
       case 'delivered':
-        return <Badge className="bg-blue-500">Delivered</Badge>;
+        return { backgroundColor: '#3b82f6', color: 'white', border: 'none' };
       case 'picked_up':
-        return <Badge className="bg-purple-500">Picked Up</Badge>;
+        return { backgroundColor: '#8b5cf6', color: 'white', border: 'none' };
       case 'cancelled':
-        return <Badge className="bg-red-500">Cancelled</Badge>;
+        return { backgroundColor: '#ef4444', color: 'white', border: 'none' };
       default:
-        return <Badge>{status}</Badge>;
+        return { backgroundColor: '#6b7280', color: 'white', border: 'none' };
     }
+  };
+
+  // Get status badge with matching colors
+  const getStatusBadge = (status: string) => {
+    const displayText = status === 'picked_up' ? 'Picked Up' : status.charAt(0).toUpperCase() + status.slice(1);
+    return <Badge style={getBadgeStyle(status)}>{displayText}</Badge>;
   };
 
   if (isLoadingBookings) {

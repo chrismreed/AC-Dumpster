@@ -379,6 +379,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update booking" });
     }
   });
+
+  app.patch("/api/bookings/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const booking = await storage.getBooking(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      const validatedData = insertBookingSchema.partial().parse(req.body);
+      const updatedBooking = await storage.updateBooking(id, validatedData);
+      res.json(updatedBooking);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid booking data", errors: err.errors });
+      }
+      console.error("Error updating booking:", err);
+      res.status(500).json({ message: "Failed to update booking" });
+    }
+  });
   
   // Endpoint to update booking payment status for customer checkout
   app.patch("/api/bookings/:id/payment-status", async (req, res) => {
