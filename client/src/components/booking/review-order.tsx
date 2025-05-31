@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Dumpster, AddOn, ServiceZone, RentalDuration } from "@shared/schema";
+import { Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -104,7 +104,8 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
           
           const data = await response.json();
           console.log("Price calculation response:", data);
-          setCalculatedPrice(data.totalPrice);
+          // Convert from cents to dollars
+          setCalculatedPrice(data.totalPrice / 100);
         } catch (error) {
           console.error("Error calculating price:", error);
           toast({
@@ -265,7 +266,14 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
 
   // Get display data
   const selectedDumpster = dumpsters?.find(d => d.id === bookingData.dumpsterId);
-  const selectedDuration = durations?.find(d => d.id === bookingData.rentalDurationId);
+  
+  // Get rental duration from pricing data instead of duration table
+  const { data: pricingOptions } = useQuery<DumpsterPricing[]>({
+    queryKey: ["/api/dumpster-pricing", bookingData.dumpsterId],
+    enabled: !!bookingData.dumpsterId,
+  });
+  const selectedPricing = pricingOptions?.find(p => p.id === bookingData.pricingId);
+  
   const selectedZone = zones?.find(z => 
     z.zipCodes.split(',').includes(bookingData.deliveryZipCode)
   );
@@ -334,18 +342,18 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
               <div className="flex justify-between pb-3 border-b border-neutral-200">
                 <div>
                   <p className="font-medium">{selectedDumpster?.name || "Selected Dumpster"}</p>
-                  <p className="text-sm text-neutral-600">{selectedDuration?.days || 0} Days Rental</p>
+                  <p className="text-sm text-neutral-600">{selectedPricing?.days || 0} Days Rental</p>
                 </div>
                 <span className="font-medium">${((selectedDumpster?.basePrice || 0) / 100).toFixed(2)}</span>
               </div>
               
-              {selectedDuration && selectedDuration.additionalPrice > 0 && (
+              {selectedPricing && selectedPricing.price > 0 && (
                 <div className="flex justify-between pb-3 border-b border-neutral-200">
                   <div>
                     <p className="font-medium">Duration Extension</p>
-                    <p className="text-sm text-neutral-600">+${(selectedDuration.additionalPrice / 100).toFixed(2)}</p>
+                    <p className="text-sm text-neutral-600">+${(selectedPricing.price / 100).toFixed(2)}</p>
                   </div>
-                  <span className="font-medium">${(selectedDuration.additionalPrice / 100).toFixed(2)}</span>
+                  <span className="font-medium">${(selectedPricing.price / 100).toFixed(2)}</span>
                 </div>
               )}
               
