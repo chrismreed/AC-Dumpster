@@ -56,8 +56,9 @@ export function GeofenceEditor({
   
   // Load Google Maps API using the hook
   const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-    libraries: ["drawing"],
+    libraries: ['places', 'drawing'],
   });
   
   // Initialize map

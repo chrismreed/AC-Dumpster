@@ -68,10 +68,11 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(defaultCenter);
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Load Google Maps API
+  // Load Google Maps API with consistent options
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
+    libraries: ['places'], // Add libraries consistently
   });
 
   // Function to get dumpster name by ID
