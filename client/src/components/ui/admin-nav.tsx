@@ -38,18 +38,8 @@ export function AdminNav() {
     },
     {
       title: "Service Zones",
-      href: "/admin/zones",
-      icon: <MapPin className="mr-2 h-4 w-4" />
-    },
-    {
-      title: "Zone Map",
-      href: "/admin/zones-map",
-      icon: <Globe className="mr-2 h-4 w-4" />
-    },
-    {
-      title: "New Zones Layout",
       href: "/admin/zones-new",
-      icon: <Settings className="mr-2 h-4 w-4" />
+      icon: <MapPin className="mr-2 h-4 w-4" />
     },
     {
       title: "Bookings",

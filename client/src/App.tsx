@@ -13,9 +13,7 @@ import { Footer } from "@/components/layout/footer";
 import DashboardPage from "@/pages/admin/dashboard";
 import DumpstersPage from "@/pages/admin/dumpsters";
 import AddOnsPage from "@/pages/admin/add-ons";
-import ZonesPage from "@/pages/admin/zones";
-import ZonesMapPage from "@/pages/admin/zones-map";
-import ZonesNewLayoutPage from "@/pages/admin/zones-new-layout";
+import ServiceZonesPage from "@/pages/admin/zones-new-layout";
 import BookingsPage from "@/pages/admin/bookings";
 
 import PaymentSettingsPage from "@/pages/admin/payment-settings";
@@ -32,9 +30,7 @@ function Router() {
       <ProtectedRoute path="/admin/dashboard" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dumpsters" component={DumpstersPage} adminOnly />
       <ProtectedRoute path="/admin/add-ons" component={AddOnsPage} adminOnly />
-      <ProtectedRoute path="/admin/zones" component={ZonesPage} adminOnly />
-      <ProtectedRoute path="/admin/zones-map" component={ZonesMapPage} adminOnly />
-      <ProtectedRoute path="/admin/zones-new" component={ZonesNewLayoutPage} adminOnly />
+      <ProtectedRoute path="/admin/zones-new" component={ServiceZonesPage} adminOnly />
       <ProtectedRoute path="/admin/bookings" component={BookingsPage} adminOnly />
 
       <ProtectedRoute path="/admin/payment-settings" component={PaymentSettingsPage} adminOnly />
