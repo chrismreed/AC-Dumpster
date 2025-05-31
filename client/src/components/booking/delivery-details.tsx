@@ -79,7 +79,7 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
   
   // Calculate available dates based on dumpster inventory and existing bookings
   useEffect(() => {
-    if (!dumpsters || !bookings) return;
+    if (!dumpsters) return;
     
     setIsLoadingAvailability(true);
     
@@ -87,34 +87,27 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     const isDumpsterAvailable = (date: Date) => {
       const dateStr = date.toISOString().split('T')[0];
       
-      // Debug the dumpsters data
-      console.log('Dumpsters data:', dumpsters);
-      console.log('Bookings data:', bookings);
+      // If we don't have dumpsters data yet, don't show as available
+      if (!Array.isArray(dumpsters) || dumpsters.length === 0) {
+        return false;
+      }
       
-      // Count total dumpsters - use the availability field or default to 1 per dumpster type
-      const totalDumpsters = Array.isArray(dumpsters) && dumpsters.length > 0
-        ? dumpsters.reduce((total: number, dumpster: Dumpster) => {
-            const availability = dumpster.availability && dumpster.availability > 0 ? dumpster.availability : 1;
-            console.log(`Dumpster ${dumpster.name}: availability=${dumpster.availability}, using=${availability}`);
-            return total + availability;
-          }, 0)
-        : 0;
+      // Count total dumpsters across all types
+      const totalDumpsters = dumpsters.reduce((total: number, dumpster: Dumpster) => {
+        const availability = dumpster.availability || 1;
+        return total + availability;
+      }, 0);
       
       // Count booked dumpsters for this date
       const bookedOnDate = Array.isArray(bookings) 
         ? bookings.filter((booking: any) => {
-            // The new endpoint already filters to active bookings only
             if (!booking.deliveryDate) return false;
-            
             const bookingDate = new Date(booking.deliveryDate).toISOString().split('T')[0];
             return bookingDate === dateStr;
           }).length
         : 0;
       
-      // For debugging
-      console.log(`Date ${dateStr}: Total=${totalDumpsters}, Booked=${bookedOnDate}, Available=${totalDumpsters > bookedOnDate}`);
-      
-      // Return true if there are dumpsters available
+      // Return true if there are available dumpsters
       return totalDumpsters > bookedOnDate;
     };
     
