@@ -1,55 +1,52 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GoogleMap, InfoWindow } from '@react-google-maps/api';
 import { useGoogleMaps } from '@/providers/google-maps-provider';
-import { Booking, Dumpster } from '@shared/schema';
-import { formatDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Booking, Dumpster } from '@shared/schema';
 
 interface DeliveryMapProps {
   bookings: Booking[];
   dumpsters: Dumpster[];
 }
 
-// Default map center (will be adjusted based on markers)
-const defaultCenter = {
-  lat: 39.8283, // Middle of USA as fallback
-  lng: -98.5795,
-};
-
-// Map container style
 const containerStyle = {
   width: '100%',
-  height: '500px',
-  borderRadius: '0.5rem',
+  height: '500px'
 };
 
-// Geocode address to get coordinates
+const defaultCenter = {
+  lat: 39.1200,
+  lng: -88.5434
+};
+
+// Geocoding function
 async function geocodeAddress(address: string): Promise<google.maps.LatLngLiteral | null> {
-  if (!address) return null;
-  
-  try {
+  return new Promise((resolve) => {
     const geocoder = new google.maps.Geocoder();
-    const result = await geocoder.geocode({ address });
-    
-    if (result.results && result.results.length > 0) {
-      const location = result.results[0].geometry.location;
-      return {
-        lat: location.lat(),
-        lng: location.lng(),
-      };
-    }
-  } catch (error) {
-    console.error('Geocoding error:', error);
-  }
-  
-  return null;
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const location = results[0].geometry.location;
+        resolve({
+          lat: location.lat(),
+          lng: location.lng()
+        });
+      } else {
+        console.warn(`Geocoding failed for address: ${address}`, status);
+        resolve(null);
+      }
+    });
+  });
 }
 
-// Get status color for markers
-function getStatusColor(status: string): string {
-  switch (status.toLowerCase()) {
+// Format date for display
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString();
+}
+
+// Get marker color based on booking status
+function getMarkerColor(status: string): string {
+  switch (status) {
     case 'confirmed':
       return '#10b981'; // green
     case 'delivered':
@@ -69,93 +66,117 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const [selectedMarker, setSelectedMarker] = useState<{ booking: Booking; position: google.maps.LatLngLiteral } | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [customMarkers, setCustomMarkers] = useState<any[]>([]);
+  const customMarkersRef = useRef<google.maps.Marker[]>([]);
 
   const { isLoaded } = useGoogleMaps();
 
-  // Function to create custom markers on the map
-  const createCustomMarkers = useCallback((map: google.maps.Map, markers: Array<{ booking: Booking; position: google.maps.LatLngLiteral }>) => {
-    // Clear existing markers
-    customMarkers.forEach(marker => {
-      if (marker.setMap) marker.setMap(null);
-    });
-
-    const newMarkers = markers.map(({ booking, position }) => {
-      // Create a simple circle marker using a Circle overlay
-      const marker = new google.maps.Circle({
-        strokeColor: '#FFFFFF',
-        strokeOpacity: 1,
-        strokeWeight: 2,
-        fillColor: getStatusColor(booking.status),
-        fillOpacity: 1,
-        map,
-        center: position,
-        radius: 100, // Small radius for marker appearance
-        clickable: true,
-      });
-
-      // Add click listener
-      marker.addListener('click', () => {
-        setSelectedMarker({ booking, position });
-      });
-
-      return marker;
-    });
-
-    setCustomMarkers(newMarkers);
-  }, [customMarkers]);
-
-  // Load map and set up markers
-  const onLoad = useCallback((map: google.maps.Map) => {
-    setMap(map);
+  // Load map
+  const onLoad = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
   }, []);
 
   // Geocode addresses and create markers
   useEffect(() => {
-    if (!isLoaded || !bookings.length) return;
+    if (!isLoaded || !bookings.length) {
+      setMarkers([]);
+      return;
+    }
+
+    let isCancelled = false;
 
     const geocodeBookings = async () => {
-      const markerPromises = bookings.map(async (booking) => {
-        const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
-        const position = await geocodeAddress(address);
+      try {
+        const markerPromises = bookings.map(async (booking) => {
+          const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+          const position = await geocodeAddress(address);
+          
+          if (position) {
+            return { booking, position };
+          }
+          return null;
+        });
+
+        const resolvedMarkers = (await Promise.all(markerPromises)).filter(Boolean) as Array<{ booking: Booking; position: google.maps.LatLngLiteral }>;
         
-        if (position) {
-          return { booking, position };
+        if (!isCancelled) {
+          setMarkers(resolvedMarkers);
+
+          // Update map center to show all markers
+          if (resolvedMarkers.length > 0) {
+            const bounds = new google.maps.LatLngBounds();
+            resolvedMarkers.forEach(({ position }) => bounds.extend(position));
+            
+            // Calculate center from bounds
+            const center = bounds.getCenter();
+            if (center) {
+              setMapCenter({ lat: center.lat(), lng: center.lng() });
+            }
+          }
         }
-        return null;
-      });
-
-      const resolvedMarkers = (await Promise.all(markerPromises)).filter(Boolean) as Array<{ booking: Booking; position: google.maps.LatLngLiteral }>;
-      setMarkers(resolvedMarkers);
-
-      // Calculate center based on markers
-      if (resolvedMarkers.length > 0) {
-        const avgLat = resolvedMarkers.reduce((sum, marker) => sum + marker.position.lat, 0) / resolvedMarkers.length;
-        const avgLng = resolvedMarkers.reduce((sum, marker) => sum + marker.position.lng, 0) / resolvedMarkers.length;
-        setMapCenter({ lat: avgLat, lng: avgLng });
+      } catch (error) {
+        console.error('Error geocoding bookings:', error);
       }
     };
 
     geocodeBookings();
-  }, [bookings, isLoaded]);
 
-  // Create custom markers when map and markers are ready
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoaded, bookings]);
+
+  // Update custom markers when map loads and markers are available
   useEffect(() => {
     if (map && markers.length > 0) {
-      createCustomMarkers(map, markers);
+      // Clear existing markers first
+      customMarkersRef.current.forEach(marker => {
+        marker.setMap(null);
+      });
+      customMarkersRef.current = [];
+
+      const newMarkers = markers.map(({ booking, position }) => {
+        const marker = new google.maps.Marker({
+          position,
+          map,
+          title: `${booking.customerName} - ${booking.deliveryAddress}`,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: getMarkerColor(booking.status),
+            fillOpacity: 0.8,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+          }
+        });
+
+        marker.addListener('click', () => {
+          setSelectedMarker({ booking, position });
+        });
+
+        return marker;
+      });
+
+      customMarkersRef.current = newMarkers;
     }
-  }, [map, markers, createCustomMarkers]);
+  }, [map, markers]);
+
+  // Cleanup markers on unmount
+  useEffect(() => {
+    return () => {
+      customMarkersRef.current.forEach(marker => {
+        marker.setMap(null);
+      });
+      customMarkersRef.current = [];
+    };
+  }, []);
 
   if (!isLoaded) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Delivery Locations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[500px]">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading map...</span>
+        <CardContent className="flex items-center justify-center h-[500px]">
+          <div className="text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p>Loading map...</p>
           </div>
         </CardContent>
       </Card>
@@ -192,11 +213,11 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                 <div className="grid grid-cols-2 gap-1 mb-2">
                   <div>
                     <span className="text-xs text-gray-500">Delivery Date</span>
-                    <p className="text-sm">{formatDate(selectedMarker.booking.deliveryDate)}</p>
+                    <p className="text-sm">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500">Created At</span>
-                    <p className="text-sm">{formatDate(selectedMarker.booking.createdAt)}</p>
+                    <p className="text-sm">{formatDate(selectedMarker.booking.createdAt.toString())}</p>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
