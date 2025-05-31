@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
 import { Dumpster, InsertDumpster, insertDumpsterSchema, Booking } from "@shared/schema";
+import { DumpsterPricingManager } from "@/components/admin/dumpster-pricing-manager";
 import { Loader2, Plus, Edit, Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -554,6 +555,12 @@ export default function DumpstersPage() {
                   </div>
                 </div>
               </CardContent>
+              <div className="px-6 pb-6">
+                <DumpsterPricingManager 
+                  dumpsterId={dumpster.id} 
+                  dumpsterName={dumpster.name}
+                />
+              </div>
             </Card>
           ))}
         </div>

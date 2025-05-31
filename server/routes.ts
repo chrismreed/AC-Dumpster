@@ -9,7 +9,8 @@ import {
   insertAddOnSchema, 
   insertServiceZoneSchema,
   insertRentalDurationSchema,
-  insertBookingSchema 
+  insertBookingSchema,
+  insertDumpsterPricingSchema 
 } from "@shared/schema";
 
 // Check for Stripe secret key

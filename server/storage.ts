@@ -70,6 +70,12 @@ export interface IStorage {
   updateBookingPaymentStatus(id: number, paymentStatus: string, stripePaymentIntentId?: string): Promise<Booking | undefined>;
   deleteBooking(id: number): Promise<boolean>;
 
+  // Dumpster pricing methods
+  getDumpsterPricing(dumpsterId: number): Promise<DumpsterPricing[]>;
+  createDumpsterPricing(pricing: InsertDumpsterPricing): Promise<DumpsterPricing>;
+  updateDumpsterPricing(id: number, pricing: Partial<InsertDumpsterPricing>): Promise<DumpsterPricing | undefined>;
+  deleteDumpsterPricing(id: number): Promise<boolean>;
+
   // Session store
   sessionStore: session.SessionStore;
 }
