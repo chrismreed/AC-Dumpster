@@ -11,6 +11,7 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, isLoading } = useAuth();
 
+  // Always render a consistent component structure to avoid hook order issues
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
