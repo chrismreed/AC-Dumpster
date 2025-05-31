@@ -56,11 +56,7 @@ export function AdminNav() {
       href: "/admin/bookings",
       icon: <Calendar className="mr-2 h-4 w-4" />
     },
-    {
-      title: "Delivery Map",
-      href: "/admin/delivery-map",
-      icon: <Map className="mr-2 h-4 w-4" />
-    },
+
     {
       title: "Payment Settings",
       href: "/admin/payment-settings",
