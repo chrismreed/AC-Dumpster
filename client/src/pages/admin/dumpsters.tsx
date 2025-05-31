@@ -516,7 +516,7 @@ export default function DumpstersPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">Deployed</p>
-                      <p className="text-lg font-bold">{getDeployedCount(dumpster.id)} units</p>
+                      <p className="text-lg font-bold">{getDeployedCount(dumpster.id)}/{dumpster.availability} units</p>
                     </div>
                   </div>
                   <div className="flex space-x-2 pt-4">
