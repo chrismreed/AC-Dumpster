@@ -471,6 +471,10 @@ export class MemStorage implements IStorage {
     this.bookingsData.set(id, updatedBooking);
     return updatedBooking;
   }
+
+  async deleteBooking(id: number): Promise<boolean> {
+    return this.bookingsData.delete(id);
+  }
 }
 
 // Database storage implementation
@@ -761,6 +765,11 @@ export class DatabaseStorage implements IStorage {
     }
     
     return this.updateBooking(id, updates);
+  }
+
+  async deleteBooking(id: number): Promise<boolean> {
+    const result = await db.delete(bookings).where(eq(bookings.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 }
 
