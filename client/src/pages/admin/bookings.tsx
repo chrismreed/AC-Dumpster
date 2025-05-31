@@ -37,6 +37,7 @@ import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List,
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { BookingCalendar } from "@/components/admin/booking-calendar";
 import { DeliveryMap } from "@/components/admin/maps/delivery-map";
 
@@ -603,6 +604,42 @@ export default function BookingsPage() {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Multiple Bookings</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete {selectedBookings.size} booking{selectedBookings.size !== 1 ? 's' : ''}?
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                This will permanently remove the selected bookings from the system.
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsBulkDeleteDialogOpen(false)}
+                disabled={bulkDeleteMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={confirmBulkDelete}
+                disabled={bulkDeleteMutation.isPending}
+              >
+                {bulkDeleteMutation.isPending ? "Deleting..." : `Delete ${selectedBookings.size} Booking${selectedBookings.size !== 1 ? 's' : ''}`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Tabs defaultValue="list" className="w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
