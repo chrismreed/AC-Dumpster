@@ -38,6 +38,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { BookingCalendar } from "@/components/admin/booking-calendar";
+import { DeliveryMap } from "@/components/admin/maps/delivery-map";
 
 export default function BookingsPage() {
   const { toast } = useToast();
@@ -435,6 +436,10 @@ export default function BookingsPage() {
                 <Calendar className="mr-2 h-4 w-4" />
                 Calendar View
               </TabsTrigger>
+              <TabsTrigger value="map" className="flex items-center">
+                <MapPin className="mr-2 h-4 w-4" />
+                Delivery Map
+              </TabsTrigger>
             </TabsList>
             
             <div className="flex items-center gap-2">
@@ -573,6 +578,10 @@ export default function BookingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="map" className="mt-6">
+            <DeliveryMap bookings={sortedAndFilteredBookings} dumpsters={dumpsters || []} />
           </TabsContent>
         </Tabs>
       </div>
