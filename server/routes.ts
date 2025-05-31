@@ -383,6 +383,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public availability endpoint for booking form
+  app.get("/api/availability", async (_req, res) => {
+    try {
+      const bookings = await storage.listBookings();
+      // Only return active bookings (not cancelled or completed) with minimal data needed for availability
+      const activeBookings = bookings
+        .filter(booking => booking.status !== 'cancelled' && booking.status !== 'completed')
+        .map(booking => ({
+          deliveryDate: booking.deliveryDate,
+          dumpsterId: booking.dumpsterId
+        }));
+      res.json(activeBookings);
+    } catch (err) {
+      console.error("Error fetching availability:", err);
+      res.status(500).json({ message: "Failed to fetch availability" });
+    }
+  });
+
   app.get("/api/bookings/:id", async (req, res) => {
     try {
       const bookingId = Number(req.params.id);

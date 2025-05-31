@@ -54,9 +54,9 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     queryKey: ["/api/dumpsters"],
   });
 
-  // Fetch existing bookings to determine availability
+  // Fetch existing bookings to determine availability (public endpoint)
   const { data: bookings, isLoading: isLoadingBookings } = useQuery({
-    queryKey: ["/api/bookings"],
+    queryKey: ["/api/availability"],
   });
 
   // Initialize form
@@ -102,10 +102,8 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
       
       // Count booked dumpsters for this date
       const bookedOnDate = Array.isArray(bookings) 
-        ? bookings.filter((booking: Booking) => {
-            if (booking.status === 'cancelled' || booking.status === 'completed') return false;
-            
-            // Only count active bookings
+        ? bookings.filter((booking: any) => {
+            // The new endpoint already filters to active bookings only
             if (!booking.deliveryDate) return false;
             
             const bookingDate = new Date(booking.deliveryDate).toISOString().split('T')[0];
