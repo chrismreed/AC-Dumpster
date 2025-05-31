@@ -87,10 +87,17 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     const isDumpsterAvailable = (date: Date) => {
       const dateStr = date.toISOString().split('T')[0];
       
+      // Debug the dumpsters data
+      console.log('Dumpsters data:', dumpsters);
+      console.log('Bookings data:', bookings);
+      
       // Count total dumpsters - use the availability field or default to 1 per dumpster type
       const totalDumpsters = Array.isArray(dumpsters) && dumpsters.length > 0
-        ? dumpsters.reduce((total: number, dumpster: Dumpster) => 
-            total + (dumpster.availability && dumpster.availability > 0 ? dumpster.availability : 1), 0)
+        ? dumpsters.reduce((total: number, dumpster: Dumpster) => {
+            const availability = dumpster.availability && dumpster.availability > 0 ? dumpster.availability : 1;
+            console.log(`Dumpster ${dumpster.name}: availability=${dumpster.availability}, using=${availability}`);
+            return total + availability;
+          }, 0)
         : 0;
       
       // Count booked dumpsters for this date
