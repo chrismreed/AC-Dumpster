@@ -399,6 +399,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update booking" });
     }
   });
+
+  app.delete("/api/bookings/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const booking = await storage.getBooking(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // For now, we'll use the updateBooking method to mark it as deleted
+      // In a production system, you might want to soft delete or archive instead
+      const success = await storage.deleteBooking ? 
+        await storage.deleteBooking(id) : 
+        await storage.updateBooking(id, { status: 'cancelled' });
+      
+      if (success) {
+        res.json({ message: "Booking deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete booking" });
+      }
+    } catch (err) {
+      console.error("Error deleting booking:", err);
+      res.status(500).json({ message: "Failed to delete booking" });
+    }
+  });
   
   // Endpoint to update booking payment status for customer checkout
   app.patch("/api/bookings/:id/payment-status", async (req, res) => {

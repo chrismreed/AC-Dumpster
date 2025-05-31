@@ -65,6 +65,7 @@ export interface IStorage {
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, booking: Partial<InsertBooking>): Promise<Booking | undefined>;
   updateBookingPaymentStatus(id: number, paymentStatus: string, stripePaymentIntentId?: string): Promise<Booking | undefined>;
+  deleteBooking(id: number): Promise<boolean>;
 
   // Session store
   sessionStore: session.SessionStore;

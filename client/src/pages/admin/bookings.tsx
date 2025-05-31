@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration } from "@shared/schema";
-import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List } from "lucide-react";
+import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,9 @@ export default function BookingsPage() {
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
   const [sortBy, setSortBy] = useState<string>("deliveryDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
@@ -99,6 +101,30 @@ export default function BookingsPage() {
     },
   });
 
+  // Delete booking mutation
+  const deleteBookingMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/bookings/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      setIsDeleteDialogOpen(false);
+      setBookingToDelete(null);
+      toast({
+        title: "Booking deleted",
+        description: "The booking has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Delete error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete booking. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleViewBooking = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsViewDialogOpen(true);
@@ -114,6 +140,17 @@ export default function BookingsPage() {
         description: "Failed to update booking status. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteBooking = (booking: Booking) => {
+    setBookingToDelete(booking);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteBooking = () => {
+    if (bookingToDelete) {
+      deleteBookingMutation.mutate(bookingToDelete.id);
     }
   };
 
@@ -435,6 +472,48 @@ export default function BookingsPage() {
           </Dialog>
         )}
 
+        {/* Delete Confirmation Dialog */}
+        {bookingToDelete && (
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Booking</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete booking #{bookingToDelete.id}?
+                  This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-4">
+                <div className="space-y-2">
+                  <p><strong>Customer:</strong> {bookingToDelete.customerName}</p>
+                  <p><strong>Email:</strong> {bookingToDelete.customerEmail}</p>
+                  <p><strong>Delivery Date:</strong> {formatDate(bookingToDelete.deliveryDate)}</p>
+                  <p><strong>Status:</strong> {getStatusBadge(bookingToDelete.status)}</p>
+                  <p><strong>Total:</strong> ${(bookingToDelete.totalPrice / 100).toFixed(2)}</p>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  disabled={deleteBookingMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={confirmDeleteBooking}
+                  disabled={deleteBookingMutation.isPending}
+                >
+                  {deleteBookingMutation.isPending ? "Deleting..." : "Delete Booking"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
         <Tabs defaultValue="list" className="w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <TabsList className="w-full md:w-auto">
@@ -571,14 +650,25 @@ export default function BookingsPage() {
                             <TableCell>{getStatusBadge(booking.status)}</TableCell>
                             <TableCell>${(booking.totalPrice / 100).toFixed(2)}</TableCell>
                             <TableCell>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleViewBooking(booking)}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleViewBooking(booking)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteBooking(booking)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
