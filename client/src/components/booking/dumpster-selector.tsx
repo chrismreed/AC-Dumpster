@@ -155,7 +155,7 @@ export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
       <div className="mt-10 text-center md:text-right">
         <Button 
           onClick={handleContinue}
-          disabled={!selectedDumpsterId || !selectedDurationId}
+          disabled={!selectedDumpsterId || !selectedPricingId}
           className="px-8 py-3 font-semibold"
         >
           Continue to Delivery Details
