@@ -41,7 +41,7 @@ export function ServiceZoneMap({ isAdmin = true }: ServiceZoneMapProps) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places', 'drawing'],
+    libraries: ['places'],
   });
 
   // Fetch service zones

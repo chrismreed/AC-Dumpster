@@ -43,8 +43,8 @@ export function ZonesMap({ zones, onSaveZone }: ZonesMapProps) {
   // Load Google Maps API
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-    libraries: ['places', 'drawing'],
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries: ['places'],
   });
   
   // Draw all zone polygons on the map
