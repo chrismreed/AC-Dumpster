@@ -45,8 +45,10 @@ export default function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const [selectedBookings, setSelectedBookings] = useState<Set<number>>(new Set());
   const [sortBy, setSortBy] = useState<string>("deliveryDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
@@ -125,6 +127,55 @@ export default function BookingsPage() {
     },
   });
 
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const promises = ids.map(id => apiRequest("DELETE", `/api/bookings/${id}`));
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      setIsBulkDeleteDialogOpen(false);
+      setSelectedBookings(new Set());
+      toast({
+        title: "Bookings deleted",
+        description: `${selectedBookings.size} bookings have been deleted successfully.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error("Bulk delete error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete some bookings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk status update mutation
+  const bulkStatusUpdateMutation = useMutation({
+    mutationFn: async ({ ids, status }: { ids: number[]; status: string }) => {
+      const promises = ids.map(id => apiRequest("PUT", `/api/bookings/${id}`, { status }));
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      setSelectedBookings(new Set());
+      toast({
+        title: "Bookings updated",
+        description: `${selectedBookings.size} bookings have been updated successfully.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error("Bulk status update error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update some bookings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleViewBooking = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsViewDialogOpen(true);
@@ -151,6 +202,45 @@ export default function BookingsPage() {
   const confirmDeleteBooking = () => {
     if (bookingToDelete) {
       deleteBookingMutation.mutate(bookingToDelete.id);
+    }
+  };
+
+  const handleSelectBooking = (bookingId: number, checked: boolean) => {
+    const newSelected = new Set(selectedBookings);
+    if (checked) {
+      newSelected.add(bookingId);
+    } else {
+      newSelected.delete(bookingId);
+    }
+    setSelectedBookings(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(sortedAndFilteredBookings.map(booking => booking.id));
+      setSelectedBookings(allIds);
+    } else {
+      setSelectedBookings(new Set());
+    }
+  };
+
+  const handleBulkStatusChange = (status: string) => {
+    const selectedIds = Array.from(selectedBookings);
+    if (selectedIds.length > 0) {
+      bulkStatusUpdateMutation.mutate({ ids: selectedIds, status });
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedBookings.size > 0) {
+      setIsBulkDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmBulkDelete = () => {
+    const selectedIds = Array.from(selectedBookings);
+    if (selectedIds.length > 0) {
+      bulkDeleteMutation.mutate(selectedIds);
     }
   };
 
@@ -573,6 +663,53 @@ export default function BookingsPage() {
           </TabsContent>
           
           <TabsContent value="list" className="mt-6">
+            {/* Bulk Actions Toolbar */}
+            {selectedBookings.size > 0 && (
+              <Card className="mb-4 border-blue-200 bg-blue-50">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        {selectedBookings.size} booking{selectedBookings.size !== 1 ? 's' : ''} selected
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedBookings(new Set())}
+                      >
+                        Clear Selection
+                      </Button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Select onValueChange={handleBulkStatusChange}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Change Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="picked_up">Picked Up</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={handleBulkDelete}
+                        disabled={bulkDeleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete Selected
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>
@@ -584,6 +721,12 @@ export default function BookingsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedBookings.size === sortedAndFilteredBookings.length && sortedAndFilteredBookings.length > 0}
+                            onCheckedChange={handleSelectAll}
+                          />
+                        </TableHead>
                         <TableHead 
                           className="cursor-pointer hover:text-primary"
                           onClick={() => {
@@ -642,6 +785,12 @@ export default function BookingsPage() {
                       ) : (
                         sortedAndFilteredBookings.map((booking) => (
                           <TableRow key={booking.id}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedBookings.has(booking.id)}
+                                onCheckedChange={(checked) => handleSelectBooking(booking.id, checked as boolean)}
+                              />
+                            </TableCell>
                             <TableCell>{booking.id}</TableCell>
                             <TableCell>{booking.customerName}</TableCell>
                             <TableCell>{getDumpsterName(booking.dumpsterId)}</TableCell>
