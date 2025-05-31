@@ -51,7 +51,7 @@ export function ServicesSection() {
                 <div className="p-8">
                   <div className="text-center mb-6">
                     <p className="text-4xl font-bold text-[#111827]">${(dumpster.basePrice / 100).toFixed(0)}</p>
-                    <p className="text-gray-500">7 Day Rental</p>
+                    <p className="text-gray-500">24-hour rental included</p>
                   </div>
                   <div className="space-y-4 mb-8">
                     <div className="flex items-start">
