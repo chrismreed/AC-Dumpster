@@ -81,26 +81,6 @@ export function AdminNav() {
           </Link>
         ))}
       </nav>
-      <div className="px-6 py-6 mt-auto border-t w-full fixed bottom-0 left-0 md:w-64 bg-white">
-        <div className="flex flex-col space-y-2">
-          <Link 
-            href="/"
-            className="flex items-center text-sm text-gray-600 hover:text-gray-900"
-          >
-            <Home className="mr-2 h-4 w-4" />
-            Back to Website
-          </Link>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleLogout}
-            className="flex items-center justify-start text-sm text-gray-600 hover:text-red-500 px-0"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
-      </div>
     </aside>
   );
 }
