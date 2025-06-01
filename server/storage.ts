@@ -72,6 +72,7 @@ export interface IStorage {
 
   // Dumpster pricing methods
   getDumpsterPricing(dumpsterId: number): Promise<DumpsterPricing[]>;
+  getAllDumpsterPricing(): Promise<DumpsterPricing[]>;
   createDumpsterPricing(pricing: InsertDumpsterPricing): Promise<DumpsterPricing>;
   updateDumpsterPricing(id: number, pricing: Partial<InsertDumpsterPricing>): Promise<DumpsterPricing | undefined>;
   deleteDumpsterPricing(id: number): Promise<boolean>;
@@ -779,6 +780,10 @@ export class DatabaseStorage implements IStorage {
   // Dumpster pricing methods
   async getDumpsterPricing(dumpsterId: number): Promise<DumpsterPricing[]> {
     return await db.select().from(dumpsterPricing).where(eq(dumpsterPricing.dumpsterId, dumpsterId)).orderBy(dumpsterPricing.sortOrder, dumpsterPricing.days);
+  }
+
+  async getAllDumpsterPricing(): Promise<DumpsterPricing[]> {
+    return await db.select().from(dumpsterPricing).orderBy(dumpsterPricing.dumpsterId, dumpsterPricing.sortOrder, dumpsterPricing.days);
   }
 
   async createDumpsterPricing(insertPricing: InsertDumpsterPricing): Promise<DumpsterPricing> {
