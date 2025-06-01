@@ -29,8 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
-import { Dumpster, InsertDumpster, insertDumpsterSchema, Booking } from "@shared/schema";
-import { DumpsterPricingManager } from "@/components/admin/dumpster-pricing-manager";
+import { Dumpster, InsertDumpster, insertDumpsterSchema, Booking, RentalDuration } from "@shared/schema";
 import { Loader2, Plus, Edit, Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -79,7 +78,6 @@ export default function DumpstersPage() {
       name: "",
       dimensions: "",
       description: "",
-      basePrice: 0,
       weightLimit: 0,
       availability: 0,
       imageUrl: "",
@@ -93,7 +91,6 @@ export default function DumpstersPage() {
       name: "",
       dimensions: "",
       description: "",
-      basePrice: 0,
       weightLimit: 0,
       availability: 0,
       imageUrl: "",
@@ -103,13 +100,7 @@ export default function DumpstersPage() {
   // Add dumpster mutation
   const addDumpsterMutation = useMutation({
     mutationFn: async (data: InsertDumpster) => {
-      // Convert price from dollars to cents
-      const formattedData = {
-        ...data,
-        basePrice: data.basePrice * 100,
-      };
-      
-      const response = await apiRequest("POST", "/api/dumpsters", formattedData);
+      const response = await apiRequest("POST", "/api/dumpsters", data);
       return response.json();
     },
     onSuccess: () => {
@@ -134,13 +125,7 @@ export default function DumpstersPage() {
   const editDumpsterMutation = useMutation({
     mutationFn: async (data: InsertDumpster & { id: number }) => {
       const { id, ...rest } = data;
-      // Convert price from dollars to cents
-      const formattedData = {
-        ...rest,
-        basePrice: rest.basePrice * 100,
-      };
-      
-      const response = await apiRequest("PUT", `/api/dumpsters/${id}`, formattedData);
+      const response = await apiRequest("PUT", `/api/dumpsters/${id}`, rest);
       return response.json();
     },
     onSuccess: () => {
@@ -194,10 +179,13 @@ export default function DumpstersPage() {
 
   const handleEdit = (dumpster: Dumpster) => {
     setSelectedDumpster(dumpster);
-    // Convert price from cents to dollars for form display
     editForm.reset({
-      ...dumpster,
-      basePrice: dumpster.basePrice / 100,
+      name: dumpster.name,
+      dimensions: dumpster.dimensions,
+      description: dumpster.description,
+      weightLimit: dumpster.weightLimit,
+      availability: dumpster.availability,
+      imageUrl: dumpster.imageUrl || "",
     });
     setIsEditDialogOpen(true);
   };
