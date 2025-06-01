@@ -214,12 +214,42 @@ export default function BookingConfirmationPage() {
           </div>
           
           <div className="border-t pt-6">
-            <div className="flex justify-between items-center font-medium text-lg">
-              <span>Total Amount</span>
-              <span>{formatPrice(booking.totalPrice)}</span>
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Includes dumpster rental, delivery fee, and any selected add-ons
+            <h3 className="font-semibold text-lg mb-4">Cost Breakdown</h3>
+            <div className="space-y-3">
+              {/* Base rental price */}
+              <div className="flex justify-between">
+                <span className="text-gray-600">
+                  {dumpster?.name} ({pricingOption?.days} day rental)
+                </span>
+                <span>{formatPrice(pricingOption?.price || 0)}</span>
+              </div>
+              
+              {/* Add-ons */}
+              {getSelectedAddOns().map(addon => {
+                const quantity = booking.selectedAddOns?.find((selected: any) => selected.addonId === addon.id)?.quantity || 1;
+                return (
+                  <div key={addon.id} className="flex justify-between">
+                    <span className="text-gray-600">
+                      {addon.name} {quantity > 1 && `(x${quantity})`}
+                    </span>
+                    <span>{formatPrice(addon.price * quantity)}</span>
+                  </div>
+                );
+              })}
+              
+              {/* Delivery fee */}
+              <div className="flex justify-between">
+                <span className="text-gray-600">
+                  Delivery fee ({serviceZone?.name})
+                </span>
+                <span>{formatPrice(serviceZone?.deliveryFee || 0)}</span>
+              </div>
+              
+              {/* Total */}
+              <div className="border-t pt-3 flex justify-between items-center font-semibold text-lg">
+                <span>Total Amount</span>
+                <span className="text-primary">{formatPrice(booking.totalPrice)}</span>
+              </div>
             </div>
           </div>
         </CardContent>
