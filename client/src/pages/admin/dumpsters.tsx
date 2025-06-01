@@ -2,13 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +12,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -54,20 +59,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 // Sortable dumpster card component
-function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDelete, pricingData, setPricingData, handleAddPricing, handleDeletePricing, addingPricing, setAddingPricing, newPricingDays, setNewPricingDays, newPricingPrice, setNewPricingPrice }: any) {
+function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDelete, pricingData, setPricingData, handleAddPricing, handleDeletePricing, addingPricing, setAddingPricing, newPricingDays, setNewPricingDays, newPricingPrice, setNewPricingPrice, handlePricingDragEnd }: any) {
   const {
     attributes,
     listeners,
@@ -165,11 +159,11 @@ function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDe
             onDragEnd={(event) => handlePricingDragEnd(event, dumpster.id, pricingData, setPricingData)}
           >
             <SortableContext
-              items={pricingData[dumpster.id]?.map(p => p.id) || []}
+              items={pricingData[dumpster.id]?.map((p: any) => p.id) || []}
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-2 mb-3">
-                {pricingData[dumpster.id]?.map((pricing) => (
+                {pricingData[dumpster.id]?.map((pricing: any) => (
                   <SortablePricingItem 
                     key={pricing.id} 
                     pricing={pricing} 
@@ -297,111 +291,50 @@ export default function DumpstersPage() {
     })
   );
 
+  // Pricing management state
+  const [pricingData, setPricingData] = useState<Record<number, DumpsterPricing[]>>({});
+  const [addingPricing, setAddingPricing] = useState<number | null>(null);
+  const [newPricingDays, setNewPricingDays] = useState("");
+  const [newPricingPrice, setNewPricingPrice] = useState("");
+
   // Fetch dumpsters
   const { data: dumpsters, isLoading } = useQuery<Dumpster[]>({
     queryKey: ["/api/dumpsters"],
   });
 
-  // Fetch bookings to calculate deployed units
+  // Fetch bookings to show deployed counts
   const { data: bookings } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
   });
-
-  // Calculate deployed units for each dumpster
-  const getDeployedCount = (dumpsterId: number) => {
-    if (!bookings) return 0;
-    return bookings.filter(booking => 
-      booking.dumpsterId === dumpsterId && booking.status === 'delivered'
-    ).length;
-  };
-
-  // Fetch rental durations for pricing options
-  const { data: rentalDurations = [] } = useQuery<RentalDuration[]>({
-    queryKey: ['/api/rental-durations'],
-  });
-
-  // State for managing pricing
-  const [pricingData, setPricingData] = useState<Record<number, DumpsterPricing[]>>({});
-  const [addingPricing, setAddingPricing] = useState<number | null>(null);
-  const [newPricingDays, setNewPricingDays] = useState("");
-  const [newPricingPrice, setNewPricingPrice] = useState("");
 
   // Fetch pricing data for each dumpster
   useEffect(() => {
     if (dumpsters) {
       dumpsters.forEach(async (dumpster) => {
         try {
-          const response = await fetch(`/api/dumpster-pricing/${dumpster.id}`);
-          if (response.ok) {
-            const pricing = await response.json();
-            setPricingData(prev => ({ ...prev, [dumpster.id]: pricing }));
-          }
+          const response = await apiRequest("GET", `/api/dumpster-pricing/${dumpster.id}`);
+          const pricing = await response.json();
+          setPricingData((prev) => ({
+            ...prev,
+            [dumpster.id]: pricing
+          }));
         } catch (error) {
-          console.error(`Error fetching pricing for dumpster ${dumpster.id}:`, error);
+          console.error(`Failed to fetch pricing for dumpster ${dumpster.id}:`, error);
         }
       });
     }
   }, [dumpsters]);
 
-  // Add pricing option
-  const handleAddPricing = async (dumpsterId: number) => {
-    if (!newPricingDays || !newPricingPrice) return;
-    
-    try {
-      const response = await apiRequest("POST", "/api/dumpster-pricing", {
-        dumpsterId,
-        days: parseInt(newPricingDays),
-        price: Math.round(parseFloat(newPricingPrice) * 100)
-      });
-      
-      if (response.ok) {
-        const newPricing = await response.json();
-        setPricingData(prev => ({
-          ...prev,
-          [dumpsterId]: [...(prev[dumpsterId] || []), newPricing]
-        }));
-        setNewPricingDays("");
-        setNewPricingPrice("");
-        setAddingPricing(null);
-        toast({
-          title: "Success",
-          description: "Pricing option added successfully",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add pricing option",
-        variant: "destructive",
-      });
-    }
+  // Get deployed count for a dumpster
+  const getDeployedCount = (dumpsterId: number) => {
+    if (!bookings) return 0;
+    return bookings.filter(booking => 
+      booking.dumpsterId === dumpsterId && 
+      booking.status === "scheduled"
+    ).length;
   };
 
-  // Delete pricing option
-  const handleDeletePricing = async (pricingId: number, dumpsterId: number) => {
-    try {
-      const response = await apiRequest("DELETE", `/api/dumpster-pricing/${pricingId}`);
-      
-      if (response.ok) {
-        setPricingData(prev => ({
-          ...prev,
-          [dumpsterId]: prev[dumpsterId]?.filter(p => p.id !== pricingId) || []
-        }));
-        toast({
-          title: "Success",
-          description: "Pricing option deleted successfully",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete pricing option",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Drag and drop handlers
+  // Handle drag end for dumpsters
   const handleDumpsterDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -436,6 +369,7 @@ export default function DumpstersPage() {
     }
   };
 
+  // Handle drag end for pricing
   const handlePricingDragEnd = async (event: DragEndEvent, dumpsterId: number, pricingData: Record<number, DumpsterPricing[]>, setPricingData: any) => {
     const { active, over } = event;
 
@@ -475,7 +409,72 @@ export default function DumpstersPage() {
     }
   };
 
-  // Create form for adding new dumpster
+  // Add pricing option
+  const handleAddPricing = async (dumpsterId: number) => {
+    if (!newPricingDays || !newPricingPrice) {
+      toast({
+        title: "Error",
+        description: "Please enter both days and price",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await apiRequest("POST", "/api/dumpster-pricing", {
+        dumpsterId,
+        days: parseInt(newPricingDays),
+        price: Math.round(parseFloat(newPricingPrice) * 100), // Convert to cents
+        sortOrder: pricingData[dumpsterId]?.length || 0
+      });
+      const newPricing = await response.json();
+      
+      setPricingData((prev) => ({
+        ...prev,
+        [dumpsterId]: [...(prev[dumpsterId] || []), newPricing]
+      }));
+
+      setAddingPricing(null);
+      setNewPricingDays("");
+      setNewPricingPrice("");
+      
+      toast({
+        title: "Success",
+        description: "Pricing option added successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add pricing option",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete pricing option
+  const handleDeletePricing = async (pricingId: number, dumpsterId: number) => {
+    try {
+      await apiRequest("DELETE", `/api/dumpster-pricing/${pricingId}`);
+      
+      setPricingData((prev) => ({
+        ...prev,
+        [dumpsterId]: prev[dumpsterId]?.filter(p => p.id !== pricingId) || []
+      }));
+
+      toast({
+        title: "Success",
+        description: "Pricing option deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete pricing option",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Add/Edit/Delete dumpster handlers
   const addForm = useForm<InsertDumpster>({
     resolver: zodResolver(insertDumpsterSchema),
     defaultValues: {
@@ -483,12 +482,12 @@ export default function DumpstersPage() {
       dimensions: "",
       description: "",
       weightLimit: 0,
-      availability: 0,
+      availability: 1,
       imageUrl: "",
+      sortOrder: 0,
     },
   });
 
-  // Create form for editing dumpster
   const editForm = useForm<InsertDumpster>({
     resolver: zodResolver(insertDumpsterSchema),
     defaultValues: {
@@ -496,15 +495,18 @@ export default function DumpstersPage() {
       dimensions: "",
       description: "",
       weightLimit: 0,
-      availability: 0,
+      availability: 1,
       imageUrl: "",
+      sortOrder: 0,
     },
   });
 
-  // Add dumpster mutation
-  const addDumpsterMutation = useMutation({
+  const addMutation = useMutation({
     mutationFn: async (data: InsertDumpster) => {
-      const response = await apiRequest("POST", "/api/dumpsters", data);
+      const response = await apiRequest("POST", "/api/dumpsters", {
+        ...data,
+        sortOrder: dumpsters?.length || 0
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -512,74 +514,63 @@ export default function DumpstersPage() {
       setIsAddDialogOpen(false);
       addForm.reset();
       toast({
-        title: "Dumpster added",
-        description: "The dumpster has been added successfully.",
+        title: "Success",
+        description: "Dumpster added successfully",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: `Failed to add dumpster: ${error.message}`,
+        description: "Failed to add dumpster",
         variant: "destructive",
       });
     },
   });
 
-  // Edit dumpster mutation
-  const editDumpsterMutation = useMutation({
-    mutationFn: async (data: InsertDumpster & { id: number }) => {
-      const { id, ...rest } = data;
-      const response = await apiRequest("PUT", `/api/dumpsters/${id}`, rest);
+  const editMutation = useMutation({
+    mutationFn: async (data: InsertDumpster) => {
+      if (!selectedDumpster) throw new Error("No dumpster selected");
+      const response = await apiRequest("PUT", `/api/dumpsters/${selectedDumpster.id}`, data);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/dumpsters"] });
       setIsEditDialogOpen(false);
       setSelectedDumpster(null);
+      editForm.reset();
       toast({
-        title: "Dumpster updated",
-        description: "The dumpster has been updated successfully.",
+        title: "Success",
+        description: "Dumpster updated successfully",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: `Failed to update dumpster: ${error.message}`,
+        description: "Failed to update dumpster",
         variant: "destructive",
       });
     },
   });
 
-  // Delete dumpster mutation
-  const deleteDumpsterMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/dumpsters/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/dumpsters"] });
       toast({
-        title: "Dumpster deleted",
-        description: "The dumpster has been deleted successfully.",
+        title: "Success",
+        description: "Dumpster deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: `Failed to delete dumpster: ${error.message}`,
+        description: "Failed to delete dumpster",
         variant: "destructive",
       });
     },
   });
-
-  const onAddSubmit = (data: InsertDumpster) => {
-    addDumpsterMutation.mutate(data);
-  };
-
-  const onEditSubmit = (data: InsertDumpster) => {
-    if (selectedDumpster) {
-      editDumpsterMutation.mutate({ ...data, id: selectedDumpster.id });
-    }
-  };
 
   const handleEdit = (dumpster: Dumpster) => {
     setSelectedDumpster(dumpster);
@@ -590,19 +581,20 @@ export default function DumpstersPage() {
       weightLimit: dumpster.weightLimit,
       availability: dumpster.availability,
       imageUrl: dumpster.imageUrl || "",
+      sortOrder: dumpster.sortOrder,
     });
     setIsEditDialogOpen(true);
   };
 
   const handleDelete = (id: number) => {
-    deleteDumpsterMutation.mutate(id);
+    deleteMutation.mutate(id);
   };
 
   if (isLoading) {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </AdminLayout>
     );
@@ -610,27 +602,25 @@ export default function DumpstersPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Dumpsters</h1>
-            <p className="text-gray-500">Manage your dumpster inventory and pricing</p>
-          </div>
+          <h1 className="text-3xl font-bold">Dumpster Management</h1>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Dumpster
+                <Plus className="mr-2 h-4 w-4" />
+                Add Dumpster
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Add New Dumpster</DialogTitle>
                 <DialogDescription>
-                  Fill in the details to add a new dumpster to your inventory.
+                  Create a new dumpster type for your rental inventory.
                 </DialogDescription>
               </DialogHeader>
               <Form {...addForm}>
-                <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
+                <form onSubmit={addForm.handleSubmit((data) => addMutation.mutate(data))} className="space-y-4">
                   <FormField
                     control={addForm.control}
                     name="name"
@@ -638,12 +628,13 @@ export default function DumpstersPage() {
                       <FormItem>
                         <FormLabel>Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="10 Yard Dumpster" {...field} />
+                          <Input placeholder="15 Yard Dumpster" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
                     control={addForm.control}
                     name="dimensions"
@@ -651,12 +642,13 @@ export default function DumpstersPage() {
                       <FormItem>
                         <FormLabel>Dimensions</FormLabel>
                         <FormControl>
-                          <Input placeholder="12' × 8' × 3.5' (LWH)" {...field} />
+                          <Input placeholder="14' L x 8' W x 4' H" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
                     control={addForm.control}
                     name="description"
@@ -664,13 +656,14 @@ export default function DumpstersPage() {
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Ideal for small remodeling projects..." {...field} />
+                          <Textarea placeholder="Perfect for medium-sized projects..." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={addForm.control}
                       name="weightLimit"
@@ -678,17 +671,13 @@ export default function DumpstersPage() {
                         <FormItem>
                           <FormLabel>Weight Limit (lbs)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              min="0" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
+                            <Input type="number" placeholder="4000" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
                     <FormField
                       control={addForm.control}
                       name="availability"
@@ -696,18 +685,14 @@ export default function DumpstersPage() {
                         <FormItem>
                           <FormLabel>Availability</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              min="0" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
+                            <Input type="number" placeholder="5" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+                  
                   <FormField
                     control={addForm.control}
                     name="imageUrl"
@@ -715,20 +700,16 @@ export default function DumpstersPage() {
                       <FormItem>
                         <FormLabel>Image URL (optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="/assets/dumpster-10yard.svg" {...field} />
+                          <Input placeholder="https://example.com/image.jpg" {...field} value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <DialogFooter>
-                    <Button 
-                      type="submit" 
-                      disabled={addDumpsterMutation.isPending}
-                    >
-                      {addDumpsterMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
+                    <Button type="submit" disabled={addMutation.isPending}>
+                      {addMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Add Dumpster
                     </Button>
                   </DialogFooter>
@@ -740,15 +721,15 @@ export default function DumpstersPage() {
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Edit Dumpster</DialogTitle>
               <DialogDescription>
-                Update the details of this dumpster.
+                Update the dumpster information.
               </DialogDescription>
             </DialogHeader>
             <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <form onSubmit={editForm.handleSubmit((data) => editMutation.mutate(data))} className="space-y-4">
                 <FormField
                   control={editForm.control}
                   name="name"
@@ -762,6 +743,7 @@ export default function DumpstersPage() {
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={editForm.control}
                   name="dimensions"
@@ -775,6 +757,7 @@ export default function DumpstersPage() {
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={editForm.control}
                   name="description"
@@ -788,7 +771,8 @@ export default function DumpstersPage() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={editForm.control}
                     name="weightLimit"
@@ -796,17 +780,13 @@ export default function DumpstersPage() {
                       <FormItem>
                         <FormLabel>Weight Limit (lbs)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            min="0" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          />
+                          <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
                     control={editForm.control}
                     name="availability"
@@ -814,18 +794,14 @@ export default function DumpstersPage() {
                       <FormItem>
                         <FormLabel>Availability</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            min="0" 
-                            {...field} 
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          />
+                          <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+                
                 <FormField
                   control={editForm.control}
                   name="imageUrl"
@@ -833,20 +809,16 @@ export default function DumpstersPage() {
                     <FormItem>
                       <FormLabel>Image URL (optional)</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <DialogFooter>
-                  <Button 
-                    type="submit" 
-                    disabled={editDumpsterMutation.isPending}
-                  >
-                    {editDumpsterMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                  <Button type="submit" disabled={editMutation.isPending}>
+                    {editMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Update Dumpster
                   </Button>
                 </DialogFooter>
@@ -855,166 +827,40 @@ export default function DumpstersPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Dumpster Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {dumpsters?.map((dumpster) => (
-            <Card key={dumpster.id}>
-              <CardHeader className="pb-2">
-                <CardTitle>{dumpster.name}</CardTitle>
-                <CardDescription>{dumpster.dimensions}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-neutral-600">{dumpster.description}</p>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm font-medium">Weight Limit</p>
-                      <p className="text-lg font-bold text-primary">{dumpster.weightLimit.toLocaleString()} lbs</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Capacity</p>
-                      <p className="text-lg font-bold">{Math.round(dumpster.weightLimit / 2000)} tons</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">Deployed</p>
-                      <p className="text-lg font-bold">{getDeployedCount(dumpster.id)}/{dumpster.availability} units</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleEdit(dumpster)}
-                    >
-                      <Edit className="mr-1 h-4 w-4" /> Edit
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                          <Trash className="mr-1 h-4 w-4" /> Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete the "{dumpster.name}" dumpster. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(dumpster.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </CardContent>
-              
-              {/* Pricing Management Section */}
-              <div className="px-6 pb-6 border-t border-gray-200">
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">Rental Duration Pricing</h4>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAddingPricing(dumpster.id)}
-                      className="text-xs"
-                    >
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add Option
-                    </Button>
-                  </div>
-
-                  {/* Current pricing options */}
-                  <div className="space-y-2 mb-3">
-                    {pricingData[dumpster.id]
-                      ?.sort((a, b) => a.days - b.days)
-                      ?.map((pricing) => (
-                      <div key={pricing.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span className="text-sm">
-                          {pricing.days} {pricing.days === 1 ? 'day' : 'days'} - ${(pricing.price / 100).toFixed(2)}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeletePricing(pricing.id, dumpster.id)}
-                          className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
-                        >
-                          <Trash className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                    {(!pricingData[dumpster.id] || pricingData[dumpster.id].length === 0) && (
-                      <div className="text-sm text-gray-500 italic">No pricing options set</div>
-                    )}
-                  </div>
-
-                  {/* Add new pricing form */}
-                  {addingPricing === dumpster.id && (
-                    <div className="bg-gray-50 p-3 rounded border">
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Days
-                          </label>
-                          <Input
-                            type="number"
-                            placeholder="3"
-                            value={newPricingDays}
-                            onChange={(e) => setNewPricingDays(e.target.value)}
-                            className="text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Price ($)
-                          </label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="480.00"
-                            value={newPricingPrice}
-                            onChange={(e) => setNewPricingPrice(e.target.value)}
-                            className="text-sm"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleAddPricing(dumpster.id)}
-                          className="text-xs"
-                        >
-                          Add
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setAddingPricing(null);
-                            setNewPricingDays("");
-                            setNewPricingPrice("");
-                          }}
-                          className="text-xs"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-            </Card>
-          ))}
-        </div>
+        {/* Dumpster Grid with Drag and Drop */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDumpsterDragEnd}
+        >
+          <SortableContext
+            items={dumpsters?.map(d => d.id) || []}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {dumpsters?.map((dumpster) => (
+                <SortableDumpsterCard
+                  key={dumpster.id}
+                  dumpster={dumpster}
+                  getDeployedCount={getDeployedCount}
+                  handleEdit={handleEdit}
+                  handleDelete={handleDelete}
+                  pricingData={pricingData}
+                  setPricingData={setPricingData}
+                  handleAddPricing={handleAddPricing}
+                  handleDeletePricing={handleDeletePricing}
+                  addingPricing={addingPricing}
+                  setAddingPricing={setAddingPricing}
+                  newPricingDays={newPricingDays}
+                  setNewPricingDays={setNewPricingDays}
+                  newPricingPrice={newPricingPrice}
+                  setNewPricingPrice={setNewPricingPrice}
+                  handlePricingDragEnd={handlePricingDragEnd}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
     </AdminLayout>
   );
