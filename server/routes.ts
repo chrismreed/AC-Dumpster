@@ -198,6 +198,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual pricing option by ID
+  app.get("/api/dumpster-pricing/item/:pricingId", async (req, res) => {
+    try {
+      const pricingId = parseInt(req.params.pricingId);
+      const allPricing = await storage.getAllDumpsterPricing();
+      const pricing = allPricing.find(p => p.id === pricingId);
+      
+      if (!pricing) {
+        return res.status(404).json({ message: "Pricing option not found" });
+      }
+      
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error fetching pricing option:", error);
+      res.status(500).json({ message: "Failed to fetch pricing option" });
+    }
+  });
+
   app.post("/api/dumpster-pricing", isAdmin, async (req, res) => {
     try {
       const validatedData = insertDumpsterPricingSchema.parse(req.body);

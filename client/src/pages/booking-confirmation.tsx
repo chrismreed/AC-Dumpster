@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration } from "@shared/schema";
+import { Booking, Dumpster, AddOn, ServiceZone, DumpsterPricing } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -31,9 +31,9 @@ export default function BookingConfirmationPage() {
     enabled: !!booking?.dumpsterId,
   });
   
-  const { data: rentalDuration } = useQuery<RentalDuration>({
-    queryKey: ["/api/durations", booking?.rentalDurationId],
-    enabled: !!booking?.rentalDurationId,
+  const { data: pricingOption } = useQuery<DumpsterPricing>({
+    queryKey: ["/api/dumpster-pricing/item", booking?.pricingId],
+    enabled: !!booking?.pricingId,
   });
   
   const { data: serviceZone } = useQuery<ServiceZone>({
@@ -62,11 +62,11 @@ export default function BookingConfirmationPage() {
   
   // Calculate pickup date based on delivery date and rental duration
   const getPickupDate = () => {
-    if (!booking?.deliveryDate || !rentalDuration) return null;
+    if (!booking?.deliveryDate || !pricingOption) return null;
     
     const deliveryDate = new Date(booking.deliveryDate);
     const pickupDate = new Date(deliveryDate);
-    pickupDate.setDate(deliveryDate.getDate() + rentalDuration.days);
+    pickupDate.setDate(deliveryDate.getDate() + pricingOption.days);
     
     return pickupDate;
   };
@@ -134,7 +134,7 @@ export default function BookingConfirmationPage() {
                 <Clock className="h-5 w-5 text-primary mt-0.5" />
                 <div>
                   <h3 className="font-medium">Rental Duration</h3>
-                  <p>{rentalDuration?.days} Days</p>
+                  <p>{pricingOption?.days} Days</p>
                 </div>
               </div>
               
