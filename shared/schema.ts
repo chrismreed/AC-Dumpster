@@ -76,7 +76,7 @@ export const bookings = pgTable("bookings", {
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone").notNull(),
   dumpsterId: integer("dumpster_id").notNull(),
-  rentalDurationId: integer("rental_duration_id").notNull(),
+  pricingId: integer("pricing_id").notNull(),
   deliveryAddress: text("delivery_address").notNull(),
   deliveryCity: text("delivery_city").notNull(),
   deliveryZipCode: text("delivery_zip_code").notNull(),
