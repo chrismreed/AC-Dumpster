@@ -104,8 +104,8 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
           
           const data = await response.json();
           console.log("Price calculation response:", data);
-          // Convert from cents to dollars
-          setCalculatedPrice(data.totalPrice / 100);
+          // Server returns price in cents, store as-is for consistent handling
+          setCalculatedPrice(data.totalPrice);
         } catch (error) {
           console.error("Error calculating price:", error);
           toast({
