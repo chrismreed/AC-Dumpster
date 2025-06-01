@@ -614,7 +614,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listDumpsters(): Promise<Dumpster[]> {
-    return db.select().from(dumpsters);
+    return db.select().from(dumpsters).orderBy(dumpsters.sortOrder, dumpsters.id);
   }
 
   async createDumpster(insertDumpster: InsertDumpster): Promise<Dumpster> {
@@ -778,7 +778,7 @@ export class DatabaseStorage implements IStorage {
 
   // Dumpster pricing methods
   async getDumpsterPricing(dumpsterId: number): Promise<DumpsterPricing[]> {
-    return await db.select().from(dumpsterPricing).where(eq(dumpsterPricing.dumpsterId, dumpsterId));
+    return await db.select().from(dumpsterPricing).where(eq(dumpsterPricing.dumpsterId, dumpsterId)).orderBy(dumpsterPricing.sortOrder, dumpsterPricing.days);
   }
 
   async createDumpsterPricing(insertPricing: InsertDumpsterPricing): Promise<DumpsterPricing> {

@@ -238,6 +238,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update dumpster sort order
+  app.put("/api/dumpsters/sort-order", isAdmin, async (req, res) => {
+    try {
+      const { dumpsterOrders } = req.body; // Array of { id, sortOrder }
+      
+      for (const order of dumpsterOrders) {
+        await storage.updateDumpster(order.id, { sortOrder: order.sortOrder });
+      }
+      
+      res.json({ message: "Dumpster sort order updated successfully" });
+    } catch (error) {
+      console.error("Error updating dumpster sort order:", error);
+      res.status(500).json({ message: "Failed to update dumpster sort order" });
+    }
+  });
+
+  // Update dumpster pricing sort order
+  app.put("/api/dumpster-pricing/sort-order", isAdmin, async (req, res) => {
+    try {
+      const { pricingOrders } = req.body; // Array of { id, sortOrder }
+      
+      for (const order of pricingOrders) {
+        await storage.updateDumpsterPricing(order.id, { sortOrder: order.sortOrder });
+      }
+      
+      res.json({ message: "Pricing sort order updated successfully" });
+    } catch (error) {
+      console.error("Error updating pricing sort order:", error);
+      res.status(500).json({ message: "Failed to update pricing sort order" });
+    }
+  });
+
   // Service zone routes
   app.get("/api/zones", async (_req, res) => {
     try {
