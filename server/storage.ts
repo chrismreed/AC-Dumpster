@@ -152,7 +152,6 @@ export class MemStorage implements IStorage {
       name: "10 Yard Dumpster",
       dimensions: "12' × 8' × 3.5' (LWH)",
       description: "Ideal for small remodeling projects or garage cleanouts.",
-      basePrice: 29900, // $299
       weightLimit: 4000, // 2 tons (4000 lbs)
       availability: 10,
       imageUrl: "/assets/dumpster-10yard.svg"
@@ -161,7 +160,6 @@ export class MemStorage implements IStorage {
       name: "15 Yard Dumpster",
       dimensions: "12' × 8' × 4.5' (LWH)",
       description: "Perfect for medium renovation projects or large cleanouts.",
-      basePrice: 34900, // $349
       weightLimit: 6000, // 3 tons (6000 lbs)
       availability: 8,
       imageUrl: "/assets/dumpster-15yard.svg"
