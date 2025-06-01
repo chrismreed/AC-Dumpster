@@ -21,6 +21,7 @@ export const dumpsters = pgTable("dumpsters", {
   weightLimit: integer("weight_limit").notNull(), // In pounds
   availability: integer("availability").notNull(), // Number of units available
   imageUrl: text("image_url"),
+  sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -64,6 +65,7 @@ export const dumpsterPricing = pgTable("dumpster_pricing", {
   dumpsterId: integer("dumpster_id").notNull(),
   days: integer("days").notNull(),
   price: integer("price").notNull(), // In cents, total price for this duration
+  sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
