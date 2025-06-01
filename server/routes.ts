@@ -203,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const pricingId = parseInt(req.params.pricingId);
       const allPricing = await storage.getAllDumpsterPricing();
-      const pricing = allPricing.find(p => p.id === pricingId);
+      const pricing = allPricing.find((p: any) => p.id === pricingId);
       
       if (!pricing) {
         return res.status(404).json({ message: "Pricing option not found" });

@@ -22,22 +22,22 @@ export default function BookingConfirmationPage() {
   }, []);
 
   const { data: booking, isLoading: isLoadingBooking } = useQuery<Booking>({
-    queryKey: ["/api/bookings", bookingId],
+    queryKey: [`/api/bookings/${bookingId}`],
     enabled: !!bookingId,
   });
 
   const { data: dumpster } = useQuery<Dumpster>({
-    queryKey: ["/api/dumpsters", booking?.dumpsterId],
+    queryKey: [`/api/dumpsters/${booking?.dumpsterId}`],
     enabled: !!booking?.dumpsterId,
   });
   
   const { data: pricingOption } = useQuery<DumpsterPricing>({
-    queryKey: ["/api/dumpster-pricing/item", booking?.pricingId],
+    queryKey: [`/api/dumpster-pricing/item/${booking?.pricingId}`],
     enabled: !!booking?.pricingId,
   });
   
   const { data: serviceZone } = useQuery<ServiceZone>({
-    queryKey: ["/api/zones", booking?.serviceZoneId],
+    queryKey: [`/api/zones/${booking?.serviceZoneId}`],
     enabled: !!booking?.serviceZoneId,
   });
   
