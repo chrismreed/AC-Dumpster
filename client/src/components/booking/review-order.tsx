@@ -344,18 +344,8 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                   <p className="font-medium">{selectedDumpster?.name || "Selected Dumpster"}</p>
                   <p className="text-sm text-neutral-600">{selectedPricing?.days || 0} Days Rental</p>
                 </div>
-                <span className="font-medium">${((selectedDumpster?.basePrice || 0) / 100).toFixed(2)}</span>
+                <span className="font-medium">${((selectedPricing?.price || 0) / 100).toFixed(2)}</span>
               </div>
-              
-              {selectedPricing && selectedPricing.price > 0 && (
-                <div className="flex justify-between pb-3 border-b border-neutral-200">
-                  <div>
-                    <p className="font-medium">Duration Extension</p>
-                    <p className="text-sm text-neutral-600">+${(selectedPricing.price / 100).toFixed(2)}</p>
-                  </div>
-                  <span className="font-medium">${(selectedPricing.price / 100).toFixed(2)}</span>
-                </div>
-              )}
               
               {bookingData.selectedAddOns && bookingData.selectedAddOns.length > 0 && (
                 <div className="flex justify-between pb-3 border-b border-neutral-200">

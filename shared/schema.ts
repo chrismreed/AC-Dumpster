@@ -18,7 +18,6 @@ export const dumpsters = pgTable("dumpsters", {
   name: text("name").notNull(),
   dimensions: text("dimensions").notNull(),
   description: text("description").notNull(),
-  basePrice: integer("base_price").notNull(), // In cents
   weightLimit: integer("weight_limit").notNull(), // In pounds
   availability: integer("availability").notNull(), // Number of units available
   imageUrl: text("image_url"),

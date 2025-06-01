@@ -575,8 +575,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Service not available in this ZIP code" });
       }
 
-      // Calculate initial total price
-      let totalPrice = dumpster.basePrice + duration.additionalPrice;
+      // Calculate initial total price using only the rental duration price
+      let totalPrice = duration.additionalPrice;
       
       // Calculate delivery fee - Use geofencing if enabled and address is provided
       let deliveryFee = zone.deliveryFee;
@@ -646,8 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return comprehensive pricing details
       res.json({ 
         totalPrice,
-        basePrice: dumpster.basePrice,
-        durationPrice: duration.additionalPrice,
+        rentalPrice: duration.additionalPrice,
         deliveryFee,
         ...(geofencingApplied ? { 
           geofencingApplied,
