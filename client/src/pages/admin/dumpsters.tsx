@@ -616,10 +616,12 @@ export default function DumpstersPage() {
 
                   {/* Current pricing options */}
                   <div className="space-y-2 mb-3">
-                    {pricingData[dumpster.id]?.map((pricing) => (
+                    {pricingData[dumpster.id]
+                      ?.sort((a, b) => a.days - b.days)
+                      ?.map((pricing) => (
                       <div key={pricing.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                         <span className="text-sm">
-                          {pricing.days} days - ${(pricing.price / 100).toFixed(2)}
+                          {pricing.days} {pricing.days === 1 ? 'day' : 'days'} - ${(pricing.price / 100).toFixed(2)}
                         </span>
                         <Button
                           variant="ghost"
