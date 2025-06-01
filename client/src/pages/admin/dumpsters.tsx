@@ -30,7 +30,26 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
 import { Dumpster, InsertDumpster, insertDumpsterSchema, Booking, RentalDuration, DumpsterPricing } from "@shared/schema";
-import { Loader2, Plus, Edit, Trash } from "lucide-react";
+import { Loader2, Plus, Edit, Trash, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -47,11 +66,236 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+// Sortable dumpster card component
+function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDelete, pricingData, setPricingData, handleAddPricing, handleDeletePricing, addingPricing, setAddingPricing, newPricingDays, setNewPricingDays, newPricingPrice, setNewPricingPrice }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: dumpster.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="relative">
+      <div {...attributes} {...listeners} className="absolute top-2 left-2 cursor-grab active:cursor-grabbing z-10">
+        <GripVertical className="h-4 w-4 text-gray-400" />
+      </div>
+      <CardHeader className="pb-2 pl-8">
+        <CardTitle>{dumpster.name}</CardTitle>
+        <CardDescription>{dumpster.dimensions}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-600">{dumpster.description}</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm font-medium">Weight Limit</p>
+              <p className="text-lg font-bold text-primary">{dumpster.weightLimit.toLocaleString()} lbs</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Capacity</p>
+              <p className="text-lg font-bold">{Math.round(dumpster.weightLimit / 2000)} tons</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Deployed</p>
+              <p className="text-lg font-bold">{getDeployedCount(dumpster.id)}/{dumpster.availability} units</p>
+            </div>
+          </div>
+          <div className="flex space-x-2 pt-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleEdit(dumpster)}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Trash className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Dumpster</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{dumpster.name}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(dumpster.id)}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </CardContent>
+      
+      {/* Pricing Management Section */}
+      <div className="px-6 pb-6 border-t border-gray-200">
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-gray-900">Rental Duration Pricing</h4>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAddingPricing(dumpster.id)}
+              className="text-xs"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Option
+            </Button>
+          </div>
+
+          {/* Current pricing options with drag and drop */}
+          <DndContext
+            sensors={[useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })]}
+            collisionDetection={closestCenter}
+            onDragEnd={(event) => handlePricingDragEnd(event, dumpster.id, pricingData, setPricingData)}
+          >
+            <SortableContext
+              items={pricingData[dumpster.id]?.map(p => p.id) || []}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2 mb-3">
+                {pricingData[dumpster.id]?.map((pricing) => (
+                  <SortablePricingItem 
+                    key={pricing.id} 
+                    pricing={pricing} 
+                    onDelete={() => handleDeletePricing(pricing.id, dumpster.id)}
+                  />
+                ))}
+                {(!pricingData[dumpster.id] || pricingData[dumpster.id].length === 0) && (
+                  <div className="text-sm text-gray-500 italic">No pricing options set</div>
+                )}
+              </div>
+            </SortableContext>
+          </DndContext>
+
+          {/* Add new pricing form */}
+          {addingPricing === dumpster.id && (
+            <div className="bg-gray-50 p-3 rounded border">
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Days
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="3"
+                    value={newPricingDays}
+                    onChange={(e) => setNewPricingDays(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Price ($)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="480.00"
+                    value={newPricingPrice}
+                    onChange={(e) => setNewPricingPrice(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleAddPricing(dumpster.id)}
+                  className="text-xs"
+                >
+                  Add
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setAddingPricing(null);
+                    setNewPricingDays("");
+                    setNewPricingPrice("");
+                  }}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// Sortable pricing item component
+function SortablePricingItem({ pricing, onDelete }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: pricing.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className="flex items-center justify-between bg-gray-50 p-2 rounded"
+    >
+      <div className="flex items-center gap-2">
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="w-3 h-3 text-gray-400" />
+        </div>
+        <span className="text-sm">
+          {pricing.days} {pricing.days === 1 ? 'day' : 'days'} - ${(pricing.price / 100).toFixed(2)}
+        </span>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onDelete}
+        className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
+      >
+        <Trash className="w-3 h-3" />
+      </Button>
+    </div>
+  );
+}
+
 export default function DumpstersPage() {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedDumpster, setSelectedDumpster] = useState<Dumpster | null>(null);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Fetch dumpsters
   const { data: dumpsters, isLoading } = useQuery<Dumpster[]>({
@@ -154,6 +398,80 @@ export default function DumpstersPage() {
         description: "Failed to delete pricing option",
         variant: "destructive",
       });
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDumpsterDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || !dumpsters) return;
+
+    if (active.id !== over.id) {
+      const oldIndex = dumpsters.findIndex((item) => item.id === active.id);
+      const newIndex = dumpsters.findIndex((item) => item.id === over.id);
+      
+      const newOrder = arrayMove(dumpsters, oldIndex, newIndex);
+      
+      // Update sort orders
+      const dumpsterOrders = newOrder.map((dumpster, index) => ({
+        id: dumpster.id,
+        sortOrder: index
+      }));
+      
+      try {
+        await apiRequest("PUT", "/api/dumpsters/sort-order", { dumpsterOrders });
+        queryClient.invalidateQueries({ queryKey: ["/api/dumpsters"] });
+        toast({
+          title: "Success",
+          description: "Dumpster order updated successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update dumpster order",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handlePricingDragEnd = async (event: DragEndEvent, dumpsterId: number, pricingData: Record<number, DumpsterPricing[]>, setPricingData: any) => {
+    const { active, over } = event;
+
+    if (!over || !pricingData[dumpsterId]) return;
+
+    if (active.id !== over.id) {
+      const oldIndex = pricingData[dumpsterId].findIndex((item) => item.id === active.id);
+      const newIndex = pricingData[dumpsterId].findIndex((item) => item.id === over.id);
+      
+      const newOrder = arrayMove(pricingData[dumpsterId], oldIndex, newIndex);
+      
+      // Update local state immediately
+      setPricingData((prev: Record<number, DumpsterPricing[]>) => ({
+        ...prev,
+        [dumpsterId]: newOrder
+      }));
+      
+      // Update sort orders on server
+      const pricingOrders = newOrder.map((pricing, index) => ({
+        id: pricing.id,
+        sortOrder: index
+      }));
+      
+      try {
+        await apiRequest("PUT", "/api/dumpster-pricing/sort-order", { pricingOrders });
+        toast({
+          title: "Success",
+          description: "Pricing order updated successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update pricing order",
+          variant: "destructive",
+        });
+      }
     }
   };
 
