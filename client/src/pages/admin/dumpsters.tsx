@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceInput } from "@/components/ui/price-input";
-import { Dumpster, InsertDumpster, insertDumpsterSchema, Booking, RentalDuration } from "@shared/schema";
+import { Dumpster, InsertDumpster, insertDumpsterSchema, Booking, RentalDuration, DumpsterPricing } from "@shared/schema";
 import { Loader2, Plus, Edit, Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,6 +69,92 @@ export default function DumpstersPage() {
     return bookings.filter(booking => 
       booking.dumpsterId === dumpsterId && booking.status === 'delivered'
     ).length;
+  };
+
+  // Fetch rental durations for pricing options
+  const { data: rentalDurations = [] } = useQuery<RentalDuration[]>({
+    queryKey: ['/api/rental-durations'],
+  });
+
+  // State for managing pricing
+  const [pricingData, setPricingData] = useState<Record<number, DumpsterPricing[]>>({});
+  const [addingPricing, setAddingPricing] = useState<number | null>(null);
+  const [newPricingDays, setNewPricingDays] = useState("");
+  const [newPricingPrice, setNewPricingPrice] = useState("");
+
+  // Fetch pricing data for each dumpster
+  useEffect(() => {
+    if (dumpsters) {
+      dumpsters.forEach(async (dumpster) => {
+        try {
+          const response = await fetch(`/api/dumpster-pricing/${dumpster.id}`);
+          if (response.ok) {
+            const pricing = await response.json();
+            setPricingData(prev => ({ ...prev, [dumpster.id]: pricing }));
+          }
+        } catch (error) {
+          console.error(`Error fetching pricing for dumpster ${dumpster.id}:`, error);
+        }
+      });
+    }
+  }, [dumpsters]);
+
+  // Add pricing option
+  const handleAddPricing = async (dumpsterId: number) => {
+    if (!newPricingDays || !newPricingPrice) return;
+    
+    try {
+      const response = await apiRequest("POST", "/api/dumpster-pricing", {
+        dumpsterId,
+        days: parseInt(newPricingDays),
+        price: Math.round(parseFloat(newPricingPrice) * 100)
+      });
+      
+      if (response.ok) {
+        const newPricing = await response.json();
+        setPricingData(prev => ({
+          ...prev,
+          [dumpsterId]: [...(prev[dumpsterId] || []), newPricing]
+        }));
+        setNewPricingDays("");
+        setNewPricingPrice("");
+        setAddingPricing(null);
+        toast({
+          title: "Success",
+          description: "Pricing option added successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add pricing option",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete pricing option
+  const handleDeletePricing = async (pricingId: number, dumpsterId: number) => {
+    try {
+      const response = await apiRequest("DELETE", `/api/dumpster-pricing/${pricingId}`);
+      
+      if (response.ok) {
+        setPricingData(prev => ({
+          ...prev,
+          [dumpsterId]: prev[dumpsterId]?.filter(p => p.id !== pricingId) || []
+        }));
+        toast({
+          title: "Success",
+          description: "Pricing option deleted successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete pricing option",
+        variant: "destructive",
+      });
+    }
   };
 
   // Create form for adding new dumpster
@@ -511,6 +597,100 @@ export default function DumpstersPage() {
                   </div>
                 </div>
               </CardContent>
+              
+              {/* Pricing Management Section */}
+              <div className="px-6 pb-6 border-t border-gray-200">
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">Rental Duration Pricing</h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAddingPricing(dumpster.id)}
+                      className="text-xs"
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Option
+                    </Button>
+                  </div>
+
+                  {/* Current pricing options */}
+                  <div className="space-y-2 mb-3">
+                    {pricingData[dumpster.id]?.map((pricing) => (
+                      <div key={pricing.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-sm">
+                          {pricing.days} days - ${(pricing.price / 100).toFixed(2)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePricing(pricing.id, dumpster.id)}
+                          className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
+                        >
+                          <Trash className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    {(!pricingData[dumpster.id] || pricingData[dumpster.id].length === 0) && (
+                      <div className="text-sm text-gray-500 italic">No pricing options set</div>
+                    )}
+                  </div>
+
+                  {/* Add new pricing form */}
+                  {addingPricing === dumpster.id && (
+                    <div className="bg-gray-50 p-3 rounded border">
+                      <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Days
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="3"
+                            value={newPricingDays}
+                            onChange={(e) => setNewPricingDays(e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Price ($)
+                          </label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="480.00"
+                            value={newPricingPrice}
+                            onChange={(e) => setNewPricingPrice(e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddPricing(dumpster.id)}
+                          className="text-xs"
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAddingPricing(null);
+                            setNewPricingDays("");
+                            setNewPricingPrice("");
+                          }}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
             </Card>
           ))}
