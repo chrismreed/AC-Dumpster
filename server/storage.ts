@@ -168,7 +168,6 @@ export class MemStorage implements IStorage {
       name: "20 Yard Dumpster",
       dimensions: "16' × 8' × 5' (LWH)",
       description: "Great for large remodeling or construction projects.",
-      basePrice: 39900, // $399
       weightLimit: 8000, // 4 tons (8000 lbs)
       availability: 6,
       imageUrl: "/assets/dumpster-20yard.svg"
@@ -177,7 +176,6 @@ export class MemStorage implements IStorage {
       name: "30 Yard Dumpster",
       dimensions: "20' × 8' × 6' (LWH)",
       description: "For major construction or demolition projects.",
-      basePrice: 49900, // $499
       weightLimit: 10000, // 5 tons (10000 lbs)
       availability: 4,
       imageUrl: "/assets/dumpster-30yard.svg"
@@ -519,7 +517,6 @@ export class DatabaseStorage implements IStorage {
         weightLimit: 2000,
         availability: 5,
         imageUrl: "/images/10yard.jpg",
-        basePrice: 25000,
       });
 
       const dumpster2 = await this.createDumpster({
@@ -529,7 +526,6 @@ export class DatabaseStorage implements IStorage {
         weightLimit: 3000,
         availability: 5,
         imageUrl: "/images/20yard.jpg",
-        basePrice: 35000,
       });
 
       const dumpster3 = await this.createDumpster({
@@ -539,7 +535,6 @@ export class DatabaseStorage implements IStorage {
         weightLimit: 5000,
         availability: 5,
         imageUrl: "/images/30yard.jpg",
-        basePrice: 45000,
       });
 
       // Create rental durations
