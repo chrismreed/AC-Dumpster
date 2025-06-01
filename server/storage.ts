@@ -77,7 +77,9 @@ export interface IStorage {
   updateDumpsterPricing(id: number, pricing: Partial<InsertDumpsterPricing>): Promise<DumpsterPricing | undefined>;
   deleteDumpsterPricing(id: number): Promise<boolean>;
 
-
+  // Inventory management methods
+  checkDumpsterAvailability(dumpsterId: number, deliveryDate: string, rentalDays: number): Promise<boolean>;
+  getAvailableDumpsters(deliveryDate: string, rentalDays: number): Promise<Dumpster[]>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -536,6 +538,67 @@ export class DatabaseStorage implements IStorage {
         weightLimit: 5000,
         availability: 5,
         imageUrl: "/images/30yard.jpg",
+      });
+
+      // Create dumpster pricing options
+      // 15 Yard Dumpster pricing
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster1.id,
+        days: 1,
+        price: 35000, // $350
+        sortOrder: 1,
+      });
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster1.id,
+        days: 3,
+        price: 42000, // $420
+        sortOrder: 2,
+      });
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster1.id,
+        days: 7,
+        price: 50000, // $500
+        sortOrder: 3,
+      });
+
+      // 20 Yard Dumpster pricing
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster2.id,
+        days: 1,
+        price: 42000, // $420
+        sortOrder: 1,
+      });
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster2.id,
+        days: 3,
+        price: 50000, // $500
+        sortOrder: 2,
+      });
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster2.id,
+        days: 7,
+        price: 60000, // $600
+        sortOrder: 3,
+      });
+
+      // 30 Yard Dumpster pricing
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster3.id,
+        days: 1,
+        price: 50000, // $500
+        sortOrder: 1,
+      });
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster3.id,
+        days: 3,
+        price: 60000, // $600
+        sortOrder: 2,
+      });
+      await this.createDumpsterPricing({
+        dumpsterId: dumpster3.id,
+        days: 7,
+        price: 72000, // $720
+        sortOrder: 3,
       });
 
       // Create rental durations

@@ -262,7 +262,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { dumpsterOrders } = req.body; // Array of { id, sortOrder }
       
       for (const order of dumpsterOrders) {
-        await storage.updateDumpster(order.id, { sortOrder: order.sortOrder });
+        const id = parseInt(order.id);
+        const sortOrder = parseInt(order.sortOrder);
+        
+        if (isNaN(id) || isNaN(sortOrder)) {
+          console.error("Invalid ID or sortOrder:", order);
+          continue;
+        }
+        
+        await storage.updateDumpster(id, { sortOrder });
       }
       
       res.json({ message: "Dumpster sort order updated successfully" });
@@ -278,7 +286,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { pricingOrders } = req.body; // Array of { id, sortOrder }
       
       for (const order of pricingOrders) {
-        await storage.updateDumpsterPricing(order.id, { sortOrder: order.sortOrder });
+        const id = parseInt(order.id);
+        const sortOrder = parseInt(order.sortOrder);
+        
+        if (isNaN(id) || isNaN(sortOrder)) {
+          console.error("Invalid ID or sortOrder:", order);
+          continue;
+        }
+        
+        await storage.updateDumpsterPricing(id, { sortOrder });
       }
       
       res.json({ message: "Pricing sort order updated successfully" });
