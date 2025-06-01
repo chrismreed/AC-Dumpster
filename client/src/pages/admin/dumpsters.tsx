@@ -266,23 +266,7 @@ export default function DumpstersPage() {
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={addForm.control}
-                      name="basePrice"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Base Price</FormLabel>
-                          <FormControl>
-                            <PriceInput
-                              {...field}
-                              onValueChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={addForm.control}
                       name="weightLimit"
@@ -400,23 +384,7 @@ export default function DumpstersPage() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={editForm.control}
-                    name="basePrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base Price</FormLabel>
-                        <FormControl>
-                          <PriceInput
-                            {...field}
-                            onValueChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={editForm.control}
                     name="weightLimit"
@@ -496,12 +464,12 @@ export default function DumpstersPage() {
                   <p className="text-sm text-neutral-600">{dumpster.description}</p>
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm font-medium">Base Price</p>
-                      <p className="text-lg font-bold text-primary">${(dumpster.basePrice / 100).toFixed(2)}</p>
+                      <p className="text-sm font-medium">Weight Limit</p>
+                      <p className="text-lg font-bold text-primary">{dumpster.weightLimit.toLocaleString()} lbs</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Weight Limit</p>
-                      <p className="text-lg font-bold">{dumpster.weightLimit / 2000} tons</p>
+                      <p className="text-sm font-medium">Capacity</p>
+                      <p className="text-lg font-bold">{Math.round(dumpster.weightLimit / 2000)} tons</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium">Deployed</p>
@@ -543,12 +511,7 @@ export default function DumpstersPage() {
                   </div>
                 </div>
               </CardContent>
-              <div className="px-6 pb-6">
-                <DumpsterPricingManager 
-                  dumpsterId={dumpster.id} 
-                  dumpsterName={dumpster.name}
-                />
-              </div>
+
             </Card>
           ))}
         </div>
