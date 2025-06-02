@@ -406,6 +406,27 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                   ${calculatedPrice ? (calculatedPrice / 100).toFixed(2) : "Calculating..."}
                 </span>
               </div>
+
+              {/* Show payment breakdown if split payment is selected */}
+              {form.watch("splitPayment") && paymentSettings?.splitPaymentEnabled && calculatedPrice && (
+                <div className="mt-4 pt-4 border-t border-neutral-200">
+                  <h4 className="font-medium text-sm mb-3 text-blue-800">Payment Breakdown</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Pay Now ({paymentSettings.splitPaymentPercentage}%)</span>
+                      <span className="font-medium text-blue-800">
+                        ${((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100 / 100).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-neutral-600">
+                      <span>Pay at Pickup ({100 - paymentSettings.splitPaymentPercentage}%)</span>
+                      <span>
+                        ${((calculatedPrice * (100 - paymentSettings.splitPaymentPercentage)) / 100 / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
