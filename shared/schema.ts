@@ -89,6 +89,16 @@ export const bookings = pgTable("bookings", {
   totalPrice: integer("total_price").notNull(), // In cents
   paymentStatus: text("payment_status").notNull().default("pending"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
+  
+  // Split payment fields
+  splitPayment: boolean("split_payment").notNull().default(false),
+  firstPaymentAmount: integer("first_payment_amount"),
+  firstPaymentStatus: text("first_payment_status").default("pending"),
+  firstPaymentIntentId: text("first_payment_intent_id"),
+  secondPaymentAmount: integer("second_payment_amount"),
+  secondPaymentStatus: text("second_payment_status").default("pending"),
+  secondPaymentIntentId: text("second_payment_intent_id"),
+  
   status: text("status").notNull().default("scheduled"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
