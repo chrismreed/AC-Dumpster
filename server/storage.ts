@@ -968,8 +968,8 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db
         .insert(paymentSettings)
         .values({
-          enableSplitPayment: settingsUpdate.enableSplitPayment ?? false,
-          splitPercentage: settingsUpdate.splitPercentage ?? 50.00
+          splitPaymentEnabled: settingsUpdate.splitPaymentEnabled ?? false,
+          splitPaymentPercentage: settingsUpdate.splitPaymentPercentage ?? 50
         })
         .returning();
       return created;
