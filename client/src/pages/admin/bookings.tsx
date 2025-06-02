@@ -424,13 +424,13 @@ export default function BookingsPage() {
               
               {/* Consolidated booking information in a single comprehensive view */}
               <div className="space-y-4">
-                {/* Customer & Service Information - Top Row */}
+                {/* Customer & Contact and Service Order - Top Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
-                        <Mail className="mr-2 h-4 w-4" />
-                        Customer Information
+                        <Phone className="mr-2 h-4 w-4" />
+                        Customer & Contact
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
@@ -459,7 +459,7 @@ export default function BookingsPage() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
                         <Package className="mr-2 h-4 w-4" />
-                        Service Details
+                        Service Order
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm space-y-2">
@@ -472,88 +472,66 @@ export default function BookingsPage() {
                         <span className="font-medium">{getDurationDays(selectedBooking.pricingId)} days</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Zone:</span>
+                        <span className="text-muted-foreground">Service Zone:</span>
                         <span className="font-medium">{getZoneName(selectedBooking.serviceZoneId)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Add-ons:</span>
                         <span className="font-medium">{getAddonNames(selectedBooking.selectedAddOns)}</span>
                       </div>
-                      <div className="pt-2 border-t">
-                        <div className="text-xs text-muted-foreground mb-1">Delivery Address</div>
-                        <div className="font-medium text-xs">{selectedBooking.deliveryAddress}</div>
-                        <div className="text-muted-foreground text-xs">{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full mt-2 h-6 text-xs"
-                          onClick={() => {
-                            const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
-                            const encodedAddress = encodeURIComponent(address);
-                            window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
-                          }}
-                        >
-                          <MapPin className="h-3 w-3 mr-1" />
-                          Navigate
-                        </Button>
-                      </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Schedule & Status Information - Middle Row */}
+                {/* Logistics - Middle Row */}
                 <div className="grid grid-cols-1 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Schedule & Status
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Logistics & Delivery
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-xs space-y-3">
+                    <CardContent className="text-sm space-y-3">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                          <span className="text-muted-foreground">Delivery:</span>
-                          <div className="font-medium">{formatDate(selectedBooking.deliveryDate)}</div>
+                          <span className="text-muted-foreground text-xs">Delivery Date:</span>
+                          <div className="font-medium text-sm">{formatDate(selectedBooking.deliveryDate)}</div>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Pickup:</span>
-                          <div className="font-medium">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</div>
+                          <span className="text-muted-foreground text-xs">Pickup Date:</span>
+                          <div className="font-medium text-sm">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</div>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Time:</span>
-                          <div className="font-medium">{selectedBooking.deliveryTimePreference}</div>
+                          <span className="text-muted-foreground text-xs">Time Preference:</span>
+                          <div className="font-medium text-sm">{selectedBooking.deliveryTimePreference}</div>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Placement:</span>
-                          <div className="font-medium">{selectedBooking.placementLocation}</div>
+                          <span className="text-muted-foreground text-xs">Placement:</span>
+                          <div className="font-medium text-sm">{selectedBooking.placementLocation}</div>
                         </div>
                       </div>
                       <div className="pt-2 border-t">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-muted-foreground">Current Status:</span>
-                              <span>{getStatusBadge(selectedBooking.status)}</span>
-                            </div>
+                            <div className="text-xs text-muted-foreground mb-1">Delivery Address</div>
+                            <div className="font-medium text-sm">{selectedBooking.deliveryAddress}</div>
+                            <div className="text-muted-foreground text-xs">{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</div>
                           </div>
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Update Status</div>
-                            <Select
-                              value={selectedBooking.status}
-                              onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                          <div className="flex items-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full h-8 text-xs"
+                              onClick={() => {
+                                const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                                const encodedAddress = encodeURIComponent(address);
+                                window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
+                              }}
                             >
-                              <SelectTrigger className="w-full h-7 text-xs">
-                                <SelectValue placeholder="Change status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="picked_up">Picked Up</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
+                              <MapPin className="h-3 w-3 mr-1" />
+                              Navigate to Address
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -561,36 +539,67 @@ export default function BookingsPage() {
                   </Card>
                 </div>
 
-                {/* Payment Information - Bottom Row */}
-                <div className="grid grid-cols-1 gap-4">
+                {/* Operations and Financial - Bottom Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Operations & Status
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Current Status:</span>
+                        <span>{getStatusBadge(selectedBooking.status)}</span>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-2">Update Status</div>
+                        <Select
+                          value={selectedBooking.status}
+                          onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Change status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="picked_up">Picked Up</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
                         <DollarSign className="mr-2 h-4 w-4" />
-                        Payment Information
+                        Financial Information
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-1">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground text-xs">Status</span>
-                          <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
-                            {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground text-xs">Total</span>
-                          <span className="text-lg font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
-                        </div>
-                        {selectedBooking.stripePaymentIntentId && (
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Payment ID</div>
-                            <div className="font-mono text-xs bg-gray-100 p-1 rounded break-all">
-                              {selectedBooking.stripePaymentIntentId}
-                            </div>
-                          </div>
-                        )}
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground text-sm">Payment Status:</span>
+                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                          {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
+                        </Badge>
                       </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground text-sm">Total Amount:</span>
+                        <span className="text-xl font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                      </div>
+                      {selectedBooking.stripePaymentIntentId && (
+                        <div className="pt-2 border-t">
+                          <div className="text-xs text-muted-foreground mb-1">Payment ID</div>
+                          <div className="font-mono text-xs bg-gray-100 p-2 rounded break-all">
+                            {selectedBooking.stripePaymentIntentId}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
