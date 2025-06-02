@@ -571,6 +571,19 @@ export default function BookingsPage() {
                       <div className="pt-1 border-t">
                         <div className="font-medium text-xs">{selectedBooking.deliveryAddress}</div>
                         <div className="text-muted-foreground text-xs">{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-2 h-6 text-xs"
+                          onClick={() => {
+                            const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                            const encodedAddress = encodeURIComponent(address);
+                            window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
+                          }}
+                        >
+                          <MapPin className="h-3 w-3 mr-1" />
+                          Navigate
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
