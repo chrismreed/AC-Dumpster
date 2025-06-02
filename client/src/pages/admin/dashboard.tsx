@@ -41,6 +41,10 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    if (!bookings || !dumpsters || bookings.length === 0 || dumpsters.length === 0) {
+      return;
+    }
+
     // Process bookings data for revenue chart (last 7 days)
     const today = new Date();
     const revenueByDay: { [key: string]: number } = {};
@@ -53,57 +57,57 @@ export default function DashboardPage() {
       revenueByDay[dateStr] = 0;
     }
 
-    // Only process booking data if it exists
-    if (bookings && dumpsters) {
-      // Sum up revenue by day
-      bookings.forEach(booking => {
-        if (booking.createdAt) {
-          const bookingDate = new Date(booking.createdAt);
-          // Check if booking is within last 7 days
-          const daysDiff = Math.floor((today.getTime() - bookingDate.getTime()) / (1000 * 3600 * 24));
-          if (daysDiff <= 6) {
-            const dateStr = bookingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            revenueByDay[dateStr] = (revenueByDay[dateStr] || 0) + booking.totalPrice;
-          }
+    // Sum up revenue by day
+    bookings.forEach(booking => {
+      if (booking.createdAt) {
+        const bookingDate = new Date(booking.createdAt);
+        // Check if booking is within last 7 days
+        const daysDiff = Math.floor((today.getTime() - bookingDate.getTime()) / (1000 * 3600 * 24));
+        if (daysDiff <= 6) {
+          const dateStr = bookingDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          revenueByDay[dateStr] = (revenueByDay[dateStr] || 0) + booking.totalPrice;
         }
-      });
+      }
+    });
 
-      // Convert to array for chart
-      const revenueChartData = Object.entries(revenueByDay).map(([date, amount]) => ({
-        date,
-        amount: amount / 100, // Convert cents to dollars
-      }));
+    // Convert to array for chart
+    const revenueChartData = Object.entries(revenueByDay).map(([date, amount]) => ({
+      date,
+      amount: amount / 100, // Convert cents to dollars
+    }));
 
-      setRevenueData(revenueChartData);
+    // Process dumpster distribution data
+    const dumpsterCounts: { [key: string]: number } = {};
+    const dumpsterMap: { [key: number]: string } = {};
+    
+    // Create mapping of dumpster ids to names
+    dumpsters.forEach(dumpster => {
+      dumpsterMap[dumpster.id] = dumpster.name;
+      dumpsterCounts[dumpster.name] = 0;
+    });
 
-      // Process dumpster distribution data
-      const dumpsterCounts: { [key: string]: number } = {};
-      const dumpsterMap: { [key: number]: string } = {};
-      
-      // Create mapping of dumpster ids to names
-      dumpsters.forEach(dumpster => {
-        dumpsterMap[dumpster.id] = dumpster.name;
-        dumpsterCounts[dumpster.name] = 0;
-      });
+    // Count bookings by dumpster type
+    bookings.forEach(booking => {
+      const dumpsterName = dumpsterMap[booking.dumpsterId] || 'Unknown';
+      dumpsterCounts[dumpsterName] = (dumpsterCounts[dumpsterName] || 0) + 1;
+    });
 
-      // Count bookings by dumpster type
-      bookings.forEach(booking => {
-        const dumpsterName = dumpsterMap[booking.dumpsterId] || 'Unknown';
-        dumpsterCounts[dumpsterName] = (dumpsterCounts[dumpsterName] || 0) + 1;
-      });
+    // Convert to array for chart
+    const dumpsterDistributionData = Object.entries(dumpsterCounts).map(([name, count]) => ({
+      name,
+      value: count,
+    }));
 
-      // Convert to array for chart
-      const dumpsterDistributionData = Object.entries(dumpsterCounts).map(([name, count]) => ({
-        name,
-        value: count,
-      }));
+    // Only update state if data has actually changed
+    setRevenueData(prevData => {
+      const dataChanged = JSON.stringify(prevData) !== JSON.stringify(revenueChartData);
+      return dataChanged ? revenueChartData : prevData;
+    });
 
-      setDumpsterDistribution(dumpsterDistributionData);
-    } else {
-      // Set default data when bookings/dumpsters aren't available
-      setRevenueData(Object.entries(revenueByDay).map(([date, amount]) => ({ date, amount: 0 })));
-      setDumpsterDistribution([]);
-    }
+    setDumpsterDistribution(prevData => {
+      const dataChanged = JSON.stringify(prevData) !== JSON.stringify(dumpsterDistributionData);
+      return dataChanged ? dumpsterDistributionData : prevData;
+    });
   }, [bookings, dumpsters]);
 
   // Chart colors in blue/teal palette that shows better against white background
