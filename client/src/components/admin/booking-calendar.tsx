@@ -52,8 +52,11 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentView, setCurrentView] = useState<string>('dayGridMonth');
 
-  const generateEvents = (viewType: string) => {
-    if (!bookings || !dumpsters || !allPricing) return [];
+  useEffect(() => {
+    if (!bookings || !dumpsters || !allPricing) {
+      setEvents([]);
+      return;
+    }
 
     const calendarEvents: CalendarEvent[] = [];
 
@@ -86,7 +89,7 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
           statusColor = { background: '#6b7280', border: '#6b7280', text: '#ffffff' };
       }
 
-      if (viewType === 'dayGridMonth') {
+      if (currentView === 'dayGridMonth') {
         // Monthly view: Show full booking duration as a single bar
         calendarEvents.push({
           id: `booking-${booking.id}`,
@@ -102,7 +105,7 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
           borderColor: statusColor.border,
           textColor: statusColor.text
         });
-      } else if (viewType === 'timeGridWeek') {
+      } else if (currentView === 'timeGridWeek') {
         // Weekly view: Show delivery and pickup in time slots based on preferred time
         let timeSlot = '';
         switch (booking.deliveryTimePreference?.toLowerCase()) {
@@ -154,12 +157,7 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
       }
     });
 
-    return calendarEvents;
-  };
-
-  useEffect(() => {
-    const newEvents = generateEvents(currentView);
-    setEvents(newEvents);
+    setEvents(calendarEvents);
   }, [bookings, dumpsters, allPricing, currentView]);
 
   const handleEventClick = (info: any) => {
