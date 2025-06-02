@@ -289,6 +289,21 @@ export default function BookingsPage() {
     return allPricing?.find(p => p.id === pricingId)?.days || "N/A";
   };
 
+  const getPickupDate = (deliveryDate: string | Date, pricingId: number) => {
+    const durationDays = getDurationDays(pricingId);
+    if (durationDays === "N/A") return "N/A";
+    
+    const delivery = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
+    const pickup = new Date(delivery);
+    pickup.setDate(delivery.getDate() + Number(durationDays));
+    
+    return pickup.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   const getZoneName = (id: number) => {
     return zones?.find(z => z.id === id)?.name || `Zone #${id}`;
   };
@@ -811,6 +826,7 @@ export default function BookingsPage() {
                             )}
                           </div>
                         </TableHead>
+                        <TableHead>Pickup Date</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Total</TableHead>
@@ -820,7 +836,7 @@ export default function BookingsPage() {
                     <TableBody>
                       {sortedAndFilteredBookings.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
+                          <TableCell colSpan={9} className="text-center py-8">
                             <p className="text-muted-foreground">No bookings found</p>
                           </TableCell>
                         </TableRow>
@@ -837,6 +853,7 @@ export default function BookingsPage() {
                             <TableCell>{booking.customerName}</TableCell>
                             <TableCell>{getDumpsterName(booking.dumpsterId)}</TableCell>
                             <TableCell>{formatDate(booking.deliveryDate)}</TableCell>
+                            <TableCell>{getPickupDate(booking.deliveryDate, booking.pricingId)}</TableCell>
                             <TableCell>{booking.deliveryZipCode}</TableCell>
                             <TableCell>{getStatusBadge(booking.status)}</TableCell>
                             <TableCell>${(booking.totalPrice / 100).toFixed(2)}</TableCell>
