@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,9 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Save } from "lucide-react";
+import { CreditCard, Save, Shield, AlertTriangle, Info } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function PaymentSettingsPage() {
   const { toast } = useToast();
@@ -24,13 +25,15 @@ export default function PaymentSettingsPage() {
   // Fetch current payment settings
   const { data: settings, isLoading } = useQuery({
     queryKey: ["/api/payment-settings"],
-    onSuccess: (data) => {
-      if (data) {
-        setSplitPaymentEnabled(data.splitPaymentEnabled || false);
-        setSplitPaymentPercentage(data.splitPaymentPercentage || 50);
-      }
-    },
   });
+
+  // Update state when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      setSplitPaymentEnabled(settings.splitPaymentEnabled || false);
+      setSplitPaymentPercentage(settings.splitPaymentPercentage || 50);
+    }
+  }, [settings]);
 
   // Update payment settings mutation
   const updateSettingsMutation = useMutation({

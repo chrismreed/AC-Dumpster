@@ -887,10 +887,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/payment-settings", isAdmin, async (req, res) => {
     try {
-      const { enableSplitPayment, splitPercentage } = req.body;
+      const { splitPaymentEnabled, splitPaymentPercentage } = req.body;
       const settings = await storage.updatePaymentSettings({
-        enableSplitPayment,
-        splitPercentage
+        splitPaymentEnabled,
+        splitPaymentPercentage
       });
       res.json(settings);
     } catch (err) {
