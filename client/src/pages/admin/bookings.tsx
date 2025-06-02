@@ -265,6 +265,19 @@ export default function BookingsPage() {
         const dateA = new Date(a.deliveryDate).getTime();
         const dateB = new Date(b.deliveryDate).getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      } else if (sortBy === "pickupDate") {
+        // Calculate pickup dates for comparison
+        const durationDaysA = allPricing?.find(p => p.id === a.pricingId)?.days || 7;
+        const durationDaysB = allPricing?.find(p => p.id === b.pricingId)?.days || 7;
+        
+        const deliveryA = new Date(a.deliveryDate);
+        const deliveryB = new Date(b.deliveryDate);
+        const pickupA = new Date(deliveryA);
+        const pickupB = new Date(deliveryB);
+        pickupA.setDate(deliveryA.getDate() + Number(durationDaysA));
+        pickupB.setDate(deliveryB.getDate() + Number(durationDaysB));
+        
+        return sortOrder === "asc" ? pickupA.getTime() - pickupB.getTime() : pickupB.getTime() - pickupA.getTime();
       } else if (sortBy === "createdAt") {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
@@ -278,7 +291,7 @@ export default function BookingsPage() {
     });
     
     return result;
-  }, [bookings, statusFilter, sortBy, sortOrder]);
+  }, [bookings, statusFilter, sortBy, sortOrder, allPricing]);
 
   // Get related data for a booking
   const getDumpsterName = (id: number) => {
@@ -826,7 +839,26 @@ export default function BookingsPage() {
                             )}
                           </div>
                         </TableHead>
-                        <TableHead>Pickup Date</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:text-primary"
+                          onClick={() => {
+                            if (sortBy === "pickupDate") {
+                              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortBy("pickupDate");
+                              setSortOrder("asc");
+                            }
+                          }}
+                        >
+                          <div className="flex items-center">
+                            Pickup Date
+                            {sortBy === "pickupDate" && (
+                              <span className="ml-1">
+                                {sortOrder === "asc" ? "↑" : "↓"}
+                              </span>
+                            )}
+                          </div>
+                        </TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Total</TableHead>
