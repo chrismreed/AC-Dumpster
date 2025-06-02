@@ -517,52 +517,64 @@ export default function BookingsPage() {
 
                 {/* Bottom Row - 3 columns */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div></div> {/* Empty left column */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Status
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-xs space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Current:</span>
+                        <span>{getStatusBadge(selectedBooking.status)}</span>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Update Status</div>
+                        <Select
+                          value={selectedBooking.status}
+                          onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                        >
+                          <SelectTrigger className="w-full h-7 text-xs">
+                            <SelectValue placeholder="Change status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="picked_up">Picked Up</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
                   
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
                         <MapPin className="mr-2 h-4 w-4" />
-                        Status & Address
+                        Delivery Address
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-xs space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Status:</span>
-                        <span>{getStatusBadge(selectedBooking.status)}</span>
-                      </div>
-                      <Select
-                        value={selectedBooking.status}
-                        onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
-                      >
-                        <SelectTrigger className="w-full h-7 text-xs">
-                          <SelectValue placeholder="Update status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="confirmed">Confirmed</SelectItem>
-                          <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="picked_up">Picked Up</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="pt-1 border-t">
+                      <div>
                         <div className="font-medium text-xs">{selectedBooking.deliveryAddress}</div>
                         <div className="text-muted-foreground text-xs">{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full mt-2 h-6 text-xs"
-                          onClick={() => {
-                            const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
-                            const encodedAddress = encodeURIComponent(address);
-                            window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
-                          }}
-                        >
-                          <MapPin className="h-3 w-3 mr-1" />
-                          Navigate
-                        </Button>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-6 text-xs"
+                        onClick={() => {
+                          const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                          const encodedAddress = encodeURIComponent(address);
+                          window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
+                        }}
+                      >
+                        <MapPin className="h-3 w-3 mr-1" />
+                        Navigate
+                      </Button>
                     </CardContent>
                   </Card>
 
