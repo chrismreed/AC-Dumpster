@@ -59,6 +59,9 @@ export default function BookingConfirmationPage() {
       selectedAddOnData = JSON.parse(selectedAddOnData);
     }
     
+    // Handle case where selectedAddOnData might be empty or invalid
+    if (!Array.isArray(selectedAddOnData)) return [];
+    
     // selectedAddOns is an array of objects like [{ addonId: 1, quantity: 2 }, { addonId: 4, quantity: 1 }]
     return addOns.filter(addon => 
       selectedAddOnData.some((selected: any) => selected.addonId === addon.id)
@@ -235,7 +238,9 @@ export default function BookingConfirmationPage() {
                 if (typeof selectedAddOnData === 'string') {
                   selectedAddOnData = JSON.parse(selectedAddOnData);
                 }
-                const quantity = selectedAddOnData?.find((selected: any) => selected.addonId === addon.id)?.quantity || 1;
+                // Ensure selectedAddOnData is an array before using find
+                const addOnArray = Array.isArray(selectedAddOnData) ? selectedAddOnData : [];
+                const quantity = addOnArray.find((selected: any) => selected.addonId === addon.id)?.quantity || 1;
                 return (
                   <div key={addon.id} className="flex justify-between">
                     <span className="text-gray-600">
