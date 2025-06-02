@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing } from "@shared/schema";
-import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2 } from "lucide-react";
+import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -520,7 +520,7 @@ export default function BookingsPage() {
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
-                        <Settings className="mr-2 h-4 w-4" />
+                        <Eye className="mr-2 h-4 w-4" />
                         Status
                       </CardTitle>
                     </CardHeader>
