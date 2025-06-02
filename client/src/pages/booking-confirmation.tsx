@@ -53,11 +53,16 @@ export default function BookingConfirmationPage() {
   
   const getSelectedAddOns = () => {
     if (!booking?.selectedAddOns || !addOns) return [];
-    const addOnIds = Array.isArray(booking.selectedAddOns) 
-      ? booking.selectedAddOns 
-      : JSON.parse(booking.selectedAddOns as string);
     
-    return addOns.filter(addon => addOnIds.includes(addon.id));
+    let selectedAddOnData = booking.selectedAddOns;
+    if (typeof selectedAddOnData === 'string') {
+      selectedAddOnData = JSON.parse(selectedAddOnData);
+    }
+    
+    // selectedAddOns is an array of objects like [{ addonId: 1, quantity: 2 }, { addonId: 4, quantity: 1 }]
+    return addOns.filter(addon => 
+      selectedAddOnData.some((selected: any) => selected.addonId === addon.id)
+    );
   };
   
   // Calculate pickup date based on delivery date and rental duration
@@ -226,7 +231,11 @@ export default function BookingConfirmationPage() {
               
               {/* Add-ons */}
               {getSelectedAddOns().map(addon => {
-                const quantity = booking.selectedAddOns?.find((selected: any) => selected.addonId === addon.id)?.quantity || 1;
+                let selectedAddOnData = booking.selectedAddOns;
+                if (typeof selectedAddOnData === 'string') {
+                  selectedAddOnData = JSON.parse(selectedAddOnData);
+                }
+                const quantity = selectedAddOnData?.find((selected: any) => selected.addonId === addon.id)?.quantity || 1;
                 return (
                   <div key={addon.id} className="flex justify-between">
                     <span className="text-gray-600">
