@@ -424,7 +424,7 @@ export default function BookingsPage() {
               
               {/* Consolidated booking information in a single comprehensive view */}
               <div className="space-y-4">
-                {/* Customer & Payment Information - Top Row */}
+                {/* Customer & Service Information - Top Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
@@ -458,43 +458,11 @@ export default function BookingsPage() {
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        Payment Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground text-xs">Status</span>
-                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
-                          {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground text-xs">Total</span>
-                        <span className="text-lg font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
-                      </div>
-                      {selectedBooking.stripePaymentIntentId && (
-                        <div className="pt-1 border-t">
-                          <div className="text-xs text-muted-foreground mb-1">Payment ID</div>
-                          <div className="font-mono text-xs bg-gray-100 p-1 rounded break-all">
-                            {selectedBooking.stripePaymentIntentId}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Service & Schedule Information - Middle Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center">
                         <Package className="mr-2 h-4 w-4" />
                         Service Details
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-xs space-y-1">
+                    <CardContent className="text-sm space-y-2">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Dumpster:</span>
                         <span className="font-medium">{getDumpsterName(selectedBooking.dumpsterId)}</span>
@@ -513,7 +481,10 @@ export default function BookingsPage() {
                       </div>
                     </CardContent>
                   </Card>
+                </div>
 
+                {/* Schedule Information - Middle Row */}
+                <div className="grid grid-cols-1 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
@@ -522,25 +493,30 @@ export default function BookingsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-xs space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Delivery:</span>
-                        <span className="font-medium">{formatDate(selectedBooking.deliveryDate)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Pickup:</span>
-                        <span className="font-medium">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time:</span>
-                        <span className="font-medium">{selectedBooking.deliveryTimePreference}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Placement:</span>
-                        <span className="font-medium">{selectedBooking.placementLocation}</span>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <span className="text-muted-foreground">Delivery:</span>
+                          <div className="font-medium">{formatDate(selectedBooking.deliveryDate)}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Pickup:</span>
+                          <div className="font-medium">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Time:</span>
+                          <div className="font-medium">{selectedBooking.deliveryTimePreference}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Placement:</span>
+                          <div className="font-medium">{selectedBooking.placementLocation}</div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
+                </div>
 
+                {/* Status & Payment Information - Bottom Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
@@ -585,6 +561,35 @@ export default function BookingsPage() {
                           Navigate
                         </Button>
                       </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Payment Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground text-xs">Status</span>
+                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                          {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground text-xs">Total</span>
+                        <span className="text-lg font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                      </div>
+                      {selectedBooking.stripePaymentIntentId && (
+                        <div className="pt-1 border-t">
+                          <div className="text-xs text-muted-foreground mb-1">Payment ID</div>
+                          <div className="font-mono text-xs bg-gray-100 p-1 rounded break-all">
+                            {selectedBooking.stripePaymentIntentId}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
