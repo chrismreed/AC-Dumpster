@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -173,14 +174,14 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
         <CardContent>
           <div className="h-[700px]">
             <FullCalendar
-              plugins={[dayGridPlugin]}
+              plugins={[dayGridPlugin, timeGridPlugin]}
               initialView="dayGridMonth"
               events={events}
               eventClick={handleEventClick}
               headerToolbar={{
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,dayGridWeek'
+                right: 'dayGridMonth,timeGridWeek'
               }}
               height="100%"
               eventTimeFormat={{
