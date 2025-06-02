@@ -50,84 +50,117 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<string>('dayGridMonth');
 
-  useEffect(() => {
-    if (bookings && dumpsters && allPricing) {
-      const calendarEvents: CalendarEvent[] = [];
+  const generateEvents = (viewType: string) => {
+    if (!bookings || !dumpsters || !allPricing) return [];
+
+    const calendarEvents: CalendarEvent[] = [];
+
+    bookings.forEach((booking) => {
+      const dumpster = dumpsters.find((d) => d.id === booking.dumpsterId);
+      const pricing = allPricing.find((p) => p.id === booking.pricingId);
+      const dumpsterName = dumpster ? dumpster.name : `Dumpster #${booking.dumpsterId}`;
+      const durationDays = pricing ? pricing.days : 7;
       
-      bookings.forEach((booking) => {
-        const dumpster = dumpsters.find((d) => d.id === booking.dumpsterId);
-        const pricing = allPricing.find((p) => p.id === booking.pricingId);
-        const dumpsterName = dumpster ? dumpster.name : `Dumpster #${booking.dumpsterId}`;
-        const durationDays = pricing ? pricing.days : 7; // Default to 7 days if not found
-        
-        const deliveryDate = new Date(booking.deliveryDate);
-        const pickupDate = new Date(deliveryDate);
-        pickupDate.setDate(deliveryDate.getDate() + durationDays);
-        
-        let dropOffColor, pickupColor;
-        
-        // Set colors based on booking status
-        switch (booking.status) {
-          case 'scheduled':
-            dropOffColor = '#3b82f6'; // Blue for drop-off
-            pickupColor = '#f59e0b'; // Amber for pickup
-            break;
-          case 'delivered':
-            dropOffColor = '#10b981'; // Green for delivered
-            pickupColor = '#f59e0b'; // Amber for pending pickup
-            break;
-          case 'completed':
-            dropOffColor = '#10b981'; // Green for delivered
-            pickupColor = '#8b5cf6'; // Purple for completed pickup
-            break;
-          case 'cancelled':
-            dropOffColor = '#ef4444'; // Red for cancelled
-            pickupColor = '#ef4444'; // Red for cancelled
-            break;
-          default:
-            dropOffColor = '#6b7280';
-            pickupColor = '#6b7280';
-        }
-        
-        // Drop-off event
+      const deliveryDate = new Date(booking.deliveryDate);
+      const pickupDate = new Date(deliveryDate);
+      pickupDate.setDate(deliveryDate.getDate() + durationDays);
+      
+      // Get status colors
+      let statusColor;
+      switch (booking.status) {
+        case 'scheduled':
+          statusColor = { background: '#3b82f6', border: '#3b82f6', text: '#ffffff' };
+          break;
+        case 'delivered':
+          statusColor = { background: '#10b981', border: '#10b981', text: '#ffffff' };
+          break;
+        case 'completed':
+          statusColor = { background: '#8b5cf6', border: '#8b5cf6', text: '#ffffff' };
+          break;
+        case 'cancelled':
+          statusColor = { background: '#ef4444', border: '#ef4444', text: '#ffffff' };
+          break;
+        default:
+          statusColor = { background: '#6b7280', border: '#6b7280', text: '#ffffff' };
+      }
+
+      if (viewType === 'dayGridMonth') {
+        // Monthly view: Show full booking duration as a single bar
         calendarEvents.push({
-          id: `${booking.id}-dropoff`,
-          title: `Drop-off: ${dumpsterName} - ${booking.customerName}`,
+          id: `booking-${booking.id}`,
+          title: `${booking.customerName} - ${dumpsterName}`,
           start: deliveryDate.toISOString().split('T')[0],
-          end: deliveryDate.toISOString().split('T')[0],
-          extendedProps: {
-            booking,
-            dumpsterName,
-            durationDays,
-            eventType: 'dropoff'
-          },
-          backgroundColor: dropOffColor,
-          borderColor: dropOffColor,
-          textColor: '#ffffff',
-        });
-        
-        // Pickup event
-        calendarEvents.push({
-          id: `${booking.id}-pickup`,
-          title: `Pickup: ${dumpsterName} - ${booking.customerName}`,
-          start: pickupDate.toISOString().split('T')[0],
           end: pickupDate.toISOString().split('T')[0],
           extendedProps: {
             booking,
             dumpsterName,
             durationDays,
-            eventType: 'pickup'
           },
-          backgroundColor: pickupColor,
-          borderColor: pickupColor,
-          textColor: '#ffffff',
+          backgroundColor: statusColor.background,
+          borderColor: statusColor.border,
+          textColor: statusColor.text
         });
-      });
-      
-      setEvents(calendarEvents);
-    }
-  }, [bookings, dumpsters, allPricing]);
+      } else if (viewType === 'timeGridWeek') {
+        // Weekly view: Show delivery and pickup in time slots based on preferred time
+        let timeSlot = '';
+        switch (booking.deliveryTimePreference?.toLowerCase()) {
+          case 'morning':
+            timeSlot = 'T10:00:00'; // 10 AM for morning
+            break;
+          case 'afternoon':
+            timeSlot = 'T14:00:00'; // 2 PM for afternoon
+            break;
+          case 'evening':
+            timeSlot = 'T18:00:00'; // 6 PM for evening
+            break;
+          default:
+            timeSlot = 'T08:00:00'; // 8 AM for anytime (top of day)
+            break;
+        }
+
+        // Delivery event
+        calendarEvents.push({
+          id: `delivery-${booking.id}`,
+          title: `🚚 ${booking.customerName} - ${dumpsterName}`,
+          start: `${deliveryDate.toISOString().split('T')[0]}${timeSlot}`,
+          end: `${deliveryDate.toISOString().split('T')[0]}${timeSlot}`,
+          extendedProps: {
+            booking,
+            dumpsterName,
+            durationDays,
+          },
+          backgroundColor: statusColor.background,
+          borderColor: statusColor.border,
+          textColor: statusColor.text
+        });
+
+        // Pickup event (same time slot as delivery)
+        calendarEvents.push({
+          id: `pickup-${booking.id}`,
+          title: `📦 Pickup - ${booking.customerName}`,
+          start: `${pickupDate.toISOString().split('T')[0]}${timeSlot}`,
+          end: `${pickupDate.toISOString().split('T')[0]}${timeSlot}`,
+          extendedProps: {
+            booking,
+            dumpsterName,
+            durationDays,
+          },
+          backgroundColor: statusColor.background,
+          borderColor: statusColor.border,
+          textColor: statusColor.text
+        });
+      }
+    });
+
+    return calendarEvents;
+  };
+
+  useEffect(() => {
+    const newEvents = generateEvents(currentView);
+    setEvents(newEvents);
+  }, [bookings, dumpsters, allPricing, currentView]);
 
   const handleEventClick = (info: any) => {
     setSelectedBooking(info.event.extendedProps.booking);
@@ -202,6 +235,10 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                 left: 'prev,next today',
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek'
+              }}
+              viewDidMount={(info) => {
+                // Update current view when view changes
+                setCurrentView(info.view.type);
               }}
               height="100%"
               eventTimeFormat={{
