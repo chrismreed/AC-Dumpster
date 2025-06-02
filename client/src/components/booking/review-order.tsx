@@ -30,6 +30,7 @@ const contactSchema = z.object({
     message: "You must agree to the terms and conditions",
   }),
   paymentMethod: z.enum(["card", "paypal"]),
+  splitPayment: z.boolean().optional(),
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
@@ -46,6 +47,12 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<number | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Fetch payment settings to check if split payment is enabled
+  const { data: paymentSettings } = useQuery({
+    queryKey: ["/api/payment-settings"],
+    retry: false,
+  });
 
   // Create form
   const form = useForm<ContactFormValues>({
@@ -207,6 +214,15 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
     // Create a valid date string (YYYY-MM-DD) that will be converted to a timestamp by the server
     const deliveryDate = bookingData.deliveryDate;
 
+    // Calculate split payment amounts if selected
+    const splitPaymentSelected = formData.splitPayment && paymentSettings?.splitPaymentEnabled;
+    const firstPaymentAmount = splitPaymentSelected 
+      ? Math.round((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100)
+      : calculatedPrice;
+    const secondPaymentAmount = splitPaymentSelected 
+      ? calculatedPrice - firstPaymentAmount
+      : 0;
+
     // Create complete booking data
     const completeBookingData = {
       ...bookingData,
@@ -218,7 +234,13 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       status: "scheduled",
       serviceZoneId: selectedZone.id,
       // Pass the date string directly to the server
-      deliveryDate: deliveryDate
+      deliveryDate: deliveryDate,
+      // Split payment fields
+      splitPayment: splitPaymentSelected,
+      firstPaymentAmount: splitPaymentSelected ? firstPaymentAmount : null,
+      secondPaymentAmount: splitPaymentSelected ? secondPaymentAmount : null,
+      firstPaymentStatus: splitPaymentSelected ? "pending" : null,
+      secondPaymentStatus: splitPaymentSelected ? "pending" : null
     };
 
     // Create booking
@@ -467,6 +489,35 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                     )}
                   />
                 </div>
+
+                {/* Split Payment Option */}
+                {paymentSettings?.splitPaymentEnabled && (
+                  <div>
+                    <h3 className="font-medium text-lg mb-4">Payment Options</h3>
+                    <FormField
+                      control={form.control}
+                      name="splitPayment"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value || false}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="text-sm font-medium">
+                              Split Payment ({paymentSettings.splitPaymentPercentage}% now, {100 - paymentSettings.splitPaymentPercentage}% at pickup)
+                            </FormLabel>
+                            <p className="text-xs text-blue-700">
+                              Pay {paymentSettings.splitPaymentPercentage}% (${calculatedPrice ? ((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100 / 100).toFixed(2) : '0.00'}) now and the remaining {100 - paymentSettings.splitPaymentPercentage}% (${calculatedPrice ? ((calculatedPrice * (100 - paymentSettings.splitPaymentPercentage)) / 100 / 100).toFixed(2) : '0.00'}) when we pick up the dumpster.
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
                 
                 <FormField
                   control={form.control}
