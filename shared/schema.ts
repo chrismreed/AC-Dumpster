@@ -103,6 +103,14 @@ export const bookings = pgTable("bookings", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Payment settings
+export const paymentSettings = pgTable("payment_settings", {
+  id: serial("id").primaryKey(),
+  splitPaymentEnabled: boolean("split_payment_enabled").notNull().default(false),
+  splitPaymentPercentage: integer("split_payment_percentage").notNull().default(50), // Percentage for first payment
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Schemas for insert operations
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -156,6 +164,11 @@ export const insertBookingSchema = createInsertSchema(bookings)
     })
   });
 
+export const insertPaymentSettingsSchema = createInsertSchema(paymentSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -177,3 +190,6 @@ export type InsertDumpsterPricing = z.infer<typeof insertDumpsterPricingSchema>;
 
 export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
+
+export type PaymentSettings = typeof paymentSettings.$inferSelect;
+export type InsertPaymentSettings = z.infer<typeof insertPaymentSettingsSchema>;

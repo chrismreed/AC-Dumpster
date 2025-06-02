@@ -19,7 +19,10 @@ import {
   type InsertBooking,
   dumpsterPricing,
   type DumpsterPricing,
-  type InsertDumpsterPricing
+  type InsertDumpsterPricing,
+  paymentSettings,
+  type PaymentSettings,
+  type InsertPaymentSettings
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -84,6 +87,10 @@ export interface IStorage {
   // Inventory management methods
   checkDumpsterAvailability(dumpsterId: number, deliveryDate: string, rentalDays: number): Promise<boolean>;
   getAvailableDumpsters(deliveryDate: string, rentalDays: number): Promise<Dumpster[]>;
+
+  // Payment settings methods
+  getPaymentSettings(): Promise<PaymentSettings | undefined>;
+  updatePaymentSettings(settings: Partial<InsertPaymentSettings>): Promise<PaymentSettings>;
 
   // Session store
   sessionStore: session.SessionStore;
