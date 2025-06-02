@@ -946,6 +946,37 @@ export class DatabaseStorage implements IStorage {
 
     return availableDumpsters;
   }
+
+  // Payment settings methods
+  async getPaymentSettings(): Promise<PaymentSettings | undefined> {
+    const [settings] = await db.select().from(paymentSettings).limit(1);
+    return settings;
+  }
+
+  async updatePaymentSettings(settingsUpdate: Partial<InsertPaymentSettings>): Promise<PaymentSettings> {
+    // First try to update existing settings
+    const [updated] = await db
+      .update(paymentSettings)
+      .set({
+        ...settingsUpdate,
+        updatedAt: new Date()
+      })
+      .returning();
+
+    // If no rows were updated, create new settings
+    if (!updated) {
+      const [created] = await db
+        .insert(paymentSettings)
+        .values({
+          enableSplitPayment: settingsUpdate.enableSplitPayment ?? false,
+          splitPercentage: settingsUpdate.splitPercentage ?? 50.00
+        })
+        .returning();
+      return created;
+    }
+
+    return updated;
+  }
 }
 
 export const storage = new DatabaseStorage();
