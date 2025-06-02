@@ -515,8 +515,10 @@ export default function BookingsPage() {
                   </Card>
                 </div>
 
-                {/* Status & Payment Information - Bottom Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Bottom Row - 3 columns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div></div> {/* Empty left column */}
+                  
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center">
