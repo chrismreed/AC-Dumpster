@@ -54,13 +54,17 @@ export default function BookingConfirmationPage() {
   const getSelectedAddOns = () => {
     if (!booking?.selectedAddOns || !addOns) return [];
     
-    let selectedAddOnData = booking.selectedAddOns;
-    if (typeof selectedAddOnData === 'string') {
-      selectedAddOnData = JSON.parse(selectedAddOnData);
-    }
+    let selectedAddOnData: any[] = [];
     
-    // Handle case where selectedAddOnData might be empty or invalid
-    if (!Array.isArray(selectedAddOnData)) return [];
+    if (typeof booking.selectedAddOns === 'string') {
+      try {
+        selectedAddOnData = JSON.parse(booking.selectedAddOns);
+      } catch {
+        return [];
+      }
+    } else if (Array.isArray(booking.selectedAddOns)) {
+      selectedAddOnData = booking.selectedAddOns;
+    }
     
     // selectedAddOns is an array of objects like [{ addonId: 1, quantity: 2 }, { addonId: 4, quantity: 1 }]
     return addOns.filter(addon => 
@@ -234,13 +238,19 @@ export default function BookingConfirmationPage() {
               
               {/* Add-ons */}
               {getSelectedAddOns().map(addon => {
-                let selectedAddOnData = booking.selectedAddOns;
-                if (typeof selectedAddOnData === 'string') {
-                  selectedAddOnData = JSON.parse(selectedAddOnData);
+                let selectedAddOnData: any[] = [];
+                
+                if (typeof booking.selectedAddOns === 'string') {
+                  try {
+                    selectedAddOnData = JSON.parse(booking.selectedAddOns);
+                  } catch {
+                    selectedAddOnData = [];
+                  }
+                } else if (Array.isArray(booking.selectedAddOns)) {
+                  selectedAddOnData = booking.selectedAddOns;
                 }
-                // Ensure selectedAddOnData is an array before using find
-                const addOnArray = Array.isArray(selectedAddOnData) ? selectedAddOnData : [];
-                const quantity = addOnArray.find((selected: any) => selected.addonId === addon.id)?.quantity || 1;
+                
+                const quantity = selectedAddOnData.find((selected: any) => selected.addonId === addon.id)?.quantity || 1;
                 return (
                   <div key={addon.id} className="flex justify-between">
                     <span className="text-gray-600">

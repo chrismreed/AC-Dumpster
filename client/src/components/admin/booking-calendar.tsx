@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Booking, Dumpster, RentalDuration } from "@shared/schema";
+import { Booking, Dumpster, RentalDuration, DumpsterPricing } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { 
   ClipboardList, 
@@ -26,6 +26,7 @@ interface BookingCalendarProps {
   bookings: Booking[];
   dumpsters: Dumpster[];
   durations: RentalDuration[];
+  allPricing: DumpsterPricing[];
 }
 
 // Define the event type compatible with FullCalendar
@@ -44,7 +45,7 @@ type CalendarEvent = {
   textColor: string;
 };
 
-export function BookingCalendar({ bookings, dumpsters, durations }: BookingCalendarProps) {
+export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: BookingCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
