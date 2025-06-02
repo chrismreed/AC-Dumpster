@@ -414,7 +414,7 @@ export default function BookingsPage() {
         {/* Booking Details Dialog */}
         {selectedBooking && (
           <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Booking Details</DialogTitle>
                 <DialogDescription>
@@ -423,61 +423,60 @@ export default function BookingsPage() {
               </DialogHeader>
               
               {/* Consolidated booking information in a single comprehensive view */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Customer & Payment Information - Top Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
                         <Mail className="mr-2 h-4 w-4" />
                         Customer Information
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2">
                       <div>
-                        <h3 className="text-lg font-semibold">{selectedBooking.customerName}</h3>
+                        <h3 className="font-semibold">{selectedBooking.customerName}</h3>
                       </div>
                       <div className="flex items-center text-sm">
-                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <a href={`mailto:${selectedBooking.customerEmail}`} className="text-primary hover:underline">
+                        <Mail className="h-3 w-3 mr-2 text-muted-foreground" />
+                        <a href={`mailto:${selectedBooking.customerEmail}`} className="text-primary hover:underline text-xs">
                           {selectedBooking.customerEmail}
                         </a>
                       </div>
                       <div className="flex items-center text-sm">
-                        <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <a href={`tel:${selectedBooking.customerPhone}`} className="text-primary hover:underline">
+                        <Phone className="h-3 w-3 mr-2 text-muted-foreground" />
+                        <a href={`tel:${selectedBooking.customerPhone}`} className="text-primary hover:underline text-xs">
                           {selectedBooking.customerPhone}
                         </a>
                       </div>
-                      <div className="pt-2 border-t">
-                        <div className="text-xs text-muted-foreground">Booking Date</div>
-                        <div className="text-sm">{formatDate(selectedBooking.createdAt)}</div>
+                      <div className="pt-1 border-t">
+                        <div className="text-xs text-muted-foreground">Booked: {formatDate(selectedBooking.createdAt)}</div>
                       </div>
                     </CardContent>
                   </Card>
 
                   <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
                         <DollarSign className="mr-2 h-4 w-4" />
                         Payment Information
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground text-sm">Payment Status</span>
+                        <span className="text-muted-foreground text-xs">Status</span>
                         <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
                           {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
                         </Badge>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground text-sm">Total Amount</span>
-                        <span className="text-xl font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                        <span className="text-muted-foreground text-xs">Total</span>
+                        <span className="text-lg font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
                       </div>
                       {selectedBooking.stripePaymentIntentId && (
-                        <div className="pt-2 border-t">
+                        <div className="pt-1 border-t">
                           <div className="text-xs text-muted-foreground mb-1">Payment ID</div>
-                          <div className="font-mono text-xs bg-gray-100 p-2 rounded break-all">
+                          <div className="font-mono text-xs bg-gray-100 p-1 rounded break-all">
                             {selectedBooking.stripePaymentIntentId}
                           </div>
                         </div>
@@ -487,25 +486,25 @@ export default function BookingsPage() {
                 </div>
 
                 {/* Service & Schedule Information - Middle Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
                         <Package className="mr-2 h-4 w-4" />
                         Service Details
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm space-y-2">
+                    <CardContent className="text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Dumpster Type:</span>
+                        <span className="text-muted-foreground">Dumpster:</span>
                         <span className="font-medium">{getDumpsterName(selectedBooking.dumpsterId)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Rental Duration:</span>
+                        <span className="text-muted-foreground">Duration:</span>
                         <span className="font-medium">{getDurationDays(selectedBooking.pricingId)} days</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Service Zone:</span>
+                        <span className="text-muted-foreground">Zone:</span>
                         <span className="font-medium">{getZoneName(selectedBooking.serviceZoneId)}</span>
                       </div>
                       <div className="flex justify-between">
@@ -516,23 +515,23 @@ export default function BookingsPage() {
                   </Card>
 
                   <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
                         <Calendar className="mr-2 h-4 w-4" />
-                        Delivery Schedule
+                        Schedule
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm space-y-2">
+                    <CardContent className="text-xs space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Delivery Date:</span>
+                        <span className="text-muted-foreground">Delivery:</span>
                         <span className="font-medium">{formatDate(selectedBooking.deliveryDate)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Pickup Date:</span>
+                        <span className="text-muted-foreground">Pickup:</span>
                         <span className="font-medium">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time Preference:</span>
+                        <span className="text-muted-foreground">Time:</span>
                         <span className="font-medium">{selectedBooking.deliveryTimePreference}</span>
                       </div>
                       <div className="flex justify-between">
@@ -541,59 +540,53 @@ export default function BookingsPage() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center">
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Status & Address
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-xs space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Status:</span>
+                        <span>{getStatusBadge(selectedBooking.status)}</span>
+                      </div>
+                      <Select
+                        value={selectedBooking.status}
+                        onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                      >
+                        <SelectTrigger className="w-full h-7 text-xs">
+                          <SelectValue placeholder="Update status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="picked_up">Picked Up</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="pt-1 border-t">
+                        <div className="font-medium text-xs">{selectedBooking.deliveryAddress}</div>
+                        <div className="text-muted-foreground text-xs">{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
 
-                {/* Delivery Address & Status - Bottom Section */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center">
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Delivery Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground mb-1">Delivery Address</div>
-                          <div className="font-medium">{selectedBooking.deliveryAddress}</div>
-                          <div className="text-muted-foreground text-sm">{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</div>
-                        </div>
-                        {selectedBooking.deliveryInstructions && (
-                          <div>
-                            <div className="text-sm font-medium text-muted-foreground mb-1">Instructions</div>
-                            <div className="text-sm italic bg-gray-50 p-2 rounded">{selectedBooking.deliveryInstructions}</div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">Current Status:</span>
-                          <span>{getStatusBadge(selectedBooking.status)}</span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground mb-2">Update Status</div>
-                          <Select
-                            value={selectedBooking.status}
-                            onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Change status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="picked_up">Picked Up</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Delivery Instructions if present */}
+                {selectedBooking.deliveryInstructions && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Delivery Instructions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm italic bg-gray-50 p-2 rounded">{selectedBooking.deliveryInstructions}</div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
               
               <DialogFooter>
