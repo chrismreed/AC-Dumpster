@@ -186,6 +186,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all dumpster pricing options
+  app.get("/api/dumpster-pricing/all", async (_req, res) => {
+    try {
+      const allPricing = await storage.getAllDumpsterPricing();
+      res.json(allPricing);
+    } catch (error) {
+      console.error("Error fetching all dumpster pricing:", error);
+      res.status(500).json({ message: "Failed to fetch all dumpster pricing" });
+    }
+  });
+
   // Dumpster pricing routes
   app.get("/api/dumpster-pricing/:dumpsterId", isAdmin, async (req, res) => {
     try {
@@ -198,17 +209,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching dumpster pricing:", error);
       res.status(500).json({ message: "Failed to fetch dumpster pricing" });
-    }
-  });
-
-  // Get all dumpster pricing options
-  app.get("/api/dumpster-pricing/all", async (_req, res) => {
-    try {
-      const allPricing = await storage.getAllDumpsterPricing();
-      res.json(allPricing);
-    } catch (error) {
-      console.error("Error fetching all dumpster pricing:", error);
-      res.status(500).json({ message: "Failed to fetch all dumpster pricing" });
     }
   });
 

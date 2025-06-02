@@ -51,12 +51,12 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   useEffect(() => {
-    if (bookings && dumpsters && durations) {
+    if (bookings && dumpsters && allPricing) {
       const calendarEvents = bookings.map((booking) => {
         const dumpster = dumpsters.find((d) => d.id === booking.dumpsterId);
-        const duration = durations.find((d) => d.id === booking.rentalDurationId);
+        const pricing = allPricing.find((p) => p.id === booking.pricingId);
         const dumpsterName = dumpster ? dumpster.name : `Dumpster #${booking.dumpsterId}`;
-        const durationDays = duration ? duration.days : 7; // Default to 7 days if not found
+        const durationDays = pricing ? pricing.days : 7; // Default to 7 days if not found
         
         const startDate = new Date(booking.deliveryDate);
         const endDate = new Date(startDate);
@@ -106,7 +106,7 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
       
       setEvents(calendarEvents);
     }
-  }, [bookings, dumpsters, durations]);
+  }, [bookings, dumpsters, allPricing]);
 
   const handleEventClick = (info: any) => {
     setSelectedBooking(info.event.extendedProps.booking);
@@ -144,14 +144,14 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
     return dumpsters?.find(d => d.id === id)?.name || `Dumpster #${id}`;
   };
 
-  // Get duration days
-  const getDurationDays = (id: number) => {
-    return durations?.find(d => d.id === id)?.days || "N/A";
+  // Get duration days from pricing
+  const getDurationDays = (pricingId: number) => {
+    return allPricing?.find(p => p.id === pricingId)?.days || "N/A";
   };
 
   // Calculate pickup date
-  const getPickupDate = (deliveryDate: string | Date, durationId: number) => {
-    const durationDays = getDurationDays(durationId);
+  const getPickupDate = (deliveryDate: string | Date, pricingId: number) => {
+    const durationDays = getDurationDays(pricingId);
     if (durationDays === "N/A") return "N/A";
     
     const startDate = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
@@ -276,7 +276,7 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Rental Duration</span>
-                      <span>{getDurationDays(selectedBooking.rentalDurationId)} days</span>
+                      <span>{getDurationDays(selectedBooking.pricingId)} days</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Delivery Date</span>
@@ -284,7 +284,7 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Pickup Date (Est.)</span>
-                      <span>{getPickupDate(selectedBooking.deliveryDate, selectedBooking.rentalDurationId)}</span>
+                      <span>{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Time Preference</span>
