@@ -53,56 +53,76 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
 
   useEffect(() => {
     if (bookings && dumpsters && allPricing) {
-      const calendarEvents = bookings.map((booking) => {
+      const calendarEvents: CalendarEvent[] = [];
+      
+      bookings.forEach((booking) => {
         const dumpster = dumpsters.find((d) => d.id === booking.dumpsterId);
         const pricing = allPricing.find((p) => p.id === booking.pricingId);
         const dumpsterName = dumpster ? dumpster.name : `Dumpster #${booking.dumpsterId}`;
         const durationDays = pricing ? pricing.days : 7; // Default to 7 days if not found
         
-        const startDate = new Date(booking.deliveryDate);
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + durationDays);
+        const deliveryDate = new Date(booking.deliveryDate);
+        const pickupDate = new Date(deliveryDate);
+        pickupDate.setDate(deliveryDate.getDate() + durationDays);
         
-        let bgColor;
-        let borderColor;
+        let dropOffColor, pickupColor;
         
         // Set colors based on booking status
         switch (booking.status) {
           case 'scheduled':
-            bgColor = '#3b82f6';
-            borderColor = '#2563eb';
+            dropOffColor = '#3b82f6'; // Blue for drop-off
+            pickupColor = '#f59e0b'; // Amber for pickup
             break;
           case 'delivered':
-            bgColor = '#10b981';
-            borderColor = '#059669';
+            dropOffColor = '#10b981'; // Green for delivered
+            pickupColor = '#f59e0b'; // Amber for pending pickup
             break;
           case 'completed':
-            bgColor = '#8b5cf6';
-            borderColor = '#7c3aed';
+            dropOffColor = '#10b981'; // Green for delivered
+            pickupColor = '#8b5cf6'; // Purple for completed pickup
             break;
           case 'cancelled':
-            bgColor = '#ef4444';
-            borderColor = '#dc2626';
+            dropOffColor = '#ef4444'; // Red for cancelled
+            pickupColor = '#ef4444'; // Red for cancelled
             break;
           default:
-            bgColor = '#6b7280';
-            borderColor = '#4b5563';
+            dropOffColor = '#6b7280';
+            pickupColor = '#6b7280';
         }
         
-        return {
-          id: String(booking.id),
-          title: `${dumpsterName} - ${booking.customerName}`,
-          start: startDate.toISOString(), // Convert to ISO string
-          end: endDate.toISOString(),     // Convert to ISO string
+        // Drop-off event
+        calendarEvents.push({
+          id: `${booking.id}-dropoff`,
+          title: `Drop-off: ${dumpsterName} - ${booking.customerName}`,
+          start: deliveryDate.toISOString().split('T')[0],
+          end: deliveryDate.toISOString().split('T')[0],
           extendedProps: {
             booking,
             dumpsterName,
             durationDays,
+            eventType: 'dropoff'
           },
-          backgroundColor: bgColor,
-          borderColor: borderColor,
+          backgroundColor: dropOffColor,
+          borderColor: dropOffColor,
           textColor: '#ffffff',
-        };
+        });
+        
+        // Pickup event
+        calendarEvents.push({
+          id: `${booking.id}-pickup`,
+          title: `Pickup: ${dumpsterName} - ${booking.customerName}`,
+          start: pickupDate.toISOString().split('T')[0],
+          end: pickupDate.toISOString().split('T')[0],
+          extendedProps: {
+            booking,
+            dumpsterName,
+            durationDays,
+            eventType: 'pickup'
+          },
+          backgroundColor: pickupColor,
+          borderColor: pickupColor,
+          textColor: '#ffffff',
+        });
       });
       
       setEvents(calendarEvents);
