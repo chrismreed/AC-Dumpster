@@ -490,7 +490,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                   />
                 </div>
 
-                {/* Split Payment Option */}
+                {/* Payment Options */}
                 {paymentSettings?.splitPaymentEnabled && (
                   <div>
                     <h3 className="font-medium text-lg mb-4">Payment Options</h3>
@@ -498,21 +498,38 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                       control={form.control}
                       name="splitPayment"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <FormItem>
                           <FormControl>
-                            <Checkbox
-                              checked={field.value || false}
-                              onCheckedChange={field.onChange}
-                            />
+                            <RadioGroup
+                              onValueChange={(value) => field.onChange(value === "split")}
+                              value={field.value ? "split" : "full"}
+                              className="space-y-3"
+                            >
+                              <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <RadioGroupItem value="full" id="payment-full" className="mt-1" />
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel htmlFor="payment-full" className="text-sm font-medium cursor-pointer">
+                                    Pay in Full
+                                  </FormLabel>
+                                  <p className="text-xs text-gray-600">
+                                    Pay the full amount (${calculatedPrice ? (calculatedPrice / 100).toFixed(2) : '0.00'}) now
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <RadioGroupItem value="split" id="payment-split" className="mt-1" />
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel htmlFor="payment-split" className="text-sm font-medium cursor-pointer">
+                                    Split Payment ({paymentSettings.splitPaymentPercentage}% now, {100 - paymentSettings.splitPaymentPercentage}% at pickup)
+                                  </FormLabel>
+                                  <p className="text-xs text-blue-700">
+                                    Pay ${calculatedPrice ? ((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100 / 100).toFixed(2) : '0.00'} now and ${calculatedPrice ? ((calculatedPrice * (100 - paymentSettings.splitPaymentPercentage)) / 100 / 100).toFixed(2) : '0.00'} when we pick up the dumpster
+                                  </p>
+                                </div>
+                              </div>
+                            </RadioGroup>
                           </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="text-sm font-medium">
-                              Split Payment ({paymentSettings.splitPaymentPercentage}% now, {100 - paymentSettings.splitPaymentPercentage}% at pickup)
-                            </FormLabel>
-                            <p className="text-xs text-blue-700">
-                              Pay {paymentSettings.splitPaymentPercentage}% (${calculatedPrice ? ((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100 / 100).toFixed(2) : '0.00'}) now and the remaining {100 - paymentSettings.splitPaymentPercentage}% (${calculatedPrice ? ((calculatedPrice * (100 - paymentSettings.splitPaymentPercentage)) / 100 / 100).toFixed(2) : '0.00'}) when we pick up the dumpster.
-                            </p>
-                          </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
