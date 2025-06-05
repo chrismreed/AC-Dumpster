@@ -89,26 +89,8 @@ export const bookings = pgTable("bookings", {
   totalPrice: integer("total_price").notNull(), // In cents
   paymentStatus: text("payment_status").notNull().default("pending"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
-  
-  // Split payment fields
-  splitPayment: boolean("split_payment").notNull().default(false),
-  firstPaymentAmount: integer("first_payment_amount"),
-  firstPaymentStatus: text("first_payment_status").default("pending"),
-  firstPaymentIntentId: text("first_payment_intent_id"),
-  secondPaymentAmount: integer("second_payment_amount"),
-  secondPaymentStatus: text("second_payment_status").default("pending"),
-  secondPaymentIntentId: text("second_payment_intent_id"),
-  
   status: text("status").notNull().default("scheduled"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Payment settings
-export const paymentSettings = pgTable("payment_settings", {
-  id: serial("id").primaryKey(),
-  splitPaymentEnabled: boolean("split_payment_enabled").notNull().default(false),
-  splitPaymentPercentage: integer("split_payment_percentage").notNull().default(50), // Percentage for first payment
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Schemas for insert operations
@@ -164,11 +146,6 @@ export const insertBookingSchema = createInsertSchema(bookings)
     })
   });
 
-export const insertPaymentSettingsSchema = createInsertSchema(paymentSettings).omit({
-  id: true,
-  updatedAt: true,
-});
-
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -190,6 +167,3 @@ export type InsertDumpsterPricing = z.infer<typeof insertDumpsterPricingSchema>;
 
 export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
-
-export type PaymentSettings = typeof paymentSettings.$inferSelect;
-export type InsertPaymentSettings = z.infer<typeof insertPaymentSettingsSchema>;

@@ -874,31 +874,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ received: true });
   });
 
-  // Payment settings routes
-  app.get("/api/payment-settings", isAdmin, async (_req, res) => {
-    try {
-      const settings = await storage.getPaymentSettings();
-      res.json(settings);
-    } catch (err) {
-      console.error("Error fetching payment settings:", err);
-      res.status(500).json({ message: "Failed to fetch payment settings" });
-    }
-  });
-
-  app.put("/api/payment-settings", isAdmin, async (req, res) => {
-    try {
-      const { splitPaymentEnabled, splitPaymentPercentage } = req.body;
-      const settings = await storage.updatePaymentSettings({
-        splitPaymentEnabled,
-        splitPaymentPercentage
-      });
-      res.json(settings);
-    } catch (err) {
-      console.error("Error updating payment settings:", err);
-      res.status(500).json({ message: "Failed to update payment settings" });
-    }
-  });
-
   const httpServer = createServer(app);
   return httpServer;
 }

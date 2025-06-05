@@ -30,7 +30,6 @@ const contactSchema = z.object({
     message: "You must agree to the terms and conditions",
   }),
   paymentMethod: z.enum(["card", "paypal"]),
-  splitPayment: z.boolean().optional(),
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
@@ -47,12 +46,6 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<number | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-
-  // Fetch payment settings to check if split payment is enabled
-  const { data: paymentSettings } = useQuery({
-    queryKey: ["/api/payment-settings"],
-    retry: false,
-  });
 
   // Create form
   const form = useForm<ContactFormValues>({
@@ -214,15 +207,6 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
     // Create a valid date string (YYYY-MM-DD) that will be converted to a timestamp by the server
     const deliveryDate = bookingData.deliveryDate;
 
-    // Calculate split payment amounts if selected
-    const splitPaymentSelected = formData.splitPayment && paymentSettings?.splitPaymentEnabled;
-    const firstPaymentAmount = splitPaymentSelected 
-      ? Math.round((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100)
-      : calculatedPrice;
-    const secondPaymentAmount = splitPaymentSelected 
-      ? calculatedPrice - firstPaymentAmount
-      : 0;
-
     // Create complete booking data
     const completeBookingData = {
       ...bookingData,
@@ -234,13 +218,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       status: "scheduled",
       serviceZoneId: selectedZone.id,
       // Pass the date string directly to the server
-      deliveryDate: deliveryDate,
-      // Split payment fields
-      splitPayment: splitPaymentSelected,
-      firstPaymentAmount: splitPaymentSelected ? firstPaymentAmount : null,
-      secondPaymentAmount: splitPaymentSelected ? secondPaymentAmount : null,
-      firstPaymentStatus: splitPaymentSelected ? "pending" : null,
-      secondPaymentStatus: splitPaymentSelected ? "pending" : null
+      deliveryDate: deliveryDate
     };
 
     // Create booking
@@ -406,27 +384,6 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                   ${calculatedPrice ? (calculatedPrice / 100).toFixed(2) : "Calculating..."}
                 </span>
               </div>
-
-              {/* Show payment breakdown if split payment is selected */}
-              {form.watch("splitPayment") && paymentSettings?.splitPaymentEnabled && calculatedPrice && (
-                <div className="mt-4 pt-4 border-t border-neutral-200">
-                  <h4 className="font-medium text-sm mb-3 text-blue-800">Payment Breakdown</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Pay Now ({paymentSettings.splitPaymentPercentage}%)</span>
-                      <span className="font-medium text-blue-800">
-                        ${((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100 / 100).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-neutral-600">
-                      <span>Pay at Pickup ({100 - paymentSettings.splitPaymentPercentage}%)</span>
-                      <span>
-                        ${((calculatedPrice * (100 - paymentSettings.splitPaymentPercentage)) / 100 / 100).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
           
@@ -510,52 +467,6 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                     )}
                   />
                 </div>
-
-                {/* Payment Options */}
-                {paymentSettings?.splitPaymentEnabled && (
-                  <div>
-                    <h3 className="font-medium text-lg mb-4">Payment Options</h3>
-                    <FormField
-                      control={form.control}
-                      name="splitPayment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={(value) => field.onChange(value === "split")}
-                              value={field.value ? "split" : "full"}
-                              className="space-y-3"
-                            >
-                              <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <RadioGroupItem value="full" id="payment-full" className="mt-1" />
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel htmlFor="payment-full" className="text-sm font-medium cursor-pointer">
-                                    Pay in Full
-                                  </FormLabel>
-                                  <p className="text-xs text-gray-600">
-                                    Pay the full amount (${calculatedPrice ? (calculatedPrice / 100).toFixed(2) : '0.00'}) now
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <RadioGroupItem value="split" id="payment-split" className="mt-1" />
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel htmlFor="payment-split" className="text-sm font-medium cursor-pointer">
-                                    Split Payment ({paymentSettings.splitPaymentPercentage}% now, {100 - paymentSettings.splitPaymentPercentage}% at pickup)
-                                  </FormLabel>
-                                  <p className="text-xs text-blue-700">
-                                    Pay ${calculatedPrice ? ((calculatedPrice * paymentSettings.splitPaymentPercentage) / 100 / 100).toFixed(2) : '0.00'} now and ${calculatedPrice ? ((calculatedPrice * (100 - paymentSettings.splitPaymentPercentage)) / 100 / 100).toFixed(2) : '0.00'} when we pick up the dumpster
-                                  </p>
-                                </div>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
                 
                 <FormField
                   control={form.control}

@@ -19,10 +19,7 @@ import {
   type InsertBooking,
   dumpsterPricing,
   type DumpsterPricing,
-  type InsertDumpsterPricing,
-  paymentSettings,
-  type PaymentSettings,
-  type InsertPaymentSettings
+  type InsertDumpsterPricing
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -87,10 +84,6 @@ export interface IStorage {
   // Inventory management methods
   checkDumpsterAvailability(dumpsterId: number, deliveryDate: string, rentalDays: number): Promise<boolean>;
   getAvailableDumpsters(deliveryDate: string, rentalDays: number): Promise<Dumpster[]>;
-
-  // Payment settings methods
-  getPaymentSettings(): Promise<PaymentSettings | undefined>;
-  updatePaymentSettings(settings: Partial<InsertPaymentSettings>): Promise<PaymentSettings>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -945,37 +938,6 @@ export class DatabaseStorage implements IStorage {
     }
 
     return availableDumpsters;
-  }
-
-  // Payment settings methods
-  async getPaymentSettings(): Promise<PaymentSettings | undefined> {
-    const [settings] = await db.select().from(paymentSettings).limit(1);
-    return settings;
-  }
-
-  async updatePaymentSettings(settingsUpdate: Partial<InsertPaymentSettings>): Promise<PaymentSettings> {
-    // First try to update existing settings
-    const [updated] = await db
-      .update(paymentSettings)
-      .set({
-        ...settingsUpdate,
-        updatedAt: new Date()
-      })
-      .returning();
-
-    // If no rows were updated, create new settings
-    if (!updated) {
-      const [created] = await db
-        .insert(paymentSettings)
-        .values({
-          splitPaymentEnabled: settingsUpdate.splitPaymentEnabled ?? false,
-          splitPaymentPercentage: settingsUpdate.splitPaymentPercentage ?? 50
-        })
-        .returning();
-      return created;
-    }
-
-    return updated;
   }
 }
 
