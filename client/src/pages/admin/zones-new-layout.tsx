@@ -225,7 +225,7 @@ export default function ZonesNewLayoutPage() {
       };
       
       updateZoneMutation.mutate({
-        id: selectedZone.id,
+        ...selectedZone,
         ...cleanUpdateData,
       });
     }
@@ -393,8 +393,8 @@ export default function ZonesNewLayoutPage() {
                         <FormLabel>Delivery Fee</FormLabel>
                         <FormControl>
                           <PriceInput
-                            value={field.value.toString()}
-                            onValueChange={(value) => field.onChange(parseFloat(value))}
+                            value={field.value?.toString() || "0"}
+                            onValueChange={(value) => field.onChange(parseFloat(value) || 0)}
                           />
                         </FormControl>
                         <FormDescription>
@@ -435,31 +435,78 @@ export default function ZonesNewLayoutPage() {
                 <div className="divide-y">
                   {zones && zones.length > 0 ? (
                     zones.map((zone) => (
-                      <button
+                      <div
                         key={zone.id}
                         className={cn(
-                          "w-full text-left p-3 hover:bg-muted flex items-center space-x-2 transition-colors",
+                          "w-full p-3 hover:bg-muted flex items-center space-x-2 transition-colors border-b last:border-b-0",
                           selectedZone?.id === zone.id && "bg-muted"
                         )}
-                        onClick={() => handleSelectZone(zone)}
                       >
-                        <div className="flex-1">
-                          <div className="font-medium">{zone.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {zone.zipCodes || "No ZIP codes defined"}
+                        <button
+                          className="flex-1 text-left flex items-center space-x-2"
+                          onClick={() => handleSelectZone(zone)}
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium">{zone.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {zone.zipCodes || "No ZIP codes defined"}
+                            </div>
+                            <div className="text-xs mt-1 text-primary">
+                              ${zone.deliveryFee.toFixed(2)}
+                            </div>
                           </div>
-                          <div className="text-xs mt-1 text-primary">
-                            ${zone.deliveryFee.toFixed(2)}
+                          <div className="flex items-center">
+                            {zone.polygonPath ? (
+                              <MapPin className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <MapPin className="h-4 w-4 text-gray-300" />
+                            )}
                           </div>
+                        </button>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(zone);
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete the service zone "{zone.name}". 
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(zone.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
-                        <div className="flex items-center">
-                          {zone.polygonPath ? (
-                            <MapPin className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <MapPin className="h-4 w-4 text-gray-300" />
-                          )}
-                        </div>
-                      </button>
+                      </div>
                     ))
                   ) : (
                     <div className="p-4 text-center text-muted-foreground">
@@ -475,53 +522,17 @@ export default function ZonesNewLayoutPage() {
               {selectedZone ? (
                 <>
                   <Card>
-                    <CardHeader className="pb-2 flex flex-row items-start justify-between">
-                      <div>
-                        <CardTitle>{selectedZone.name}</CardTitle>
-                        <CardDescription>
-                          {selectedZone.polygonPath ? (
-                            "Uses custom boundary area"
-                          ) : selectedZone.zipCodes ? (
-                            `Covers ZIP codes: ${selectedZone.zipCodes}`
-                          ) : (
-                            "No service area defined"
-                          )}
-                        </CardDescription>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(selectedZone)}
-                        >
-                          <Edit className="mr-2 h-4 w-4" /> Edit Details
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-red-500">
-                              <Trash className="mr-2 h-4 w-4" /> Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the service zone "{selectedZone.name}". 
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(selectedZone.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                    <CardHeader className="pb-2">
+                      <CardTitle>{selectedZone.name}</CardTitle>
+                      <CardDescription>
+                        {selectedZone.polygonPath ? (
+                          "Uses custom boundary area"
+                        ) : selectedZone.zipCodes ? (
+                          `Covers ZIP codes: ${selectedZone.zipCodes}`
+                        ) : (
+                          "No service area defined"
+                        )}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-4 text-sm">
@@ -701,8 +712,8 @@ export default function ZonesNewLayoutPage() {
                       <FormLabel>Delivery Fee</FormLabel>
                       <FormControl>
                         <PriceInput
-                          value={field.value.toString()}
-                          onValueChange={(value) => field.onChange(parseFloat(value))}
+                          value={field.value?.toString() || "0"}
+                          onValueChange={(value) => field.onChange(parseFloat(value) || 0)}
                         />
                       </FormControl>
                       <FormDescription>
