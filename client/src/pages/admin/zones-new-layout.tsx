@@ -392,9 +392,12 @@ export default function ZonesNewLayoutPage() {
                       <FormItem>
                         <FormLabel>Delivery Fee</FormLabel>
                         <FormControl>
-                          <PriceInput
-                            value={field.value?.toString() || "0"}
-                            onValueChange={(value) => field.onChange(parseFloat(value) || 0)}
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
                         </FormControl>
                         <FormDescription>
@@ -711,9 +714,12 @@ export default function ZonesNewLayoutPage() {
                     <FormItem>
                       <FormLabel>Delivery Fee</FormLabel>
                       <FormControl>
-                        <PriceInput
-                          value={field.value?.toString() || "0"}
-                          onValueChange={(value) => field.onChange(parseFloat(value) || 0)}
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
                       </FormControl>
                       <FormDescription>
