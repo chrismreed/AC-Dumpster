@@ -44,11 +44,8 @@ export function StickyHeader() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            <NavLink href="/" label="Home" isActive={location === '/'} isScrolled={isScrolled} />
             <NavLink href="/#services" label="Services" isScrolled={isScrolled} />
-            <NavLink href="/#how-it-works" label="How It Works" isScrolled={isScrolled} />
             <NavLink href="/#about" label="About Us" isScrolled={isScrolled} />
-            <NavLink href="/#testimonials" label="Testimonials" isScrolled={isScrolled} />
             <NavLink href="/#faq" label="FAQ" isScrolled={isScrolled} />
             <NavLink href="/#contact" label="Contact" isScrolled={isScrolled} />
             
@@ -88,11 +85,8 @@ export function StickyHeader() {
         <div className="md:hidden bg-[#0f172a]/95 shadow-lg backdrop-blur-sm border-t border-[#d1d5db]">
           <div className="container mx-auto px-4 py-5">
             <nav className="flex flex-col space-y-4">
-              <MobileNavLink href="/" label="Home" onClick={() => setIsMobileMenuOpen(false)} />
               <MobileNavLink href="/#services" label="Services" onClick={() => setIsMobileMenuOpen(false)} />
-              <MobileNavLink href="/#how-it-works" label="How It Works" onClick={() => setIsMobileMenuOpen(false)} />
               <MobileNavLink href="/#about" label="About Us" onClick={() => setIsMobileMenuOpen(false)} />
-              <MobileNavLink href="/#testimonials" label="Testimonials" onClick={() => setIsMobileMenuOpen(false)} />
               <MobileNavLink href="/#faq" label="FAQ" onClick={() => setIsMobileMenuOpen(false)} />
               <MobileNavLink href="/#contact" label="Contact" onClick={() => setIsMobileMenuOpen(false)} />
               

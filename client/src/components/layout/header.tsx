@@ -92,9 +92,6 @@ export function Header() {
                 </Button>
               </div>
               <nav className="flex flex-col space-y-4 mt-8">
-                <Link href="/" onClick={closeMenu} className="text-lg font-medium py-2 text-[#ffdd33]">
-                  HOME
-                </Link>
                 <Link href="/#pricing" onClick={closeMenu} className="text-lg font-medium py-2 text-[#ffdd33]">
                   PRICING
                 </Link>
