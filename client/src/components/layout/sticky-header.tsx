@@ -126,13 +126,7 @@ function NavLink({
   return (
     <Link href={href}>
       <div 
-        className={`px-4 py-3 mx-1 rounded-md text-sm font-medium hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer ${
-          isActive 
-            ? 'text-white font-semibold' 
-            : isScrolled 
-              ? 'text-[#ffffff]' 
-              : 'text-[#ffffff]'
-        }`}
+        className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium"
       >
         {label}
       </div>
