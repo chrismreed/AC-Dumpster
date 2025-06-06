@@ -6,7 +6,6 @@ export function ImprovedHero() {
     <section className="relative bg-[#0f172a] text-[#ffffff]">
       {/* Background with overlay */}
       <div className="absolute inset-0 bg-[#0f172a]/80 z-0"></div>
-      
       {/* Hero content */}
       <div className="relative z-10 pt-32 pb-20 lg:pt-40 lg:pb-28">
         <div className="container mx-auto px-4">
@@ -87,7 +86,6 @@ export function ImprovedHero() {
           </div>
         </div>
       </div>
-      
       {/* Trust bar */}
       <div className="bg-[#0f172a]/90 backdrop-blur-sm border-y border-[#d1d5db]/20 shadow-md">
         <div className="container mx-auto px-4 py-6">
@@ -118,7 +116,7 @@ export function ImprovedHero() {
               </div>
               <div>
                 <p className="font-medium text-lg">5-Star Service</p>
-                <p className="text-sm text-gray-400">Based on 200+ reviews</p>
+                <p className="text-sm text-gray-400">Based on 20+ reviews</p>
               </div>
             </div>
           </div>
