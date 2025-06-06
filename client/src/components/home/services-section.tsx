@@ -99,7 +99,7 @@ export function ServicesSection() {
             Not sure which size is right for your project? Give us a call and our experts will help you choose.
           </p>
           <Button className="bg-[#0f172a] hover:bg-[#0f172a]/90 text-[#ffffff] py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300" asChild>
-            <a href="tel:5551234567" className="font-medium text-lg">Call (555) 123-4567</a>
+            <a href="tel:5551234567" className="font-medium text-lg">Call (217) 994-2582</a>
           </Button>
         </div>
       </div>
