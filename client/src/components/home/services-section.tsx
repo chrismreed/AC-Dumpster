@@ -44,7 +44,7 @@ export function ServicesSection() {
                     POPULAR
                   </div>
                 )}
-                <div className="bg-[#0f172a] text-[#ffffff] p-6 text-center">
+                <div className="text-[#ffffff] p-6 text-center bg-[#454238]">
                   <h3 className="text-2xl font-bold">{dumpster.name}</h3>
                   <p className="text-gray-300 mt-1">{getDumpsterCategory(dumpster.name)}</p>
                 </div>
