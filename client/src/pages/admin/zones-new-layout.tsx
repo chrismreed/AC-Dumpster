@@ -217,17 +217,16 @@ export default function ZonesNewLayoutPage() {
         updateData.zipCodes = "";
       }
       
-      // Create clean update object with only the essential fields
-      const cleanUpdateData = {
+      // Create update object preserving existing data
+      const fullUpdateData = {
+        ...selectedZone,
         name: updateData.name,
         zipCodes: updateData.zipCodes || "",
         deliveryFee: updateData.deliveryFee,
+        useGeofencing: useGeofencing,
       };
       
-      updateZoneMutation.mutate({
-        ...selectedZone,
-        ...cleanUpdateData,
-      });
+      updateZoneMutation.mutate(fullUpdateData);
     }
   };
 
