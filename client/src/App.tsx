@@ -31,7 +31,7 @@ function Router() {
       <ProtectedRoute path="/admin/dashboard" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dumpsters" component={DumpstersPage} adminOnly />
       <ProtectedRoute path="/admin/add-ons" component={AddOnsPage} adminOnly />
-      <ProtectedRoute path="/admin/zones-new" component={ServiceZonesPage} adminOnly />
+      <ProtectedRoute path="/admin/zones" component={ServiceZonesPage} adminOnly />
       <ProtectedRoute path="/admin/bookings" component={BookingsPage} adminOnly />
 
       <ProtectedRoute path="/admin/payment-settings" component={PaymentSettingsPage} adminOnly />

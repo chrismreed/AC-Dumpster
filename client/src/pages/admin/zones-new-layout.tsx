@@ -452,17 +452,32 @@ export default function ZonesNewLayoutPage() {
                           <div className="flex-1">
                             <div className="font-medium">{zone.name}</div>
                             <div className="text-xs text-muted-foreground">
-                              {zone.zipCodes || "No ZIP codes defined"}
+                              {zone.polygonPath ? (
+                                // Has custom boundary
+                                zone.polygonPath.trim().length > 0 ? (
+                                  "Custom boundary defined"
+                                ) : (
+                                  <span className="text-red-500">Boundary undefined</span>
+                                )
+                              ) : zone.zipCodes ? (
+                                // Has ZIP codes
+                                `ZIP codes: ${zone.zipCodes}`
+                              ) : (
+                                // No ZIP codes defined
+                                "No ZIP codes defined"
+                              )}
                             </div>
                             <div className="text-xs mt-1 text-primary">
                               ${zone.deliveryFee.toFixed(2)}
                             </div>
                           </div>
                           <div className="flex items-center">
-                            {zone.polygonPath ? (
+                            {zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
                               <MapPin className="h-4 w-4 text-green-500" />
+                            ) : zone.zipCodes ? (
+                              <MapPin className="h-4 w-4 text-blue-500" />
                             ) : (
-                              <MapPin className="h-4 w-4 text-gray-300" />
+                              <MapPin className="h-4 w-4 text-red-500" />
                             )}
                           </div>
                         </button>
