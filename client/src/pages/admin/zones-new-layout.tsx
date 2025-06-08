@@ -223,7 +223,7 @@ export default function ZonesNewLayoutPage() {
         name: updateData.name,
         zipCodes: updateData.zipCodes || "",
         deliveryFee: updateData.deliveryFee,
-        useGeofencing: useGeofencing,
+        useGeofencing: useGeofencing ?? false,
       };
       
       updateZoneMutation.mutate(fullUpdateData);

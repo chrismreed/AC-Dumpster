@@ -113,8 +113,11 @@ export const insertServiceZoneSchema = createInsertSchema(serviceZones).omit({
   id: true,
   createdAt: true,
 }).extend({
-  // Make polygonPath optional since it will be set by the geofence editor
-  polygonPath: z.string().optional(),
+  // Make geofencing fields nullable since they may not be set initially
+  polygonPath: z.string().nullable().optional(),
+  centerLat: z.number().nullable().optional(),
+  centerLng: z.number().nullable().optional(),
+  radiusMeters: z.number().nullable().optional(),
 });
 
 export const insertRentalDurationSchema = createInsertSchema(rentalDurations).omit({
