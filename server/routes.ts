@@ -379,6 +379,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Updating zone with data:", req.body);
       const validatedData = insertServiceZoneSchema.partial().parse(req.body);
+      
+      // If useGeofencing is set to false, clear the polygon path and related fields
+      if (validatedData.useGeofencing === false) {
+        validatedData.polygonPath = null;
+        validatedData.centerLat = null;
+        validatedData.centerLng = null;
+        validatedData.radiusMeters = null;
+      }
+      
       const updatedZone = await storage.updateServiceZone(id, validatedData);
       res.json(updatedZone);
     } catch (err) {
