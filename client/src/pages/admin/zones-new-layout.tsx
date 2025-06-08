@@ -236,7 +236,7 @@ export default function ZonesNewLayoutPage() {
       name: zone.name,
       zipCodes: zone.zipCodes || "",
       deliveryFee: zone.deliveryFee || 0,
-      useGeofencing: !!(zone.polygonPath && zone.polygonPath.trim().length > 0),
+      useGeofencing: zone.useGeofencing || false,
     });
     setIsEditDialogOpen(true);
   };
