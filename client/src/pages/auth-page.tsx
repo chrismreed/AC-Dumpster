@@ -44,12 +44,6 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [, navigate] = useLocation();
 
-  // Redirect if already logged in
-  if (user) {
-    navigate(user.isAdmin ? "/admin/dashboard" : "/");
-    return null;
-  }
-
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -66,6 +60,12 @@ export default function AuthPage() {
       password: "",
     },
   });
+
+  // Redirect if already logged in
+  if (user) {
+    navigate(user.isAdmin ? "/admin/dashboard" : "/");
+    return null;
+  }
 
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data);
