@@ -452,19 +452,18 @@ export default function ZonesNewLayoutPage() {
                           <div className="flex-1">
                             <div className="font-medium">{zone.name}</div>
                             <div className="text-xs text-muted-foreground">
-                              {zone.polygonPath ? (
-                                // Has custom boundary
-                                zone.polygonPath.trim().length > 0 ? (
-                                  "Custom boundary defined"
-                                ) : (
-                                  <span className="text-red-500">Boundary undefined</span>
-                                )
-                              ) : zone.zipCodes ? (
-                                // Has ZIP codes
+                              {zone.zipCodes && zone.zipCodes.trim().length > 0 ? (
+                                // Has ZIP codes - this zone uses ZIP codes
                                 `ZIP codes: ${zone.zipCodes}`
+                              ) : zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
+                                // Has custom boundary and no ZIP codes - this zone uses custom boundary
+                                "Custom boundary defined"
+                              ) : zone.polygonPath ? (
+                                // Has empty polygonPath but no ZIP codes - boundary undefined
+                                <span className="text-red-500">Boundary undefined</span>
                               ) : (
-                                // No ZIP codes defined
-                                "No ZIP codes defined"
+                                // No ZIP codes and no polygon path
+                                "No service area defined"
                               )}
                             </div>
                             <div className="text-xs mt-1 text-primary">
@@ -472,10 +471,10 @@ export default function ZonesNewLayoutPage() {
                             </div>
                           </div>
                           <div className="flex items-center">
-                            {zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
-                              <MapPin className="h-4 w-4 text-green-500" />
-                            ) : zone.zipCodes ? (
+                            {zone.zipCodes && zone.zipCodes.trim().length > 0 ? (
                               <MapPin className="h-4 w-4 text-blue-500" />
+                            ) : zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
+                              <MapPin className="h-4 w-4 text-green-500" />
                             ) : (
                               <MapPin className="h-4 w-4 text-red-500" />
                             )}
