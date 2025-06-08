@@ -38,7 +38,7 @@ export function AdminNav() {
     },
     {
       title: "Service Zones",
-      href: "/admin/zones-new",
+      href: "/admin/zones",
       icon: <MapPin className="mr-2 h-4 w-4" />
     },
     {
