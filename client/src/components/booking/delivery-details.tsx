@@ -208,7 +208,16 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
                 <FormItem>
                   <FormLabel>City</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input 
+                      {...field} 
+                      onChange={(e) => {
+                        field.onChange(e);
+                        const zipCode = form.getValues("deliveryZipCode");
+                        if (zipCode && zipCode.length === 5) {
+                          setTimeout(validateServiceArea, 500);
+                        }
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

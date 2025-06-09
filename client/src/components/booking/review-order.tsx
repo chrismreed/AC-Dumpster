@@ -92,6 +92,8 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
             dumpsterId: bookingData.dumpsterId,
             pricingId: bookingData.pricingId,
             deliveryZipCode: bookingData.deliveryZipCode,
+            deliveryAddress: bookingData.deliveryAddress,
+            deliveryCity: bookingData.deliveryCity,
             selectedAddOns: bookingData.selectedAddOns || [],
           });
           
@@ -99,6 +101,8 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
             dumpsterId: bookingData.dumpsterId,
             pricingId: bookingData.pricingId,
             deliveryZipCode: bookingData.deliveryZipCode,
+            deliveryAddress: bookingData.deliveryAddress,
+            deliveryCity: bookingData.deliveryCity,
             selectedAddOns: bookingData.selectedAddOns || [],
           });
           

@@ -434,13 +434,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const lat = location.lat;
             const lng = location.lng;
             
-            // Check geofenced zones
+            // Check geofenced zones - strict boundary validation
             const zones = await storage.listServiceZones();
             for (const zone of zones) {
               if (zone.useGeofencing && zone.polygonPath) {
                 try {
                   const polygon = JSON.parse(zone.polygonPath);
+                  // Strict validation: address must be within the exact polygon boundaries
                   if (Array.isArray(polygon) && isPointInPolygon(lat, lng, polygon)) {
+                    console.log(`Address lookup: coordinates (${lat}, ${lng}) found within custom boundary zone: ${zone.name}`);
                     return res.json(zone);
                   }
                 } catch (error) {
@@ -759,10 +761,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get service zone
-      const zone = await storage.getServiceZoneByZipCode(deliveryZipCode);
+      // Get service zone using enhanced lookup
+      let zone = null;
+      
+      // First check custom boundary zones (higher priority than ZIP codes)
+      if (deliveryAddress && deliveryCity) {
+        const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+        if (apiKey) {
+          const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(deliveryAddress + ', ' + deliveryCity)}&key=${apiKey}`;
+          
+          try {
+            const geocodeResponse = await fetch(geocodeUrl);
+            const geocodeData = await geocodeResponse.json();
+            
+            if (geocodeData.status === 'OK' && geocodeData.results.length > 0) {
+              const location = geocodeData.results[0].geometry.location;
+              const lat = location.lat;
+              const lng = location.lng;
+              
+              // Check geofenced zones - strict boundary validation
+              const zones = await storage.listServiceZones();
+              for (const checkZone of zones) {
+                if (checkZone.useGeofencing && checkZone.polygonPath) {
+                  try {
+                    const polygon = JSON.parse(checkZone.polygonPath);
+                    // Strict validation: address must be within the exact polygon boundaries
+                    if (Array.isArray(polygon) && isPointInPolygon(lat, lng, polygon)) {
+                      console.log(`Address at (${lat}, ${lng}) is within custom boundary zone: ${checkZone.name}`);
+                      zone = checkZone;
+                      break;
+                    } else {
+                      console.log(`Address at (${lat}, ${lng}) is OUTSIDE custom boundary zone: ${checkZone.name}`);
+                    }
+                  } catch (error) {
+                    console.error("Error parsing polygon path for zone", checkZone.id, error);
+                  }
+                }
+              }
+            }
+          } catch (geocodeError) {
+            console.error("Geocoding error during price calculation:", geocodeError);
+          }
+        }
+      }
+      
       if (!zone) {
-        return res.status(404).json({ message: "Service not available in this ZIP code" });
+        return res.status(404).json({ message: "Service not available in this location" });
       }
 
       // Calculate initial total price using only the rental duration price
