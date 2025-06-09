@@ -251,7 +251,7 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
                         ✓ Service available in <span className="font-medium">{validatedZone.name}</span>
                       </p>
                       <p className="text-xs text-green-600 mt-1">
-                        Base delivery fee: ${(validatedZone.deliveryFee / 100).toFixed(2)}
+                        Base delivery fee: ${validatedZone.deliveryFee.toFixed(2)}
                         {validatedZone.useGeofencing && " (distance-based pricing applies)"}
                       </p>
                     </div>
