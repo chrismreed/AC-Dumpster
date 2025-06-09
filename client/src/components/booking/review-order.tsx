@@ -278,9 +278,27 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   });
   const selectedPricing = pricingOptions?.find(p => p.id === bookingData.pricingId);
   
-  const selectedZone = zones?.find(z => 
-    z.zipCodes.split(',').includes(bookingData.deliveryZipCode)
-  );
+  // Get selected zone using the zone lookup API since it handles both ZIP codes and custom boundaries
+  const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
+  
+  useEffect(() => {
+    if (bookingData.deliveryZipCode && bookingData.deliveryAddress && bookingData.deliveryCity) {
+      const lookupZone = async () => {
+        try {
+          const response = await apiRequest("POST", "/api/zones/lookup", {
+            zipCode: bookingData.deliveryZipCode,
+            address: bookingData.deliveryAddress,
+            city: bookingData.deliveryCity
+          });
+          const data = await response.json();
+          setSelectedZone(data);
+        } catch (error) {
+          console.error("Error looking up zone:", error);
+        }
+      };
+      lookupZone();
+    }
+  }, [bookingData.deliveryZipCode, bookingData.deliveryAddress, bookingData.deliveryCity]);
 
   // Calculate addons total
   const calculateAddonsTotal = () => {
