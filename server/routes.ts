@@ -822,49 +822,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate initial total price using only the rental duration price
       let totalPrice = duration.additionalPrice;
       
-      // Calculate delivery fee - Use geofencing if enabled and address is provided
+      // Use the flat delivery fee set in the admin dashboard
+      console.log('Using flat delivery fee from zone:', zone.deliveryFee);
       let deliveryFee = zone.deliveryFee;
-      let drivingTime = null;
-      let drivingDistance = null;
-      let geofencingApplied = false;
-      
-      // Log geofencing info for debugging
-      console.log(`Checking if geofencing should be applied: zone.useGeofencing=${zone.useGeofencing}, deliveryAddress=${!!deliveryAddress}, deliveryCity=${!!deliveryCity}`);
-      console.log('Zone details:', JSON.stringify(zone, null, 2));
-      
-      // If geofencing is enabled and we have full address details, calculate better fee
-      if (zone.useGeofencing && deliveryAddress && deliveryCity) {
-        console.log('Geofencing conditions met, will calculate distance-based fee');
-        try {
-          // Import distance service
-          const { calculateDistanceFee } = await import('./services/distance-service');
-          
-          // Calculate fee based on actual driving distance/time
-          const distanceData = await calculateDistanceFee(
-            deliveryAddress, 
-            deliveryCity, 
-            deliveryZipCode,
-            zone.deliveryFee // Pass the base zone fee as fallback
-          );
-          
-          // If the address is within a service area, use the calculated fee
-          if (distanceData.inServiceArea) {
-            deliveryFee = distanceData.fee;
-            drivingTime = distanceData.drivingTime;
-            drivingDistance = distanceData.drivingDistance;
-            geofencingApplied = true;
-            
-            // Log if we're using the fallback fee
-            if (distanceData.usingFallback) {
-              console.log('Using fallback zone fee due to Google Maps API limitations:', deliveryFee);
-            }
-          }
-          // Otherwise, fall back to zone-based pricing
-        } catch (error) {
-          console.error('Error in geofencing calculation:', error);
-          // Fall back to zone-based pricing if geofencing fails
-        }
-      }
       
       // Add delivery fee to total price
       totalPrice += deliveryFee;
@@ -887,18 +847,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
-      // Return comprehensive pricing details
+      // Return pricing details
       res.json({ 
         totalPrice,
         rentalPrice: duration.additionalPrice,
-        deliveryFee,
-        ...(geofencingApplied ? { 
-          geofencingApplied,
-          drivingTime,
-          drivingDistance,
-          // Include fallback status flag if geofencing was applied but we used fallback
-          usingFallbackPricing: drivingTime === null
-        } : {})
+        deliveryFee
       });
     } catch (err) {
       console.error("Error calculating price:", err);
