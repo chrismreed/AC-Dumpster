@@ -466,7 +466,7 @@ export default function ZonesNewLayoutPage() {
                               )}
                             </div>
                             <div className="text-xs mt-1 text-primary">
-                              ${zone.deliveryFee.toFixed(2)}
+                              ${(zone.deliveryFee / 100).toFixed(2)}
                             </div>
                           </div>
                           <div className="flex items-center">
