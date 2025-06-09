@@ -16,12 +16,9 @@ const DISTANCE_TIERS = [
   { maxMinutes: Infinity, fee: 10000 } // Over 60 minutes: $100 fee
 ];
 
-// Geofencing zones (circular areas with radius in meters)
-const GEOFENCE_ZONES = [
-  { center: { lat: 39.1200, lng: -88.5434 }, radius: 10000, feeMultiplier: 1.0 },   // Zone 1: 10km radius, normal fee
-  { center: { lat: 39.1200, lng: -88.5434 }, radius: 20000, feeMultiplier: 1.5 },   // Zone 2: 20km radius, 1.5x fee
-  { center: { lat: 39.1200, lng: -88.5434 }, radius: 50000, feeMultiplier: 2.0 },   // Zone 3: 50km radius, 2x fee
-];
+// Note: Geofencing zones are now managed through the database service zones
+// These hardcoded zones are disabled in favor of custom polygon boundaries
+const GEOFENCE_ZONES: any[] = [];
 
 /**
  * Calculates delivery fee based on driving time from business location
