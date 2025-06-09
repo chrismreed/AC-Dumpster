@@ -45,6 +45,7 @@ interface DeliveryDetailsProps {
 export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
   const { toast } = useToast();
   const [isValidatingZip, setIsValidatingZip] = useState(false);
+  const [validatedZone, setValidatedZone] = useState<any>(null);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const datePickerRef = useRef<HTMLButtonElement>(null);
@@ -136,16 +137,19 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     if (zipCode && zipCode.length === 5) {
       setIsValidatingZip(true);
       try {
-        await apiRequest("POST", "/api/zones/lookup", {
+        const response = await apiRequest("POST", "/api/zones/lookup", {
           zipCode,
           address,
           city
         });
+        const zoneData = await response.json();
+        setValidatedZone(zoneData);
         setIsValidatingZip(false);
         // Clear any previous errors
         form.clearErrors("deliveryZipCode");
       } catch (error) {
         setIsValidatingZip(false);
+        setValidatedZone(null);
         toast({
           title: "Service Area Check",
           description: "We don't currently service this area. Please try another location.",
@@ -241,6 +245,17 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
                   </FormControl>
                   <FormMessage />
                   {isValidatingZip && <p className="text-xs text-blue-500">Checking service availability...</p>}
+                  {validatedZone && (
+                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-sm text-green-800">
+                        ✓ Service available in <span className="font-medium">{validatedZone.name}</span>
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">
+                        Base delivery fee: ${(validatedZone.deliveryFee / 100).toFixed(2)}
+                        {validatedZone.useGeofencing && " (distance-based pricing applies)"}
+                      </p>
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
