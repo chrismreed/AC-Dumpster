@@ -183,15 +183,19 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       return;
     }
 
-    // Find the selected zone for this zip code
-    const selectedZone = zones?.find(z => 
-      z.zipCodes.split(',').includes(bookingData.deliveryZipCode)
-    );
+    if (isLoadingZone) {
+      toast({
+        title: "Please wait",
+        description: "Validating service area. Please try again in a moment.",
+        variant: "default",
+      });
+      return;
+    }
 
     if (!selectedZone) {
       toast({
         title: "Error",
-        description: "Service zone not found for the delivery zip code. Please try a different zip code.",
+        description: "Service zone not found for the delivery address. Please verify your address details.",
         variant: "destructive",
       });
       return;
@@ -280,10 +284,12 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   
   // Get selected zone using the zone lookup API since it handles both ZIP codes and custom boundaries
   const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
+  const [isLoadingZone, setIsLoadingZone] = useState(false);
   
   useEffect(() => {
     if (bookingData.deliveryZipCode && bookingData.deliveryAddress && bookingData.deliveryCity) {
       const lookupZone = async () => {
+        setIsLoadingZone(true);
         try {
           const response = await apiRequest("POST", "/api/zones/lookup", {
             zipCode: bookingData.deliveryZipCode,
@@ -294,6 +300,9 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
           setSelectedZone(data);
         } catch (error) {
           console.error("Error looking up zone:", error);
+          setSelectedZone(null);
+        } finally {
+          setIsLoadingZone(false);
         }
       };
       lookupZone();
