@@ -123,13 +123,16 @@ export async function calculateDistanceFee(
       const drivingTimeInMinutes = Math.ceil(drivingTimeInSeconds / 60);
       
       // Determine fee based on driving time tiers
-      let fee = 0;
+      let distanceBasedFee = 0;
       for (const tier of DISTANCE_TIERS) {
         if (drivingTimeInMinutes <= tier.maxMinutes) {
-          fee = tier.fee;
+          distanceBasedFee = tier.fee;
           break;
         }
       }
+      
+      // Start with the zone's base delivery fee and add distance-based fee
+      let fee = zoneBaseDeliveryFee + distanceBasedFee;
       
       // Try to geocode the address for more precise zone calculation
       try {
