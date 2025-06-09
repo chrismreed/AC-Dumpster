@@ -128,17 +128,27 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
     setIsLoadingAvailability(false);
   }, [dumpsters, bookings]);
 
-  const handleZipCodeChange = async (zipCode: string) => {
-    if (zipCode.length === 5) {
+  const validateServiceArea = async () => {
+    const zipCode = form.getValues("deliveryZipCode");
+    const address = form.getValues("deliveryAddress");
+    const city = form.getValues("deliveryCity");
+    
+    if (zipCode && zipCode.length === 5) {
       setIsValidatingZip(true);
       try {
-        await apiRequest("GET", `/api/zones/zipcode/${zipCode}`);
+        await apiRequest("POST", "/api/zones/lookup", {
+          zipCode,
+          address,
+          city
+        });
         setIsValidatingZip(false);
+        // Clear any previous errors
+        form.clearErrors("deliveryZipCode");
       } catch (error) {
         setIsValidatingZip(false);
         toast({
           title: "Service Area Check",
-          description: "We don't currently service this ZIP code. Please try another area.",
+          description: "We don't currently service this area. Please try another location.",
           variant: "destructive",
         });
         form.setError("deliveryZipCode", {
@@ -146,6 +156,12 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
           message: "Service not available in this area",
         });
       }
+    }
+  };
+
+  const handleZipCodeChange = async (zipCode: string) => {
+    if (zipCode.length === 5) {
+      await validateServiceArea();
     }
   };
 
@@ -167,7 +183,17 @@ export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
               <FormItem>
                 <FormLabel>Delivery Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="Street Address" {...field} />
+                  <Input 
+                    placeholder="Street Address" 
+                    {...field} 
+                    onChange={(e) => {
+                      field.onChange(e);
+                      const zipCode = form.getValues("deliveryZipCode");
+                      if (zipCode && zipCode.length === 5) {
+                        setTimeout(validateServiceArea, 500);
+                      }
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

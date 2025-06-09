@@ -342,6 +342,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to check if a point is inside a polygon
+  const isPointInPolygon = (lat: number, lng: number, polygon: { lat: number; lng: number }[]): boolean => {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].lat, yi = polygon[i].lng;
+      const xj = polygon[j].lat, yj = polygon[j].lng;
+      
+      if (((yi > lng) !== (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  };
+
+  // Check service zone by coordinates (for geofenced zones)
+  app.get("/api/zones/coordinates/:lat/:lng", async (req, res) => {
+    try {
+      const lat = parseFloat(req.params.lat);
+      const lng = parseFloat(req.params.lng);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        return res.status(400).json({ message: "Invalid coordinates" });
+      }
+
+      const zones = await storage.listServiceZones();
+      
+      // Check geofenced zones first
+      for (const zone of zones) {
+        if (zone.useGeofencing && zone.polygonPath) {
+          try {
+            const polygon = JSON.parse(zone.polygonPath);
+            if (Array.isArray(polygon) && isPointInPolygon(lat, lng, polygon)) {
+              return res.json(zone);
+            }
+          } catch (error) {
+            console.error("Error parsing polygon path for zone", zone.id, error);
+          }
+        }
+      }
+      
+      return res.status(404).json({ message: "No service zone found for these coordinates" });
+    } catch (err) {
+      console.error("Error fetching service zone by coordinates:", err);
+      res.status(500).json({ message: "Failed to fetch service zone by coordinates" });
+    }
+  });
+
   app.get("/api/zones/zipcode/:zipcode", async (req, res) => {
     try {
       const zone = await storage.getServiceZoneByZipCode(req.params.zipcode);
@@ -352,6 +399,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error fetching service zone by ZIP code:", err);
       res.status(500).json({ message: "Failed to fetch service zone by ZIP code" });
+    }
+  });
+
+  // Enhanced service zone lookup that checks both ZIP codes and coordinates
+  app.post("/api/zones/lookup", async (req, res) => {
+    try {
+      const { zipCode, address, city } = req.body;
+      
+      // First try ZIP code lookup
+      if (zipCode) {
+        const zipZone = await storage.getServiceZoneByZipCode(zipCode);
+        if (zipZone) {
+          return res.json(zipZone);
+        }
+      }
+      
+      // If ZIP code lookup fails and we have address info, try geocoding + polygon check
+      if (address && city) {
+        // Use Google Maps Geocoding API to get coordinates
+        const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+          return res.status(404).json({ message: "No service zone found and geocoding unavailable" });
+        }
+        
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address + ', ' + city)}&key=${apiKey}`;
+        
+        try {
+          const geocodeResponse = await fetch(geocodeUrl);
+          const geocodeData = await geocodeResponse.json();
+          
+          if (geocodeData.status === 'OK' && geocodeData.results.length > 0) {
+            const location = geocodeData.results[0].geometry.location;
+            const lat = location.lat;
+            const lng = location.lng;
+            
+            // Check geofenced zones
+            const zones = await storage.listServiceZones();
+            for (const zone of zones) {
+              if (zone.useGeofencing && zone.polygonPath) {
+                try {
+                  const polygon = JSON.parse(zone.polygonPath);
+                  if (Array.isArray(polygon) && isPointInPolygon(lat, lng, polygon)) {
+                    return res.json(zone);
+                  }
+                } catch (error) {
+                  console.error("Error parsing polygon path for zone", zone.id, error);
+                }
+              }
+            }
+          }
+        } catch (geocodeError) {
+          console.error("Geocoding error:", geocodeError);
+        }
+      }
+      
+      return res.status(404).json({ message: "No service zone found for this location" });
+    } catch (err) {
+      console.error("Error in zone lookup:", err);
+      res.status(500).json({ message: "Failed to lookup service zone" });
     }
   });
 
