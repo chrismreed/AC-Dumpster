@@ -434,13 +434,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const lat = location.lat;
             const lng = location.lng;
             
-            // Check geofenced zones - strict boundary validation
+            // Check geofenced zones - only for zones without ZIP codes defined
             const zones = await storage.listServiceZones();
             for (const zone of zones) {
-              if (zone.useGeofencing && zone.polygonPath) {
+              // Only check custom boundaries for zones that don't have ZIP codes defined
+              if (zone.useGeofencing && zone.polygonPath && (!zone.zipCodes || zone.zipCodes.trim() === '')) {
                 try {
                   const polygon = JSON.parse(zone.polygonPath);
-                  // Strict validation: address must be within the exact polygon boundaries
                   if (Array.isArray(polygon) && isPointInPolygon(lat, lng, polygon)) {
                     console.log(`Address lookup: coordinates (${lat}, ${lng}) found within custom boundary zone: ${zone.name}`);
                     return res.json(zone);
@@ -761,11 +761,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get service zone using enhanced lookup
+      // Get service zone using enhanced lookup with proper priority
       let zone = null;
       
-      // First check custom boundary zones (higher priority than ZIP codes)
-      if (deliveryAddress && deliveryCity) {
+      // First try ZIP code lookup (highest priority when ZIP codes are defined)
+      if (deliveryZipCode) {
+        zone = await storage.getServiceZoneByZipCode(deliveryZipCode);
+        if (zone) {
+          console.log(`Found ZIP code zone for ${deliveryZipCode}: ${zone.name}`);
+          // If zone has ZIP codes defined, accept it regardless of boundaries
+          if (zone.zipCodes && zone.zipCodes.trim() !== '') {
+            console.log(`ZIP code zone takes priority - accepting delivery for ${deliveryZipCode}`);
+          }
+        }
+      }
+      
+      // If no ZIP code zone found, check custom boundary zones
+      if (!zone && deliveryAddress && deliveryCity) {
         const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
         if (apiKey) {
           const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(deliveryAddress + ', ' + deliveryCity)}&key=${apiKey}`;
@@ -779,19 +791,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const lat = location.lat;
               const lng = location.lng;
               
-              // Check geofenced zones - strict boundary validation
+              // Check geofenced zones - only for zones without ZIP codes
               const zones = await storage.listServiceZones();
               for (const checkZone of zones) {
-                if (checkZone.useGeofencing && checkZone.polygonPath) {
+                // Only check custom boundaries for zones that don't have ZIP codes defined
+                if (checkZone.useGeofencing && checkZone.polygonPath && (!checkZone.zipCodes || checkZone.zipCodes.trim() === '')) {
                   try {
                     const polygon = JSON.parse(checkZone.polygonPath);
-                    // Strict validation: address must be within the exact polygon boundaries
                     if (Array.isArray(polygon) && isPointInPolygon(lat, lng, polygon)) {
                       console.log(`Address at (${lat}, ${lng}) is within custom boundary zone: ${checkZone.name}`);
                       zone = checkZone;
                       break;
-                    } else {
-                      console.log(`Address at (${lat}, ${lng}) is OUTSIDE custom boundary zone: ${checkZone.name}`);
                     }
                   } catch (error) {
                     console.error("Error parsing polygon path for zone", checkZone.id, error);
@@ -802,14 +812,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (geocodeError) {
             console.error("Geocoding error during price calculation:", geocodeError);
           }
-        }
-      }
-      
-      // If no custom boundary zone found, fall back to ZIP code lookup
-      if (!zone && deliveryZipCode) {
-        zone = await storage.getServiceZoneByZipCode(deliveryZipCode);
-        if (zone) {
-          console.log(`Using ZIP code zone fallback for ${deliveryZipCode}: ${zone.name}`);
         }
       }
       
