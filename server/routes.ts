@@ -805,6 +805,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // If no custom boundary zone found, fall back to ZIP code lookup
+      if (!zone && deliveryZipCode) {
+        zone = await storage.getServiceZoneByZipCode(deliveryZipCode);
+        if (zone) {
+          console.log(`Using ZIP code zone fallback for ${deliveryZipCode}: ${zone.name}`);
+        }
+      }
+      
       if (!zone) {
         return res.status(404).json({ message: "Service not available in this location" });
       }
