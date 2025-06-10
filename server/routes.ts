@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dumpster pricing routes
-  app.get("/api/dumpster-pricing/:dumpsterId", isAdmin, async (req, res) => {
+  app.get("/api/dumpster-pricing/:dumpsterId", async (req, res) => {
     try {
       const dumpsterId = parseInt(req.params.dumpsterId);
       if (isNaN(dumpsterId)) {
