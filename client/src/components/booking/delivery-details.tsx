@@ -50,6 +50,7 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
   const [validatedZone, setValidatedZone] = useState<any>(null);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = useRef<HTMLButtonElement>(null);
 
   // Fetch dumpster inventory to check availability
@@ -346,7 +347,7 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Delivery Date</FormLabel>
-                  <Popover>
+                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild ref={datePickerRef}>
                       <FormControl>
                         <Button
@@ -413,6 +414,9 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
                               
                               // Update the form field with this exact string value
                               field.onChange(formattedDate);
+                              
+                              // Close the date picker after selection
+                              setIsDatePickerOpen(false);
                             }
                           }}
                           disabled={(date) => {
