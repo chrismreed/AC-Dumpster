@@ -15,10 +15,20 @@ interface SelectedAddOn {
 interface ServiceAddonsProps {
   onBack: () => void;
   onNext: (data: { selectedAddOns: SelectedAddOn[] }) => void;
+  selectedAddOns?: SelectedAddOn[];
 }
 
-export function ServiceAddons({ onBack, onNext }: ServiceAddonsProps) {
-  const [selectedAddOns, setSelectedAddOns] = useState<{ [key: number]: SelectedAddOn }>({});
+export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedAddOns }: ServiceAddonsProps) {
+  const [selectedAddOns, setSelectedAddOns] = useState<{ [key: number]: SelectedAddOn }>(() => {
+    // Initialize with saved data if available
+    const initial: { [key: number]: SelectedAddOn } = {};
+    if (initialSelectedAddOns) {
+      initialSelectedAddOns.forEach(addon => {
+        initial[addon.addonId] = addon;
+      });
+    }
+    return initial;
+  });
   
   const { data: addons, isLoading } = useQuery<AddOn[]>({
     queryKey: ["/api/addons"],

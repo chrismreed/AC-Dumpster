@@ -61,17 +61,17 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
     queryKey: ["/api/availability"],
   });
 
-  // Initialize form
+  // Initialize form with saved data if available
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      deliveryAddress: "",
-      deliveryCity: "",
-      deliveryZipCode: "",
-      deliveryInstructions: "",
-      placementLocation: "driveway",
-      deliveryDate: "",
-      deliveryTimePreference: "anytime",
+      deliveryAddress: initialData?.deliveryAddress || "",
+      deliveryCity: initialData?.deliveryCity || "",
+      deliveryZipCode: initialData?.deliveryZipCode || "",
+      deliveryInstructions: initialData?.deliveryInstructions || "",
+      placementLocation: initialData?.placementLocation || "driveway",
+      deliveryDate: initialData?.deliveryDate || "",
+      deliveryTimePreference: initialData?.deliveryTimePreference || "anytime",
     },
   });
 
