@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PhoneIcon, MailIcon, MapPinIcon, ClockIcon } from "lucide-react";
+import { scrollToSection } from "@/lib/scroll-utils";
 
 export function ContactSection() {
   return (
@@ -67,10 +68,10 @@ export function ContactSection() {
 
             <div className="text-center">
               <Button 
-                asChild 
+                onClick={() => scrollToSection('booking-form')}
                 className="bg-primary text-black hover:bg-primary/90 font-bold px-8 py-3"
               >
-                <a href="#booking-form">Book Your Dumpster Now</a>
+                Book Your Dumpster Now
               </Button>
             </div>
           </div>

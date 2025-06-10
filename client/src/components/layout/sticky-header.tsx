@@ -81,11 +81,11 @@ export function StickyHeader() {
           {/* CTA Button */}
           <div className="hidden md:block">
             <Button 
-              asChild 
+              onClick={() => scrollToSection('booking-form')}
               size="lg"
               className="font-bold bg-[#f7c948] text-dark hover:bg-[#f8d468] px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
             >
-              <a href="#booking-form">RENT NOW</a>
+              RENT NOW
             </Button>
           </div>
 
@@ -128,11 +128,10 @@ export function StickyHeader() {
               
               <div className="pt-4">
                 <Button 
-                  asChild 
+                  onClick={() => scrollToSection('booking-form')}
                   className="w-full font-bold bg-white text-[#111827] hover:bg-gray-100 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-                  onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <a href="#booking-form">RENT NOW</a>
+                  RENT NOW
                 </Button>
               </div>
             </nav>
