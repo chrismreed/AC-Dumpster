@@ -358,7 +358,16 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
                           )}
                         >
                           {field.value ? (
-                            format(new Date(field.value), "PPP")
+                            (() => {
+                              // Parse the YYYY-MM-DD format directly to avoid timezone issues
+                              const dateParts = field.value.split('-');
+                              const year = parseInt(dateParts[0]);
+                              const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+                              const day = parseInt(dateParts[2]);
+                              // Create date at noon to avoid timezone shifting
+                              const displayDate = new Date(year, month, day, 12, 0, 0, 0);
+                              return format(displayDate, "PPP");
+                            })()
                           ) : (
                             <span>Select a delivery date</span>
                           )}
