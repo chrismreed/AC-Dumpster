@@ -17,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { GooglePlacesAutocomplete } from "./google-places-autocomplete";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -130,7 +131,7 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
     setIsLoadingAvailability(false);
   }, [dumpsters, bookings]);
 
-  const validateServiceArea = async () => {
+  const validateServiceArea = async (coordinates?: { lat: number; lng: number }) => {
     const zipCode = form.getValues("deliveryZipCode");
     const address = form.getValues("deliveryAddress");
     const city = form.getValues("deliveryCity");
@@ -138,11 +139,19 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
     if (zipCode && zipCode.length === 5) {
       setIsValidatingZip(true);
       try {
-        const response = await apiRequest("POST", "/api/zones/lookup", {
+        const requestBody: any = {
           zipCode,
           address,
           city
-        });
+        };
+
+        // Include coordinates if available from Google Places
+        if (coordinates) {
+          requestBody.lat = coordinates.lat;
+          requestBody.lng = coordinates.lng;
+        }
+
+        const response = await apiRequest("POST", "/api/zones/lookup", requestBody);
         const zoneData = await response.json();
         setValidatedZone(zoneData);
         setIsValidatingZip(false);
@@ -167,6 +176,24 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
   const handleZipCodeChange = async (zipCode: string) => {
     if (zipCode.length === 5) {
       await validateServiceArea();
+    }
+  };
+
+  const handlePlaceSelect = (place: {
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    coordinates: { lat: number; lng: number };
+  }) => {
+    // Update form fields with the selected place data
+    form.setValue("deliveryAddress", place.address);
+    form.setValue("deliveryCity", place.city);
+    form.setValue("deliveryZipCode", place.zipCode);
+
+    // Validate the service area with coordinates for more accurate geofencing
+    if (place.zipCode && place.zipCode.length === 5) {
+      setTimeout(() => validateServiceArea(place.coordinates), 500);
     }
   };
 
