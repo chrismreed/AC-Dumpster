@@ -55,6 +55,12 @@ export function AdminNav() {
       title: "Payment Settings",
       href: "/admin/payment-settings",
       icon: <CreditCard className="mr-2 h-4 w-4" />
+    },
+    {
+      title: "Logout",
+      href: "#",
+      icon: <LogOut className="mr-2 h-4 w-4" />,
+      onClick: () => logoutMutation.mutate()
     }
   ];
 
@@ -90,20 +96,34 @@ export function AdminNav() {
             </div>
             <nav className="mt-2">
               {navItems.map((item, index) => (
-                <Link 
-                  href={item.href} 
-                  key={index}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "flex items-center px-4 py-3 text-sm",
-                    location === item.href
-                      ? "bg-gray-100 text-gray-900 font-medium"
-                      : "text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  {item.icon}
-                  {item.title}
-                </Link>
+                item.onClick ? (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      item.onClick();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    {item.icon}
+                    {item.title}
+                  </button>
+                ) : (
+                  <Link 
+                    href={item.href} 
+                    key={index}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center px-4 py-3 text-sm",
+                      location === item.href
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    )}
+                  >
+                    {item.icon}
+                    {item.title}
+                  </Link>
+                )
               ))}
             </nav>
           </div>
@@ -118,19 +138,30 @@ export function AdminNav() {
         </div>
         <nav className="mt-4">
           {navItems.map((item, index) => (
-            <Link 
-              href={item.href} 
-              key={index}
-              className={cn(
-                "flex items-center px-6 py-3 text-sm z-10 relative",
-                location === item.href
-                  ? "bg-gray-100 text-gray-900 font-medium"
-                  : "text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              {item.icon}
-              {item.title}
-            </Link>
+            item.onClick ? (
+              <button
+                key={index}
+                onClick={item.onClick}
+                className="w-full flex items-center px-6 py-3 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                {item.icon}
+                {item.title}
+              </button>
+            ) : (
+              <Link 
+                href={item.href} 
+                key={index}
+                className={cn(
+                  "flex items-center px-6 py-3 text-sm z-10 relative",
+                  location === item.href
+                    ? "bg-gray-100 text-gray-900 font-medium"
+                    : "text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                {item.icon}
+                {item.title}
+              </Link>
+            )
           ))}
         </nav>
       </aside>

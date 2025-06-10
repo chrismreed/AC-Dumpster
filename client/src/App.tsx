@@ -59,19 +59,11 @@ function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {isAdminPage ? (
-        <Header />
-      ) : (
-        <StickyHeader />
-      )}
-      <main className="flex-grow pt-16 md:pt-20">
+      {!isAdminPage && <StickyHeader />}
+      <main className={`flex-grow ${!isAdminPage ? 'pt-16 md:pt-20' : ''}`}>
         <Router />
       </main>
-      {isAdminPage ? (
-        <Footer />
-      ) : (
-        <ImprovedFooter />
-      )}
+      {!isAdminPage && <ImprovedFooter />}
       <AdminStylesOverride />
     </div>
   );
