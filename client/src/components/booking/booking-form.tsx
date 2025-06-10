@@ -41,7 +41,17 @@ export function BookingForm() {
   useEffect(() => {
     if (currentStep > 1) {
       setTimeout(() => {
-        scrollToSection('booking-form');
+        const formElement = document.getElementById('booking-form-container');
+        if (formElement) {
+          const headerOffset = 20; // Small offset from top
+          const elementPosition = formElement.offsetTop;
+          const offsetPosition = elementPosition - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
       }, 350); // Wait for slide animation to complete
     }
   }, [currentStep]);
@@ -97,7 +107,7 @@ export function BookingForm() {
   const showConfirmation = bookingData.paymentSuccess;
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div id="booking-form-container" className="bg-white rounded-lg shadow-md overflow-hidden">
       {!showConfirmation && (
         <BookingSteps 
           currentStep={currentStep} 
