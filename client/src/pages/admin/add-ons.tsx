@@ -392,7 +392,10 @@ export default function AddOnsPage() {
                         <Input
                           type="time"
                           placeholder="14:00"
-                          {...field}
+                          name={field.name}
+                          ref={field.ref}
+                          onBlur={field.onBlur}
+                          onChange={field.onChange}
                           value={field.value || ""}
                         />
                       </FormControl>
