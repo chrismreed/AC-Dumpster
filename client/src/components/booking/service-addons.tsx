@@ -34,6 +34,31 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
     queryKey: ["/api/addons"],
   });
 
+  // Function to check if same-day delivery is available based on cutoff time
+  const isSameDayDeliveryAvailable = (addon: AddOn) => {
+    if (!addon.cutoffTime) return true; // If no cutoff time set, always available
+    
+    const now = new Date();
+    const [hours, minutes] = addon.cutoffTime.split(':').map(Number);
+    const cutoffTime = new Date();
+    cutoffTime.setHours(hours, minutes, 0, 0);
+    
+    return now <= cutoffTime;
+  };
+
+  // Function to get delivery label for same-day delivery add-ons
+  const getDeliveryLabel = (addon: AddOn) => {
+    if (addon.name.toLowerCase().includes('same day') && addon.cutoffTime) {
+      const isAvailable = isSameDayDeliveryAvailable(addon);
+      if (isAvailable) {
+        return `Same Day Delivery (order by ${addon.cutoffTime})`;
+      } else {
+        return 'Next Day Delivery';
+      }
+    }
+    return addon.name;
+  };
+
   const handleAddonChange = (checked: boolean, addon: AddOn) => {
     if (checked) {
       setSelectedAddOns(prev => ({
@@ -98,7 +123,7 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
                   htmlFor={`addon-${addon.id}`} 
                   className="font-medium cursor-pointer"
                 >
-                  {addon.name}
+                  {getDeliveryLabel(addon)}
                 </Label>
                 <p className={`text-sm mt-1 ${selectedAddOns[addon.id] ? "text-neutral-300" : "text-neutral-600"}`}>
                   {addon.description}

@@ -32,6 +32,7 @@ export const addOns = pgTable("add_ons", {
   description: text("description").notNull(),
   price: integer("price").notNull(), // In cents
   isActive: boolean("is_active").notNull().default(true),
+  cutoffTime: text("cutoff_time"), // Format: "HH:MM" for same-day delivery cutoff
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
