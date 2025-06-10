@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Menu, X, ChevronDown } from 'lucide-react';
+import { scrollToSection } from '@/lib/scroll-utils';
 
 export function StickyHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -24,19 +25,9 @@ export function StickyHeader() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Smooth scroll to section
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const headerOffset = 80; // Account for fixed header
-      const elementPosition = element.offsetTop;
-      const offsetPosition = elementPosition - headerOffset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+  // Handle section scrolling and close mobile menu
+  const handleScrollToSection = (sectionId: string) => {
+    scrollToSection(sectionId);
     setIsMobileMenuOpen(false);
   };
 
@@ -109,16 +100,16 @@ export function StickyHeader() {
         <div className="md:hidden bg-[#0f172a]/95 shadow-lg backdrop-blur-sm border-t border-[#d1d5db]">
           <div className="container mx-auto px-4 py-5">
             <nav className="flex flex-col space-y-4">
-              <button onClick={() => scrollToSection('services')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+              <button onClick={() => handleScrollToSection('services')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
                 Services
               </button>
-              <button onClick={() => scrollToSection('about')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+              <button onClick={() => handleScrollToSection('about')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
                 About Us
               </button>
-              <button onClick={() => scrollToSection('faq')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+              <button onClick={() => handleScrollToSection('faq')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
                 FAQ
               </button>
-              <button onClick={() => scrollToSection('contact')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+              <button onClick={() => handleScrollToSection('contact')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
                 Contact
               </button>
               
@@ -128,7 +119,7 @@ export function StickyHeader() {
               
               <div className="pt-4">
                 <Button 
-                  onClick={() => scrollToSection('booking-form')}
+                  onClick={() => handleScrollToSection('booking-form')}
                   className="w-full font-bold bg-white text-[#111827] hover:bg-gray-100 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                 >
                   RENT NOW

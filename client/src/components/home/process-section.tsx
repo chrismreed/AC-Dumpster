@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { scrollToSection } from "@/lib/scroll-utils";
 
 export function ProcessSection() {
   return (
@@ -75,10 +76,11 @@ export function ProcessSection() {
           <p className="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">
             Need your dumpster picked up early or want to extend your rental? No problem! Just give us a call and we'll accommodate your schedule.
           </p>
-          <Button className="bg-[#facc15] text-[#0f172a] hover:bg-[#eab308] font-bold px-8 py-3 rounded-lg shadow-md" asChild>
-            <a href="#booking-form" className="inline-flex items-center text-lg">
-              Get Started <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+          <Button 
+            onClick={() => scrollToSection('booking-form')}
+            className="bg-[#facc15] text-[#0f172a] hover:bg-[#eab308] font-bold px-8 py-3 rounded-lg shadow-md inline-flex items-center text-lg"
+          >
+            Get Started <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </div>
