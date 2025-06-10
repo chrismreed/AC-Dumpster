@@ -24,6 +24,22 @@ export function StickyHeader() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Smooth scroll to section
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const headerOffset = 80; // Account for fixed header
+      const elementPosition = element.offsetTop;
+      const offsetPosition = elementPosition - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -44,10 +60,18 @@ export function StickyHeader() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            <NavLink href="/#services" label="Services" isScrolled={isScrolled} />
-            <NavLink href="/#about" label="About Us" isScrolled={isScrolled} />
-            <NavLink href="/#faq" label="FAQ" isScrolled={isScrolled} />
-            <NavLink href="/#contact" label="Contact" isScrolled={isScrolled} />
+            <button onClick={() => scrollToSection('services')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+              Services
+            </button>
+            <button onClick={() => scrollToSection('about')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+              About Us
+            </button>
+            <button onClick={() => scrollToSection('faq')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+              FAQ
+            </button>
+            <button onClick={() => scrollToSection('contact')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+              Contact
+            </button>
             
             {user && (
               <NavLink href="/admin/dashboard" label="Dashboard" isActive={location.startsWith('/admin')} isScrolled={isScrolled} />
@@ -85,10 +109,18 @@ export function StickyHeader() {
         <div className="md:hidden bg-[#0f172a]/95 shadow-lg backdrop-blur-sm border-t border-[#d1d5db]">
           <div className="container mx-auto px-4 py-5">
             <nav className="flex flex-col space-y-4">
-              <MobileNavLink href="/#services" label="Services" onClick={() => setIsMobileMenuOpen(false)} />
-              <MobileNavLink href="/#about" label="About Us" onClick={() => setIsMobileMenuOpen(false)} />
-              <MobileNavLink href="/#faq" label="FAQ" onClick={() => setIsMobileMenuOpen(false)} />
-              <MobileNavLink href="/#contact" label="Contact" onClick={() => setIsMobileMenuOpen(false)} />
+              <button onClick={() => scrollToSection('services')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                Services
+              </button>
+              <button onClick={() => scrollToSection('about')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                About Us
+              </button>
+              <button onClick={() => scrollToSection('faq')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                FAQ
+              </button>
+              <button onClick={() => scrollToSection('contact')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                Contact
+              </button>
               
               {user && (
                 <MobileNavLink href="/admin/dashboard" label="Dashboard" onClick={() => setIsMobileMenuOpen(false)} />
