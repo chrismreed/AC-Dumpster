@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SelectedAddOn {
   addonId: number;
@@ -16,9 +17,10 @@ interface ServiceAddonsProps {
   onBack: () => void;
   onNext: (data: { selectedAddOns: SelectedAddOn[] }) => void;
   selectedAddOns?: SelectedAddOn[];
+  bookingData?: any;
 }
 
-export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedAddOns }: ServiceAddonsProps) {
+export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedAddOns, bookingData }: ServiceAddonsProps) {
   const [selectedAddOns, setSelectedAddOns] = useState<{ [key: number]: SelectedAddOn }>(() => {
     // Initialize with saved data if available
     const initial: { [key: number]: SelectedAddOn } = {};
@@ -32,6 +34,23 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
   
   const { data: addons, isLoading } = useQuery<AddOn[]>({
     queryKey: ["/api/addons"],
+  });
+
+  // Get zone information for same-day delivery notices
+  const { data: zone } = useQuery({
+    queryKey: ["/api/zones/lookup"],
+    queryFn: async () => {
+      if (bookingData?.deliveryZipCode) {
+        const response = await apiRequest("POST", "/api/zones/lookup", {
+          zipCode: bookingData.deliveryZipCode,
+          address: bookingData.deliveryAddress || "",
+          city: bookingData.deliveryCity || "",
+        });
+        return response.json();
+      }
+      return null;
+    },
+    enabled: !!bookingData?.deliveryZipCode,
   });
 
   // Function to check if same-day delivery is available based on cutoff time
@@ -53,6 +72,37 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
     const hours12 = hours % 12 || 12;
     return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
+
+  // Check if today is selected for same-day delivery notice
+  const isSelectedDateToday = () => {
+    if (!bookingData?.deliveryDate) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return bookingData.deliveryDate === today;
+  };
+
+  // Check if same-day delivery is available
+  const getSameDayDeliveryStatus = () => {
+    if (!isSelectedDateToday() || !zone?.sameDayDeliveryEnabled) return null;
+    
+    const now = new Date();
+    const cutoffTime = zone.sameDayCutoffTime;
+    
+    if (cutoffTime) {
+      const [hours, minutes] = cutoffTime.split(':').map(Number);
+      const cutoff = new Date();
+      cutoff.setHours(hours, minutes, 0, 0);
+      
+      return {
+        isAvailable: now <= cutoff,
+        cutoffTime: formatTime(cutoffTime),
+        fee: zone.sameDayDeliveryFee
+      };
+    }
+    
+    return null;
+  };
+
+  const sameDayStatus = getSameDayDeliveryStatus();
 
   // Function to get delivery label for same-day delivery add-ons
   const getDeliveryLabel = (addon: AddOn) => {
@@ -104,10 +154,42 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
     );
   }
 
+
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-neutral-800 mb-6">Service Add-ons</h2>
-      <p className="text-neutral-600 mb-8">Customize your rental with these optional services.</p>
+      <p className="text-neutral-600 mb-6">Customize your rental with these optional services.</p>
+      
+      {/* Same-day delivery notice */}
+      {sameDayStatus && (
+        <div className={`mb-8 p-4 rounded-lg border ${
+          sameDayStatus.isAvailable 
+            ? 'bg-yellow-50 border-yellow-200' 
+            : 'bg-blue-50 border-blue-200'
+        }`}>
+          <div className="flex items-center">
+            <span className="text-2xl mr-3">
+              {sameDayStatus.isAvailable ? '🚚' : '📅'}
+            </span>
+            <div>
+              <h3 className={`font-semibold text-lg ${
+                sameDayStatus.isAvailable ? 'text-yellow-800' : 'text-blue-800'
+              }`}>
+                {sameDayStatus.isAvailable ? 'Same-Day Delivery Available' : 'Next-Day Delivery'}
+              </h3>
+              <p className={`text-sm ${
+                sameDayStatus.isAvailable ? 'text-yellow-700' : 'text-blue-700'
+              }`}>
+                {sameDayStatus.isAvailable 
+                  ? `Order by ${sameDayStatus.cutoffTime} for delivery today. Additional fee: $${(sameDayStatus.fee / 100).toFixed(2)}`
+                  : `Same-day cutoff time (${sameDayStatus.cutoffTime}) has passed. Your order will be delivered tomorrow.`
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="space-y-6">
         {addons?.filter(addon => addon.isActive).map((addon) => (

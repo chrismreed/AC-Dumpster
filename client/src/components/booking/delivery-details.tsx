@@ -449,6 +449,53 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
                   {availableDates.length === 0 && !isLoadingAvailability && !isLoadingDumpsters && !isLoadingBookings && (
                     <p className="text-xs text-red-500 mt-1">No dumpsters available for the next 30 days.</p>
                   )}
+                  {/* Same-day delivery notice */}
+                  {field.value && (() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    const isToday = field.value === today;
+                    if (isToday && validatedZone?.sameDayDeliveryEnabled) {
+                      const now = new Date();
+                      const cutoffTime = validatedZone.sameDayCutoffTime;
+                      
+                      if (cutoffTime) {
+                        const [hours, minutes] = cutoffTime.split(':').map(Number);
+                        const cutoff = new Date();
+                        cutoff.setHours(hours, minutes, 0, 0);
+                        
+                        const formatTime = (time24: string) => {
+                          const [h, m] = time24.split(':').map(Number);
+                          const period = h >= 12 ? 'PM' : 'AM';
+                          const h12 = h % 12 || 12;
+                          return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
+                        };
+                        
+                        if (now <= cutoff) {
+                          return (
+                            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                              <p className="text-sm text-yellow-800 font-medium">
+                                🚚 Same-Day Delivery Available
+                              </p>
+                              <p className="text-xs text-yellow-700 mt-1">
+                                Order by {formatTime(cutoffTime)} for delivery today. Additional fee: ${(validatedZone.sameDayDeliveryFee / 100).toFixed(2)}
+                              </p>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                              <p className="text-sm text-blue-800">
+                                📅 Next-Day Delivery
+                              </p>
+                              <p className="text-xs text-blue-700 mt-1">
+                                Same-day cutoff time ({formatTime(cutoffTime)}) has passed. Your order will be delivered tomorrow.
+                              </p>
+                            </div>
+                          );
+                        }
+                      }
+                    }
+                    return null;
+                  })()}
                   <FormMessage />
                 </FormItem>
               )}
