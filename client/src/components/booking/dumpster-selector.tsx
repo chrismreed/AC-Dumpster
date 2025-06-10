@@ -90,7 +90,6 @@ export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId
             name={dumpster.name}
             dimensions={dumpster.dimensions}
             description={dumpster.description}
-            basePrice={dumpster.basePrice}
             weightLimit={dumpster.weightLimit}
             isSelected={selectedDumpsterId === dumpster.id}
             onClick={() => setSelectedDumpsterId(dumpster.id)}

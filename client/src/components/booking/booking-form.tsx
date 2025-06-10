@@ -180,6 +180,7 @@ export function BookingForm() {
                 onBack={() => handleBack(2)} 
                 onNext={handleAddOns}
                 selectedAddOns={bookingData.selectedAddOns || []}
+                bookingData={bookingData}
               />
             </div>
             <div className="w-full flex-shrink-0 p-6 md:p-8">

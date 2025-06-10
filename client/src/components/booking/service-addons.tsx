@@ -136,14 +136,8 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
   const handleQuantityChange = (addonId: number, quantity: number) => {
     setSelectedAddOns(prev => ({
       ...prev,
-      [addonId]: { ...prev[addonId], quantity }
+      [addonId]: { addonId, quantity }
     }));
-  };
-
-  const handleContinue = () => {
-    onNext({ 
-      selectedAddOns: Object.values(selectedAddOns) 
-    });
   };
 
   if (isLoading) {
@@ -153,8 +147,6 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
       </div>
     );
   }
-
-
 
   return (
     <div>
@@ -241,15 +233,19 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
                             <SelectItem value="1">1 Additional Ton (+${(addon.price / 100).toFixed(2)})</SelectItem>
                             <SelectItem value="2">2 Additional Tons (+${((addon.price * 2) / 100).toFixed(2)})</SelectItem>
                             <SelectItem value="3">3 Additional Tons (+${((addon.price * 3) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="4">4 Additional Tons (+${((addon.price * 4) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="5">5 Additional Tons (+${((addon.price * 5) / 100).toFixed(2)})</SelectItem>
                           </>
                         ) : (
                           // Extension options
                           <>
-                            <SelectItem value="1">1 Extra Day (+${(addon.price / 100).toFixed(2)})</SelectItem>
-                            <SelectItem value="2">2 Extra Days (+${((addon.price * 2) / 100).toFixed(2)})</SelectItem>
-                            <SelectItem value="3">3 Extra Days (+${((addon.price * 3) / 100).toFixed(2)})</SelectItem>
-                            <SelectItem value="4">4 Extra Days (+${((addon.price * 4) / 100).toFixed(2)})</SelectItem>
-                            <SelectItem value="5">5 Extra Days (+${((addon.price * 5) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="1">1 Additional Day (+${(addon.price / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="2">2 Additional Days (+${((addon.price * 2) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="3">3 Additional Days (+${((addon.price * 3) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="4">4 Additional Days (+${((addon.price * 4) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="5">5 Additional Days (+${((addon.price * 5) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="6">6 Additional Days (+${((addon.price * 6) / 100).toFixed(2)})</SelectItem>
+                            <SelectItem value="7">7 Additional Days (+${((addon.price * 7) / 100).toFixed(2)})</SelectItem>
                           </>
                         )}
                       </SelectContent>
@@ -264,41 +260,19 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
 
       <div className="mt-10 flex justify-between">
         <Button
-          onClick={onBack}
+          type="button"
           variant="outline"
-          className="px-6 py-2 text-[#ffdd33] border-[#ffdd33] hover:bg-[#2c2c2c]"
+          onClick={onBack}
+          className="bg-white border-[#2c2c2c] text-[#2c2c2c] hover:bg-[#2c2c2c] hover:text-white px-8 py-3"
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-5 w-5 mr-2" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path 
-              fillRule="evenodd" 
-              d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" 
-              clipRule="evenodd" 
-            />
-          </svg>
-          Back
+          ← Back
         </Button>
-        <Button 
-          onClick={handleContinue}
-          className="px-6 py-2 bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#ffd700] font-bold"
+        <Button
+          type="button"
+          onClick={() => onNext({ selectedAddOns: Object.values(selectedAddOns) })}
+          className="bg-[#ffdd33] text-[#2c2c2c] hover:bg-[#e6c42e] font-medium px-8 py-3"
         >
-          Review Order
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-5 w-5 ml-2" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path 
-              fillRule="evenodd" 
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" 
-              clipRule="evenodd" 
-            />
-          </svg>
+          Review Order →
         </Button>
       </div>
     </div>

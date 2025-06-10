@@ -9,7 +9,6 @@ interface PricingCardProps {
   name: string;
   dimensions: string;
   description: string;
-  basePrice: number;
   weightLimit: number;
   isSelected?: boolean;
   onClick?: () => void;
@@ -21,7 +20,6 @@ export function PricingCard({
   name,
   dimensions,
   description,
-  basePrice,
   weightLimit,
   isSelected = false,
   onClick,
@@ -50,7 +48,7 @@ export function PricingCard({
       );
       return minPricing.price;
     }
-    return basePrice;
+    return 0; // Default to 0 if no pricing options available
   };
 
   const minPrice = getMinPrice();
