@@ -131,7 +131,7 @@ export default function DashboardPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 p-4 sm:p-6">
+      <div className="space-y-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
           <p className="text-gray-500 text-sm sm:text-base">Overview of your dumpster rental business</p>
