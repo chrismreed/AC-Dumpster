@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookingSteps } from "@/components/ui/booking-steps";
 import { DumpsterSelector } from "@/components/booking/dumpster-selector";
 import { DeliveryDetails } from "@/components/booking/delivery-details";
 import { ServiceAddons } from "@/components/booking/service-addons";
 import { ReviewOrder } from "@/components/booking/review-order";
 import { Button } from "@/components/ui/button";
+import { scrollToSection } from "@/lib/scroll-utils";
 
 // Define types for booking data
 interface BookingData {
   dumpsterId?: number;
-  rentalDurationId?: number;
+  pricingId?: number;
   selectedAddOns?: any[];
   paymentSuccess?: boolean;
   bookingId?: number;
@@ -27,6 +28,16 @@ export function BookingForm() {
     "Review & Pay"
   ];
 
+  // Auto-scroll to booking form when step changes
+  useEffect(() => {
+    if (currentStep > 1) {
+      // Small delay to ensure the new step content has rendered
+      setTimeout(() => {
+        scrollToSection('booking-form');
+      }, 100);
+    }
+  }, [currentStep]);
+
   const handleStepClick = (step: number) => {
     // Only allow going to steps that have already been visited or the next step
     // Don't allow changing steps if payment was successful
@@ -35,7 +46,7 @@ export function BookingForm() {
     }
   };
 
-  const handleDumpsterSelect = (data: { dumpsterId: number; rentalDurationId: number }) => {
+  const handleDumpsterSelect = (data: { dumpsterId: number; pricingId: number }) => {
     setBookingData((prevData: BookingData) => ({ ...prevData, ...data }));
     setCurrentStep(2);
   };
