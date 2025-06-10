@@ -5,6 +5,7 @@ import { AboutSection } from "@/components/home/about-section";
 import { ImprovedTestimonials } from "@/components/home/improved-testimonials";
 import { ComparisonSection } from "@/components/home/comparison-section";
 import { ImprovedFAQ } from "@/components/home/improved-faq";
+import { ContactSection } from "@/components/home/contact-section";
 import { FinalCTA } from "@/components/home/final-cta";
 import { BookingForm } from "@/components/booking/booking-form";
 
@@ -43,6 +44,8 @@ export default function HomePage() {
       <ComparisonSection />
       
       <ImprovedFAQ />
+      
+      <ContactSection />
       
       <FinalCTA />
     </div>
