@@ -215,16 +215,11 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
               <FormItem>
                 <FormLabel>Delivery Address</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Street Address" 
-                    {...field} 
-                    onChange={(e) => {
-                      field.onChange(e);
-                      const zipCode = form.getValues("deliveryZipCode");
-                      if (zipCode && zipCode.length === 5) {
-                        setTimeout(validateServiceArea, 500);
-                      }
-                    }}
+                  <GooglePlacesAutocomplete
+                    value={field.value}
+                    onChange={field.onChange}
+                    onPlaceSelect={handlePlaceSelect}
+                    placeholder="Start typing your address..."
                   />
                 </FormControl>
                 <FormMessage />
