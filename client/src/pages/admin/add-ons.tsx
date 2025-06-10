@@ -68,6 +68,7 @@ export default function AddOnsPage() {
       description: "",
       price: 0,
       isActive: true,
+      cutoffTime: "",
     },
   });
 
@@ -79,6 +80,7 @@ export default function AddOnsPage() {
       description: "",
       price: 0,
       isActive: true,
+      cutoffTime: "",
     },
   });
 
@@ -268,6 +270,30 @@ export default function AddOnsPage() {
                   />
                   <FormField
                     control={addForm.control}
+                    name="cutoffTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cutoff Time (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            placeholder="14:00"
+                            name={field.name}
+                            ref={field.ref}
+                            onBlur={field.onBlur}
+                            onChange={field.onChange}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          For same-day delivery services, set the order cutoff time (24-hour format)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addForm.control}
                     name="isActive"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -352,6 +378,27 @@ export default function AddOnsPage() {
                           onValueChange={field.onChange}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="cutoffTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cutoff Time (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          placeholder="14:00"
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        For same-day delivery services, set the order cutoff time (24-hour format)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
