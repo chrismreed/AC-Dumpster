@@ -49,6 +49,9 @@ export const serviceZones = pgTable("service_zones", {
   polygonPath: text("polygon_path"), // JSON string containing polygon vertices for custom geofencing
   feeMultiplier: doublePrecision("fee_multiplier").default(1.0), // Multiplier for the base fee
   maxDrivingMinutes: integer("max_driving_minutes"), // Maximum driving time in minutes
+  sameDayDeliveryEnabled: boolean("same_day_delivery_enabled").default(false),
+  sameDayDeliveryFee: integer("same_day_delivery_fee").default(0), // In cents
+  sameDayCutoffTime: text("same_day_cutoff_time"), // 24-hour format, e.g., "14:00"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

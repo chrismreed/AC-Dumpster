@@ -56,7 +56,9 @@ import { cn } from "@/lib/utils";
 // Extended schema for the form
 const extendedZoneSchema = insertServiceZoneSchema.extend({
   deliveryFee: z.coerce.number().min(0, { message: "Delivery fee must be a positive number" }),
+  sameDayDeliveryFee: z.coerce.number().min(0, { message: "Same-day delivery fee must be a positive number" }),
   useGeofencing: z.boolean().optional(),
+  sameDayDeliveryEnabled: z.boolean().optional(),
 }).refine((data) => {
   // Ensure either zip codes or geofencing is used, but not both
   const hasZipCodes = data.zipCodes && data.zipCodes.trim().length > 0;
@@ -99,6 +101,9 @@ export default function ZonesNewLayoutPage() {
       zipCodes: "",
       deliveryFee: 0,
       useGeofencing: false,
+      sameDayDeliveryEnabled: false,
+      sameDayDeliveryFee: 0,
+      sameDayCutoffTime: "",
     },
   });
 
@@ -109,6 +114,9 @@ export default function ZonesNewLayoutPage() {
       zipCodes: "",
       deliveryFee: 0,
       useGeofencing: false,
+      sameDayDeliveryEnabled: false,
+      sameDayDeliveryFee: 0,
+      sameDayCutoffTime: "",
     },
   });
 

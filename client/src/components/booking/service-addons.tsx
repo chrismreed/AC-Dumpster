@@ -46,12 +46,21 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
     return now <= cutoffTime;
   };
 
+  // Function to format time from 24-hour to 12-hour format
+  const formatTime = (time24: string) => {
+    const [hours, minutes] = time24.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
   // Function to get delivery label for same-day delivery add-ons
   const getDeliveryLabel = (addon: AddOn) => {
     if (addon.name.toLowerCase().includes('same day') && addon.cutoffTime) {
       const isAvailable = isSameDayDeliveryAvailable(addon);
       if (isAvailable) {
-        return `Same Day Delivery (order by ${addon.cutoffTime})`;
+        const formattedTime = formatTime(addon.cutoffTime);
+        return `Same Day Delivery (order by ${formattedTime})`;
       } else {
         return 'Next Day Delivery';
       }
