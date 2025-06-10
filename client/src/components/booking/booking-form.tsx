@@ -106,8 +106,8 @@ export function BookingForm() {
           onStepClick={handleStepClick}
         />
       )}
-      <div className="p-6 md:p-8">
-        {showConfirmation ? (
+      {showConfirmation ? (
+        <div className="p-6 md:p-8">
           <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
             <svg
               className="w-16 h-16 text-green-500 mx-auto mb-4"
@@ -144,33 +144,35 @@ export function BookingForm() {
               </Button>
             </div>
           </div>
-        ) : (
+        </div>
+      ) : (
+        <div className="relative overflow-hidden">
           <div 
             className="flex transition-transform duration-300 ease-in-out"
             style={{ transform: `translateX(-${(currentStep - 1) * 100}%)` }}
           >
-            <div className="w-full flex-shrink-0">
+            <div className="w-full flex-shrink-0 p-6 md:p-8">
               <DumpsterSelector 
                 onNext={handleDumpsterSelect}
                 selectedDumpsterId={bookingData.dumpsterId}
                 selectedPricingId={bookingData.pricingId}
               />
             </div>
-            <div className="w-full flex-shrink-0">
+            <div className="w-full flex-shrink-0 p-6 md:p-8">
               <DeliveryDetails 
                 onBack={() => handleBack(1)} 
                 onNext={handleDeliveryDetails}
                 initialData={bookingData}
               />
             </div>
-            <div className="w-full flex-shrink-0">
+            <div className="w-full flex-shrink-0 p-6 md:p-8">
               <ServiceAddons 
                 onBack={() => handleBack(2)} 
                 onNext={handleAddOns}
                 selectedAddOns={bookingData.selectedAddOns || []}
               />
             </div>
-            <div className="w-full flex-shrink-0">
+            <div className="w-full flex-shrink-0 p-6 md:p-8">
               <ReviewOrder
                 bookingData={bookingData}
                 onBack={() => handleBack(3)}
@@ -178,8 +180,8 @@ export function BookingForm() {
               />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
