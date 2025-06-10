@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Trash2,
@@ -12,7 +13,9 @@ import {
   Map,
   Globe,
   CreditCard,
-  Settings
+  Settings,
+  Menu,
+  X
 } from "lucide-react";
 import { Button } from "./button";
 

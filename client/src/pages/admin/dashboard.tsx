@@ -131,75 +131,75 @@ export default function DashboardPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 p-4 sm:p-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-500">Overview of your dumpster rental business</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+          <p className="text-gray-500 text-sm sm:text-base">Overview of your dumpster rental business</p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Card>
-            <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-gray-100 p-3 rounded-full">
-                <CalendarDays className="h-6 w-6 text-gray-600" />
+            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
+              <div className="bg-gray-100 p-2 sm:p-3 rounded-full flex-shrink-0">
+                <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Bookings</p>
-                <h3 className="text-2xl font-bold">{totalBookings}</h3>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Bookings</p>
+                <h3 className="text-xl sm:text-2xl font-bold">{totalBookings}</h3>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-gray-100 p-3 rounded-full">
-                <Truck className="h-6 w-6 text-gray-700" />
+            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
+              <div className="bg-gray-100 p-2 sm:p-3 rounded-full flex-shrink-0">
+                <Truck className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Active Deliveries</p>
-                <h3 className="text-2xl font-bold">{activeBookings}</h3>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-yellow-100 p-3 rounded-full">
-                <DollarSign className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-                <h3 className="text-2xl font-bold">${(totalRevenue / 100).toFixed(2)}</h3>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Active Deliveries</p>
+                <h3 className="text-xl sm:text-2xl font-bold">{activeBookings}</h3>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6 flex items-center space-x-4">
-              <div className="bg-gray-100 p-3 rounded-full">
-                <MapPin className="h-6 w-6 text-gray-700" />
+            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
+              <div className="bg-yellow-100 p-2 sm:p-3 rounded-full flex-shrink-0">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Service Zones</p>
-                <h3 className="text-2xl font-bold">{serviceZoneCount}</h3>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Revenue</p>
+                <h3 className="text-lg sm:text-2xl font-bold">${(totalRevenue / 100).toFixed(2)}</h3>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
+              <div className="bg-gray-100 p-2 sm:p-3 rounded-full flex-shrink-0">
+                <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-500">Service Zones</p>
+                <h3 className="text-xl sm:text-2xl font-bold">{serviceZoneCount}</h3>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           <Card>
-            <CardHeader>
-              <CardTitle>Revenue (Last 7 Days)</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg sm:text-xl">Revenue (Last 7 Days)</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-80">
+            <CardContent className="p-4 sm:p-6">
+              <div className="h-64 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={revenueData || []}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
@@ -219,11 +219,11 @@ export default function DashboardPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Dumpster Type Distribution</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg sm:text-xl">Dumpster Type Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-80">
+            <CardContent className="p-4 sm:p-6">
+              <div className="h-64 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                       cy="50%"
                       labelLine={false}
                       label={({ name, percent }) => name ? `${name} (${((percent || 0) * 100).toFixed(0)}%)` : ''}
-                      outerRadius={80}
+                      outerRadius="80%"
                       fill="#8884d8"
                       dataKey="value"
                     >
