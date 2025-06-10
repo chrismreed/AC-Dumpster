@@ -98,4 +98,33 @@
   .admin-section {
     @apply p-6 bg-gray rounded-lg mb-6;
   }
+
+  /* Fix dialog modal issues - ensure proper z-index and interaction */
+  [data-radix-dialog-overlay] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+  }
+
+  [data-radix-dialog-content] {
+    position: fixed !important;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ensure FullCalendar doesn't interfere with dialogs */
+  .fc {
+    z-index: 1 !important;
+  }
+
+  .fc .fc-popover {
+    z-index: 2 !important;
+  }
+
+  /* Ensure dialog content is scrollable */
+  [data-radix-dialog-content] {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
 }

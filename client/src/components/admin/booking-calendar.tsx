@@ -256,8 +256,16 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
       
       {/* Booking Details Dialog */}
       {selectedBooking && (
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className="max-w-3xl">
+        <Dialog 
+          open={isDetailsOpen} 
+          onOpenChange={setIsDetailsOpen}
+          modal={true}
+        >
+          <DialogContent 
+            className="max-w-3xl max-h-[90vh] overflow-y-auto"
+            onEscapeKeyDown={() => setIsDetailsOpen(false)}
+            onPointerDownOutside={() => setIsDetailsOpen(false)}
+          >
             <DialogHeader>
               <DialogTitle>Booking Details</DialogTitle>
               <DialogDescription>

@@ -413,8 +413,16 @@ export default function BookingsPage() {
         
         {/* Booking Details Dialog */}
         {selectedBooking && (
-          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <Dialog 
+            open={isViewDialogOpen} 
+            onOpenChange={setIsViewDialogOpen}
+            modal={true}
+          >
+            <DialogContent 
+              className="max-w-4xl max-h-[90vh] overflow-y-auto"
+              onEscapeKeyDown={() => setIsViewDialogOpen(false)}
+              onPointerDownOutside={() => setIsViewDialogOpen(false)}
+            >
               <DialogHeader>
                 <DialogTitle>Booking Details</DialogTitle>
                 <DialogDescription>
