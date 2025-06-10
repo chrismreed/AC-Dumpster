@@ -10,11 +10,13 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface DumpsterSelectorProps {
   onNext: (data: { dumpsterId: number, pricingId: number }) => void;
+  selectedDumpsterId?: number;
+  selectedPricingId?: number;
 }
 
-export function DumpsterSelector({ onNext }: DumpsterSelectorProps) {
-  const [selectedDumpsterId, setSelectedDumpsterId] = useState<number | null>(null);
-  const [selectedPricingId, setSelectedPricingId] = useState<number | null>(null);
+export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId, selectedPricingId: initialPricingId }: DumpsterSelectorProps) {
+  const [selectedDumpsterId, setSelectedDumpsterId] = useState<number | null>(initialDumpsterId || null);
+  const [selectedPricingId, setSelectedPricingId] = useState<number | null>(initialPricingId || null);
   const durationSectionRef = useRef<HTMLDivElement>(null);
 
   const { data: dumpsters, isLoading: isLoadingDumpsters } = useQuery<Dumpster[]>({

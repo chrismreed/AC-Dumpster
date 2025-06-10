@@ -40,9 +40,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface DeliveryDetailsProps {
   onBack: () => void;
   onNext: (data: FormValues) => void;
+  initialData?: any;
 }
 
-export function DeliveryDetails({ onBack, onNext }: DeliveryDetailsProps) {
+export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetailsProps) {
   const { toast } = useToast();
   const [isValidatingZip, setIsValidatingZip] = useState(false);
   const [validatedZone, setValidatedZone] = useState<any>(null);

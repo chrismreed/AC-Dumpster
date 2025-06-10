@@ -28,13 +28,21 @@ export function BookingForm() {
     "Review & Pay"
   ];
 
-  // Auto-scroll to booking form when step changes
+  // Auto-scroll to booking form only on initial load when someone clicks a "Book Now" button
+  useEffect(() => {
+    const hasScrolled = sessionStorage.getItem('hasScrolledToBooking');
+    if (!hasScrolled) {
+      scrollToSection('booking-form');
+      sessionStorage.setItem('hasScrolledToBooking', 'true');
+    }
+  }, []);
+
+  // Scroll to top of form when step changes (for varying step heights)
   useEffect(() => {
     if (currentStep > 1) {
-      // Small delay to ensure the new step content has rendered
       setTimeout(() => {
         scrollToSection('booking-form');
-      }, 100);
+      }, 350); // Wait for slide animation to complete
     }
   }, [currentStep]);
 
@@ -137,30 +145,39 @@ export function BookingForm() {
             </div>
           </div>
         ) : (
-          <>
-            {currentStep === 1 && (
-              <DumpsterSelector onNext={handleDumpsterSelect} />
-            )}
-            {currentStep === 2 && (
+          <div 
+            className="flex transition-transform duration-300 ease-in-out"
+            style={{ transform: `translateX(-${(currentStep - 1) * 100}%)` }}
+          >
+            <div className="w-full flex-shrink-0">
+              <DumpsterSelector 
+                onNext={handleDumpsterSelect}
+                selectedDumpsterId={bookingData.dumpsterId}
+                selectedPricingId={bookingData.pricingId}
+              />
+            </div>
+            <div className="w-full flex-shrink-0">
               <DeliveryDetails 
                 onBack={() => handleBack(1)} 
-                onNext={handleDeliveryDetails} 
+                onNext={handleDeliveryDetails}
+                initialData={bookingData}
               />
-            )}
-            {currentStep === 3 && (
+            </div>
+            <div className="w-full flex-shrink-0">
               <ServiceAddons 
                 onBack={() => handleBack(2)} 
-                onNext={handleAddOns} 
+                onNext={handleAddOns}
+                selectedAddOns={bookingData.selectedAddOns || []}
               />
-            )}
-            {currentStep === 4 && (
+            </div>
+            <div className="w-full flex-shrink-0">
               <ReviewOrder
                 bookingData={bookingData}
                 onBack={() => handleBack(3)}
                 onSubmit={handleSubmit}
               />
-            )}
-          </>
+            </div>
+          </div>
         )}
       </div>
     </div>
