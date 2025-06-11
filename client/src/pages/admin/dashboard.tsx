@@ -295,7 +295,7 @@ export default function DashboardPage() {
                     deliveryDate.setHours(0, 0, 0, 0);
                     
                     // Check if delivery is today
-                    if (deliveryDate.getTime() === today.getTime() && ['pending', 'confirmed', 'delivered'].includes(booking.status)) {
+                    if (deliveryDate.getTime() === today.getTime() && ['pending', 'confirmed', 'delivered', 'picked_up'].includes(booking.status)) {
                       return true;
                     }
                     
@@ -306,7 +306,7 @@ export default function DashboardPage() {
                     pickupDate.setDate(deliveryDate.getDate() + rentalDays);
                     pickupDate.setHours(0, 0, 0, 0);
                     
-                    return pickupDate.getTime() === today.getTime() && ['pending', 'confirmed', 'delivered'].includes(booking.status);
+                    return pickupDate.getTime() === today.getTime() && ['pending', 'confirmed', 'delivered', 'picked_up'].includes(booking.status);
                   }) || [];
 
                   if (todayBookings.length === 0) {
@@ -497,14 +497,14 @@ export default function DashboardPage() {
                       // Next task is delivery
                       nextTask = 'delivery';
                       nextTaskDate = deliveryDate;
-                    } else if (['delivered'].includes(booking.status)) {
-                      // Next task is pickup
+                    } else if (['delivered', 'picked_up'].includes(booking.status)) {
+                      // Next task is pickup (or showing current pickup task if picked_up)
                       nextTask = 'pickup';
                       nextTaskDate = new Date(deliveryDate);
                       nextTaskDate.setDate(deliveryDate.getDate() + rentalDays);
                       nextTaskDate.setHours(0, 0, 0, 0);
                     }
-                    // If status is 'picked_up' or 'complete', no next task needed
+                    // If status is 'complete', no next task needed
                     
                     if (nextTask && nextTaskDate && nextTaskDate > today) {
                       upcomingTasks.push({
