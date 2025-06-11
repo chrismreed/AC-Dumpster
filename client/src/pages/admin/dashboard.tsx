@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Booking, Dumpster } from "@shared/schema";
 import { 
   BarChart, 
@@ -38,6 +39,11 @@ export default function DashboardPage() {
   // Fetch dumpsters
   const { data: dumpsters = [], isLoading: isLoadingDumpsters } = useQuery<Dumpster[]>({
     queryKey: ["/api/dumpsters"],
+  });
+
+  // Fetch all pricing data to get rental durations
+  const { data: allPricing = [], isLoading: isLoadingPricing } = useQuery<any[]>({
+    queryKey: ["/api/dumpster-pricing/all"],
   });
 
   useEffect(() => {
@@ -119,7 +125,7 @@ export default function DashboardPage() {
   const totalRevenue = bookings?.reduce((sum, booking) => sum + booking.totalPrice, 0) || 0;
   const serviceZoneCount = new Set(bookings?.map(b => b.serviceZoneId)).size || 0;
 
-  if (isLoadingBookings || isLoadingDumpsters) {
+  if (isLoadingBookings || isLoadingDumpsters || isLoadingPricing) {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
@@ -188,91 +194,188 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Upcoming Deliveries & Pickups */}
+        {/* Deliveries & Pickups */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5" />
-              Next Deliveries & Pickups
+              Deliveries & Pickups
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {(() => {
-                // Get upcoming bookings within next 7 days
-                const today = new Date();
-                const nextWeek = new Date(today);
-                nextWeek.setDate(today.getDate() + 7);
-                
-                const upcomingBookings = bookings
-                  ?.filter(booking => {
+            <Tabs defaultValue="today" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="today">Today</TabsTrigger>
+                <TabsTrigger value="coming-up">Coming Up</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="today" className="space-y-4 mt-4">
+                {(() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const tomorrow = new Date(today);
+                  tomorrow.setDate(today.getDate() + 1);
+                  
+                  const todayBookings = bookings?.filter(booking => {
                     if (!booking.deliveryDate) return false;
                     const deliveryDate = new Date(booking.deliveryDate);
-                    const pickupDate = new Date(deliveryDate);
-                    pickupDate.setDate(deliveryDate.getDate() + (booking.rentalDays || 3));
+                    deliveryDate.setHours(0, 0, 0, 0);
                     
-                    return (deliveryDate >= today && deliveryDate <= nextWeek) || 
-                           (pickupDate >= today && pickupDate <= nextWeek);
-                  })
-                  .sort((a, b) => {
-                    const dateA = new Date(a.deliveryDate!);
-                    const dateB = new Date(b.deliveryDate!);
-                    return dateA.getTime() - dateB.getTime();
-                  })
-                  .slice(0, 5) || [];
+                    // Check if delivery is today
+                    if (deliveryDate.getTime() === today.getTime() && booking.status === 'scheduled') {
+                      return true;
+                    }
+                    
+                    // Check if pickup is today (delivery date + rental duration)
+                    const pricing = allPricing.find(p => p.id === booking.pricingId);
+                    const rentalDays = pricing?.days || 3;
+                    const pickupDate = new Date(deliveryDate);
+                    pickupDate.setDate(deliveryDate.getDate() + rentalDays);
+                    pickupDate.setHours(0, 0, 0, 0);
+                    
+                    return pickupDate.getTime() === today.getTime() && booking.status === 'scheduled';
+                  }) || [];
 
-                if (upcomingBookings.length === 0) {
-                  return (
-                    <div className="text-center py-8 text-gray-500">
-                      <Truck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>No upcoming deliveries or pickups in the next 7 days</p>
-                    </div>
-                  );
-                }
+                  if (todayBookings.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-gray-500">
+                        <Truck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p>No deliveries or pickups scheduled for today</p>
+                      </div>
+                    );
+                  }
 
-                return upcomingBookings.map((booking) => {
-                  const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
-                  const deliveryDate = new Date(booking.deliveryDate!);
-                  const pickupDate = new Date(deliveryDate);
-                  pickupDate.setDate(deliveryDate.getDate() + (booking.rentalDays || 3));
-                  
-                  const needsDelivery = deliveryDate >= today && booking.status === 'scheduled';
-                  const needsPickup = pickupDate <= nextWeek && booking.status === 'scheduled';
-                  
-                  return (
-                    <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-2 rounded-full ${needsDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
-                          <Truck className={`h-4 w-4 ${needsDelivery ? 'text-blue-600' : 'text-green-600'}`} />
+                  return todayBookings.map((booking) => {
+                    const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                    const pricing = allPricing.find(p => p.id === booking.pricingId);
+                    const rentalDays = pricing?.days || 3;
+                    const deliveryDate = new Date(booking.deliveryDate!);
+                    const pickupDate = new Date(deliveryDate);
+                    pickupDate.setDate(deliveryDate.getDate() + rentalDays);
+                    
+                    const isDelivery = deliveryDate.getTime() === today.getTime();
+                    
+                    return (
+                      <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
+                            <Truck className={`h-4 w-4 ${isDelivery ? 'text-blue-600' : 'text-green-600'}`} />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{booking.customerName}</h4>
+                            <p className="text-sm text-gray-600">
+                              {dumpster?.name || `Dumpster #${booking.dumpsterId}`}
+                            </p>
+                            <p className="text-sm text-gray-500">{booking.deliveryAddress}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-medium">{booking.customerName}</h4>
-                          <p className="text-sm text-gray-600">
-                            {dumpster?.name || `Dumpster #${booking.dumpsterId}`}
+                        <div className="text-right">
+                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isDelivery 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {isDelivery ? 'Delivery' : 'Pickup'}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">Today</p>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </TabsContent>
+              
+              <TabsContent value="coming-up" className="space-y-4 mt-4">
+                {(() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  
+                  const upcomingTasks: any[] = [];
+                  
+                  // Get all bookings and create delivery/pickup tasks
+                  bookings?.forEach(booking => {
+                    if (!booking.deliveryDate || booking.status !== 'scheduled') return;
+                    
+                    const pricing = allPricing.find(p => p.id === booking.pricingId);
+                    const rentalDays = pricing?.days || 3;
+                    const deliveryDate = new Date(booking.deliveryDate);
+                    deliveryDate.setHours(0, 0, 0, 0);
+                    
+                    const pickupDate = new Date(deliveryDate);
+                    pickupDate.setDate(deliveryDate.getDate() + rentalDays);
+                    pickupDate.setHours(0, 0, 0, 0);
+                    
+                    // Add delivery task if it's in the future
+                    if (deliveryDate > today) {
+                      upcomingTasks.push({
+                        ...booking,
+                        taskType: 'delivery',
+                        taskDate: deliveryDate,
+                        sortDate: deliveryDate.getTime()
+                      });
+                    }
+                    
+                    // Add pickup task if it's in the future
+                    if (pickupDate > today) {
+                      upcomingTasks.push({
+                        ...booking,
+                        taskType: 'pickup',
+                        taskDate: pickupDate,
+                        sortDate: pickupDate.getTime()
+                      });
+                    }
+                  });
+                  
+                  // Sort by date and take first 10
+                  const sortedTasks = upcomingTasks
+                    .sort((a, b) => a.sortDate - b.sortDate)
+                    .slice(0, 10);
+
+                  if (sortedTasks.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-gray-500">
+                        <Truck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p>No upcoming deliveries or pickups scheduled</p>
+                      </div>
+                    );
+                  }
+
+                  return sortedTasks.map((task, index) => {
+                    const dumpster = dumpsters?.find(d => d.id === task.dumpsterId);
+                    const isDelivery = task.taskType === 'delivery';
+                    
+                    return (
+                      <div key={`${task.id}-${task.taskType}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
+                            <Truck className={`h-4 w-4 ${isDelivery ? 'text-blue-600' : 'text-green-600'}`} />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{task.customerName}</h4>
+                            <p className="text-sm text-gray-600">
+                              {dumpster?.name || `Dumpster #${task.dumpsterId}`}
+                            </p>
+                            <p className="text-sm text-gray-500">{task.deliveryAddress}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isDelivery 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {isDelivery ? 'Delivery' : 'Pickup'}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {task.taskDate.toLocaleDateString()}
                           </p>
-                          <p className="text-sm text-gray-500">{booking.deliveryAddress}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          needsDelivery 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {needsDelivery ? 'Delivery' : 'Pickup'} Due
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {needsDelivery 
-                            ? deliveryDate.toLocaleDateString() 
-                            : pickupDate.toLocaleDateString()
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
+                    );
+                  });
+                })()}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
