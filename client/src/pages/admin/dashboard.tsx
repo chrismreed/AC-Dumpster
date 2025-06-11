@@ -6,6 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Booking, Dumpster } from "@shared/schema";
 import { 
   BarChart, 
@@ -34,6 +38,9 @@ export default function DashboardPage() {
   const [dumpsterDistribution, setDumpsterDistribution] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Always call all query hooks - no early returns or conditions
   // Fetch bookings
@@ -54,6 +61,32 @@ export default function DashboardPage() {
   // Fetch add-ons for dialog details
   const { data: addOns = [] } = useQuery({
     queryKey: ['/api/addons'],
+  });
+
+  // Mutation for updating booking status
+  const updateBookingStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
+      return apiRequest("PATCH", `/api/bookings/${bookingId}`, { status });
+    },
+    onSuccess: (data, variables) => {
+      // Update the selected booking state
+      if (selectedBooking && selectedBooking.id === variables.bookingId) {
+        setSelectedBooking({ ...selectedBooking, status: variables.status });
+      }
+      // Invalidate and refetch bookings
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      toast({
+        title: "Status Updated",
+        description: `Booking status changed to ${variables.status}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update booking status",
+        variant: "destructive",
+      });
+    },
   });
 
   useEffect(() => {
@@ -330,27 +363,31 @@ export default function DashboardPage() {
                     pickupDate.setDate(deliveryDate.getDate() + rentalDays);
                     pickupDate.setHours(0, 0, 0, 0);
                     
-                    // Show all delivery tasks for now (for debugging)
-                    upcomingTasks.push({
-                      id: booking.id,
-                      customerName: booking.customerName,
-                      dumpsterId: booking.dumpsterId,
-                      deliveryAddress: booking.deliveryAddress,
-                      taskType: 'delivery',
-                      taskDate: deliveryDate,
-                      sortDate: deliveryDate.getTime()
-                    });
+                    // Add delivery task if it's today or in the future and status is scheduled
+                    if (deliveryDate >= today && booking.status === 'scheduled') {
+                      upcomingTasks.push({
+                        id: booking.id,
+                        customerName: booking.customerName,
+                        dumpsterId: booking.dumpsterId,
+                        deliveryAddress: booking.deliveryAddress,
+                        taskType: 'delivery',
+                        taskDate: deliveryDate,
+                        sortDate: deliveryDate.getTime()
+                      });
+                    }
                     
-                    // Show all pickup tasks for now (for debugging)
-                    upcomingTasks.push({
-                      id: booking.id + 1000, // Avoid duplicate keys
-                      customerName: booking.customerName,
-                      dumpsterId: booking.dumpsterId,
-                      deliveryAddress: booking.deliveryAddress,
-                      taskType: 'pickup',
-                      taskDate: pickupDate,
-                      sortDate: pickupDate.getTime()
-                    });
+                    // Add pickup task if it's today or in the future and status is scheduled
+                    if (pickupDate >= today && booking.status === 'scheduled') {
+                      upcomingTasks.push({
+                        id: booking.id + 1000, // Avoid duplicate keys
+                        customerName: booking.customerName,
+                        dumpsterId: booking.dumpsterId,
+                        deliveryAddress: booking.deliveryAddress,
+                        taskType: 'pickup',
+                        taskDate: pickupDate,
+                        sortDate: pickupDate.getTime()
+                      });
+                    }
                   });
                   
                   // Sort by date and take first 10
@@ -612,14 +649,35 @@ export default function DashboardPage() {
                     <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
                     <div className="space-y-2">
                       <p><span className="font-medium">Total Price:</span> ${(selectedBooking.totalPrice / 100).toFixed(2)}</p>
-                      <p><span className="font-medium">Payment Status:</span> 
-                        <Badge variant={selectedBooking.paymentStatus === 'completed' ? 'default' : 'secondary'} className="ml-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Payment Status:</span>
+                        <Badge variant={selectedBooking.paymentStatus === 'completed' ? 'default' : 'secondary'}>
                           {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
                         </Badge>
-                      </p>
-                      <p><span className="font-medium">Booking Status:</span> 
-                        {getStatusBadge(selectedBooking.status)}
-                      </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Booking Status:</span>
+                        <Select
+                          value={selectedBooking.status}
+                          onValueChange={(newStatus) => {
+                            updateBookingStatusMutation.mutate({
+                              bookingId: selectedBooking.id,
+                              status: newStatus
+                            });
+                          }}
+                          disabled={updateBookingStatusMutation.isPending}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </div>
