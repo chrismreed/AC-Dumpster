@@ -50,6 +50,11 @@ export default function DashboardPage() {
     queryKey: ["/api/dumpster-pricing/all"],
   });
 
+  // Fetch add-ons for dialog details
+  const { data: addOns = [] } = useQuery({
+    queryKey: ['/api/addons'],
+  });
+
   useEffect(() => {
     if (!bookings || !dumpsters || bookings.length === 0 || dumpsters.length === 0) {
       return;
@@ -538,8 +543,11 @@ export default function DashboardPage() {
               <DialogHeader>
                 <DialogTitle>Booking Details</DialogTitle>
                 <DialogDescription>
-                  Booking #{selectedBooking.id} - {getStatusBadge(selectedBooking.status)}
+                  Booking #{selectedBooking.id}
                 </DialogDescription>
+                <div className="mt-2">
+                  {getStatusBadge(selectedBooking.status)}
+                </div>
               </DialogHeader>
               
               <div className="space-y-6">
