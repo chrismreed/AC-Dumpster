@@ -188,6 +188,94 @@ export default function DashboardPage() {
           </Card>
         </div>
 
+        {/* Upcoming Deliveries & Pickups */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Next Deliveries & Pickups
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {(() => {
+                // Get upcoming bookings within next 7 days
+                const today = new Date();
+                const nextWeek = new Date(today);
+                nextWeek.setDate(today.getDate() + 7);
+                
+                const upcomingBookings = bookings
+                  ?.filter(booking => {
+                    if (!booking.deliveryDate) return false;
+                    const deliveryDate = new Date(booking.deliveryDate);
+                    const pickupDate = new Date(deliveryDate);
+                    pickupDate.setDate(deliveryDate.getDate() + (booking.rentalDays || 3));
+                    
+                    return (deliveryDate >= today && deliveryDate <= nextWeek) || 
+                           (pickupDate >= today && pickupDate <= nextWeek);
+                  })
+                  .sort((a, b) => {
+                    const dateA = new Date(a.deliveryDate!);
+                    const dateB = new Date(b.deliveryDate!);
+                    return dateA.getTime() - dateB.getTime();
+                  })
+                  .slice(0, 5) || [];
+
+                if (upcomingBookings.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-gray-500">
+                      <Truck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>No upcoming deliveries or pickups in the next 7 days</p>
+                    </div>
+                  );
+                }
+
+                return upcomingBookings.map((booking) => {
+                  const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                  const deliveryDate = new Date(booking.deliveryDate!);
+                  const pickupDate = new Date(deliveryDate);
+                  pickupDate.setDate(deliveryDate.getDate() + (booking.rentalDays || 3));
+                  
+                  const needsDelivery = deliveryDate >= today && booking.status === 'scheduled';
+                  const needsPickup = pickupDate <= nextWeek && booking.status === 'scheduled';
+                  
+                  return (
+                    <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-2 rounded-full ${needsDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
+                          <Truck className={`h-4 w-4 ${needsDelivery ? 'text-blue-600' : 'text-green-600'}`} />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{booking.customerName}</h4>
+                          <p className="text-sm text-gray-600">
+                            {dumpster?.name || `Dumpster #${booking.dumpsterId}`}
+                          </p>
+                          <p className="text-sm text-gray-500">{booking.deliveryAddress}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          needsDelivery 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {needsDelivery ? 'Delivery' : 'Pickup'} Due
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {needsDelivery 
+                            ? deliveryDate.toLocaleDateString() 
+                            : pickupDate.toLocaleDateString()
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Charts */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           <Card>
