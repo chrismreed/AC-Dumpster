@@ -71,18 +71,18 @@ export function AdminNav() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white border-b px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden bg-white border-b px-3 py-2 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">DumpsterDirect</h1>
+          <h1 className="text-base font-bold text-gray-900">DumpsterDirect</h1>
           <p className="text-xs text-gray-500">Admin Dashboard</p>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2"
+          className="p-1 h-8 w-8"
         >
-          {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
       </div>
 
@@ -111,7 +111,7 @@ export function AdminNav() {
                 </button>
               </div>
             </div>
-            <nav className="mt-2">
+            <nav className="mt-1">
               {navItems.map((item, index) => (
                 item.onClick ? (
                   <button
@@ -120,7 +120,7 @@ export function AdminNav() {
                       item.onClick();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full flex items-center px-4 py-3 text-sm text-gray-600 hover:bg-gray-50"
+                    className="w-full flex items-center px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 active:bg-gray-100"
                   >
                     {item.icon}
                     {item.title}
@@ -131,7 +131,7 @@ export function AdminNav() {
                     key={index}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      "flex items-center px-4 py-3 text-sm",
+                      "flex items-center px-3 py-2.5 text-sm active:bg-gray-100",
                       location === item.href
                         ? "bg-gray-100 text-gray-900 font-medium"
                         : "text-gray-600 hover:bg-gray-50"

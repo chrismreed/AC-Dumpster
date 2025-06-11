@@ -37,8 +37,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       <AdminNav />
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 admin-content overflow-x-hidden">
-        {children}
+      <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 admin-content overflow-x-hidden">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
       </div>
     </div>
   );

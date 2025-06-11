@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 <TabsTrigger value="coming-up">Coming Up</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="today" className="space-y-4 mt-4">
+              <TabsContent value="today" className="space-y-3 mt-4">
                 {(() => {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
@@ -425,7 +425,7 @@ export default function DashboardPage() {
                 })()}
               </TabsContent>
               
-              <TabsContent value="coming-up" className="space-y-4 mt-4">
+              <TabsContent value="coming-up" className="space-y-3 mt-4">
                 {(() => {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);

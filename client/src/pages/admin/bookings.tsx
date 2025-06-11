@@ -925,14 +925,23 @@ export default function BookingsPage() {
                             <TableCell className="hidden lg:table-cell">{getPickupDate(booking.deliveryDate, booking.pricingId)}</TableCell>
                             <TableCell className="hidden sm:table-cell">{booking.deliveryZipCode}</TableCell>
                             <TableCell>
-                              {/* Mobile: Clickable status badge */}
+                              {/* Mobile: Status dropdown */}
                               <div className="md:hidden">
-                                <div 
-                                  className="cursor-pointer"
-                                  onClick={() => handleViewBooking(booking)}
+                                <Select 
+                                  value={booking.status} 
+                                  onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
                                 >
-                                  {getStatusBadge(booking.status)}
-                                </div>
+                                  <SelectTrigger className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0">
+                                    {getStatusBadge(booking.status)}
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                    <SelectItem value="picked_up">Picked Up</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
                               
                               {/* Desktop: Status dropdown */}
