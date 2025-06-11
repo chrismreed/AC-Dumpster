@@ -88,6 +88,22 @@ export const dumpsterPricing = pgTable("dumpster_pricing", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Fleet units (individual dumpster tracking)
+export const fleetUnits = pgTable("fleet_units", {
+  id: serial("id").primaryKey(),
+  unitNumber: text("unit_number").notNull().unique(), // Physical unit identifier (e.g., "15Y-001")
+  dumpsterId: integer("dumpster_id").notNull(), // Reference to dumpster type
+  status: text("status").notNull().default("available"), // available, out_for_delivery, at_customer, in_transit, needs_cleaning
+  currentLocation: text("current_location").notNull().default("hub"), // hub, customer_address, or "in_transit"
+  currentHubId: integer("current_hub_id"), // Which hub it's currently at (if at hub)
+  currentBookingId: integer("current_booking_id"), // Current active booking (if applicable)
+  needsCleaning: boolean("needs_cleaning").default(false),
+  needsMaintenance: boolean("needs_maintenance").default(false),
+  lastMaintenanceDate: timestamp("last_maintenance_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Customer bookings
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
@@ -109,6 +125,7 @@ export const bookings = pgTable("bookings", {
   paymentStatus: text("payment_status").notNull().default("pending"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   status: text("status").notNull().default("scheduled"),
+  assignedFleetUnitId: integer("assigned_fleet_unit_id"), // Which specific dumpster unit is assigned
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -174,12 +191,22 @@ export const insertHubSchema = createInsertSchema(hubs)
     createdAt: true,
   });
 
+export const insertFleetUnitSchema = createInsertSchema(fleetUnits)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Dumpster = typeof dumpsters.$inferSelect;
 export type InsertDumpster = z.infer<typeof insertDumpsterSchema>;
+
+export type FleetUnit = typeof fleetUnits.$inferSelect;
+export type InsertFleetUnit = z.infer<typeof insertFleetUnitSchema>;
 
 export type AddOn = typeof addOns.$inferSelect;
 export type InsertAddOn = z.infer<typeof insertAddOnSchema>;
