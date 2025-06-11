@@ -61,6 +61,35 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentView, setCurrentView] = useState<string>('dayGridMonth');
+  const { toast } = useToast();
+
+  // Update booking status mutation
+  const updateBookingStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
+      return apiRequest("PATCH", `/api/bookings/${bookingId}`, { status });
+    },
+    onSuccess: (data, variables) => {
+      // Update the selected booking state
+      if (selectedBooking && selectedBooking.id === variables.bookingId) {
+        setSelectedBooking({ ...selectedBooking, status: variables.status });
+      }
+      // Invalidate all booking-related queries across the admin site
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings", variables.bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dumpster-pricing/all"] });
+      toast({
+        title: "Status Updated",
+        description: `Booking status changed to ${variables.status}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update booking status",
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     if (!bookings || !dumpsters || !allPricing) {
@@ -83,14 +112,17 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
       // Get status colors
       let statusColor;
       switch (booking.status) {
-        case 'scheduled':
-          statusColor = { background: '#3b82f6', border: '#3b82f6', text: '#ffffff' };
+        case 'pending':
+          statusColor = { background: '#6b7280', border: '#6b7280', text: '#ffffff' };
+          break;
+        case 'confirmed':
+          statusColor = { background: '#f59e0b', border: '#f59e0b', text: '#ffffff' };
           break;
         case 'delivered':
-          statusColor = { background: '#10b981', border: '#10b981', text: '#ffffff' };
+          statusColor = { background: '#3b82f6', border: '#3b82f6', text: '#ffffff' };
           break;
         case 'completed':
-          statusColor = { background: '#8b5cf6', border: '#8b5cf6', text: '#ffffff' };
+          statusColor = { background: '#10b981', border: '#10b981', text: '#ffffff' };
           break;
         case 'cancelled':
           statusColor = { background: '#ef4444', border: '#ef4444', text: '#ffffff' };
@@ -185,37 +217,36 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
     });
   };
 
-  // Get status badge style
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'scheduled':
-        return <Badge className="bg-blue-500">Scheduled</Badge>;
-      case 'delivered':
-        return <Badge className="bg-green-500">Delivered</Badge>;
-      case 'completed':
-        return <Badge className="bg-purple-500">Completed</Badge>;
-      case 'cancelled':
-        return <Badge className="bg-red-500">Cancelled</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
+  // Helper function to render status badges
+  function getStatusBadge(status: string) {
+    const statusColors = {
+      confirmed: 'bg-yellow-100 text-yellow-800',
+      delivered: 'bg-blue-100 text-blue-800',
+      completed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      pending: 'bg-gray-100 text-gray-800',
+    };
+    
+    return (
+      <Badge className={statusColors[status as keyof typeof statusColors] || statusColors.pending}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  }
+
+  // Get helper functions for booking details
+  const getDumpsterName = (dumpsterId: number) => {
+    const dumpster = dumpsters.find(d => d.id === dumpsterId);
+    return dumpster ? dumpster.name : `Dumpster #${dumpsterId}`;
   };
 
-  // Get dumpster name
-  const getDumpsterName = (id: number) => {
-    return dumpsters?.find(d => d.id === id)?.name || `Dumpster #${id}`;
-  };
-
-  // Get duration days from pricing
   const getDurationDays = (pricingId: number) => {
-    return allPricing?.find(p => p.id === pricingId)?.days || "N/A";
+    const pricing = allPricing.find(p => p.id === pricingId);
+    return pricing ? pricing.days : 7;
   };
 
-  // Calculate pickup date
   const getPickupDate = (deliveryDate: string | Date, pricingId: number) => {
     const durationDays = getDurationDays(pricingId);
-    if (durationDays === "N/A") return "N/A";
-    
     const startDate = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + Number(durationDays));
@@ -278,8 +309,37 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
           >
             <DialogHeader>
               <DialogTitle>Booking Details</DialogTitle>
-              <DialogDescription>
-                Booking #{selectedBooking.id} - {getStatusBadge(selectedBooking.status)}
+              <DialogDescription className="flex items-center justify-between">
+                <span>Booking #{selectedBooking.id}</span>
+                <div className="flex items-center gap-3">
+                  <Select 
+                    value={selectedBooking.status} 
+                    onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: selectedBooking.id, status: value })}
+                  >
+                    <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    onClick={() => {
+                      const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                      const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                      window.open(mapsUrl, '_blank');
+                    }}
+                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
+                    size="sm"
+                  >
+                    <MapPin className="h-3 w-3 mr-1" />
+                    Navigate
+                  </Button>
+                </div>
               </DialogDescription>
             </DialogHeader>
             
