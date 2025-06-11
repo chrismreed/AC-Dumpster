@@ -835,11 +835,24 @@ export default function DashboardPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      {statusOrder.map((status) => (
+                        <SelectItem 
+                          key={status.value} 
+                          value={status.value}
+                          className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through text-gray-400" : ""}
+                        >
+                          <span className="flex items-center gap-2">
+                            {status.step > 0 && (
+                              <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
+                                {status.step}
+                              </span>
+                            )}
+                            <span className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through" : ""}>
+                              {status.label}
+                            </span>
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
