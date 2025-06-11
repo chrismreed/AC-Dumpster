@@ -73,8 +73,11 @@ export default function DashboardPage() {
       if (selectedBooking && selectedBooking.id === variables.bookingId) {
         setSelectedBooking({ ...selectedBooking, status: variables.status });
       }
-      // Invalidate and refetch bookings
+      // Invalidate all booking-related queries across the admin site
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings", variables.bookingId] });
+      // Also invalidate any dashboard-specific queries that might depend on booking status
+      queryClient.invalidateQueries({ queryKey: ["/api/dumpster-pricing/all"] });
       toast({
         title: "Status Updated",
         description: `Booking status changed to ${variables.status}`,
@@ -265,7 +268,7 @@ export default function DashboardPage() {
                     deliveryDate.setHours(0, 0, 0, 0);
                     
                     // Check if delivery is today
-                    if (deliveryDate.getTime() === today.getTime() && ['pending', 'confirmed'].includes(booking.status)) {
+                    if (deliveryDate.getTime() === today.getTime() && ['pending', 'confirmed', 'delivered'].includes(booking.status)) {
                       return true;
                     }
                     
@@ -276,7 +279,7 @@ export default function DashboardPage() {
                     pickupDate.setDate(deliveryDate.getDate() + rentalDays);
                     pickupDate.setHours(0, 0, 0, 0);
                     
-                    return pickupDate.getTime() === today.getTime() && ['pending', 'confirmed'].includes(booking.status);
+                    return pickupDate.getTime() === today.getTime() && ['pending', 'confirmed', 'delivered'].includes(booking.status);
                   }) || [];
 
                   if (todayBookings.length === 0) {
@@ -364,7 +367,7 @@ export default function DashboardPage() {
                     pickupDate.setHours(0, 0, 0, 0);
                     
                     // Add delivery task if it's today or in the future (for active bookings)
-                    if (deliveryDate >= today && ['pending', 'confirmed'].includes(booking.status)) {
+                    if (deliveryDate >= today && ['pending', 'confirmed', 'delivered'].includes(booking.status)) {
                       upcomingTasks.push({
                         id: booking.id,
                         customerName: booking.customerName,
@@ -377,7 +380,7 @@ export default function DashboardPage() {
                     }
                     
                     // Add pickup task if it's today or in the future (for active bookings)
-                    if (pickupDate >= today && ['pending', 'confirmed'].includes(booking.status)) {
+                    if (pickupDate >= today && ['pending', 'confirmed', 'delivered'].includes(booking.status)) {
                       upcomingTasks.push({
                         id: booking.id + 1000, // Avoid duplicate keys
                         customerName: booking.customerName,
@@ -601,6 +604,7 @@ export default function DashboardPage() {
                     <SelectContent>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
@@ -698,6 +702,7 @@ export default function DashboardPage() {
   function getStatusBadge(status: string) {
     const statusColors = {
       confirmed: 'bg-yellow-100 text-yellow-800',
+      delivered: 'bg-blue-100 text-blue-800',
       completed: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800',
       pending: 'bg-gray-100 text-gray-800',
