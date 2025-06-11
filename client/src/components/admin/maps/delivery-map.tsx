@@ -128,6 +128,33 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Define status progression order
+  const statusOrder = [
+    { value: "pending", label: "Pending", step: 1 },
+    { value: "confirmed", label: "Confirmed", step: 2 },
+    { value: "delivered", label: "Delivered", step: 3 },
+    { value: "picked_up", label: "Picked Up", step: 4 },
+    { value: "complete", label: "Complete", step: 5 },
+    { value: "cancelled", label: "Cancelled", step: 0 }, // Special case - can happen at any time
+  ];
+
+  // Helper function to get current step number for a status
+  const getCurrentStep = (status: string) => {
+    return statusOrder.find(s => s.value === status)?.step || 0;
+  };
+
+  // Helper function to determine if a status should be struck through
+  const isStatusCompleted = (statusValue: string, currentStatus: string) => {
+    const statusStep = statusOrder.find(s => s.value === statusValue)?.step || 0;
+    const currentStep = getCurrentStep(currentStatus);
+    
+    // Don't strike through cancelled status
+    if (statusValue === "cancelled") return false;
+    
+    // Strike through if current step is higher than this status step
+    return currentStep > statusStep && statusStep > 0;
+  };
+
   // Mutation to update booking status
   const updateStatusMutation = useMutation({
     mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
@@ -334,12 +361,24 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="picked_up">Picked Up</SelectItem>
-                      <SelectItem value="complete">Complete</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      {statusOrder.map((status) => (
+                        <SelectItem 
+                          key={status.value} 
+                          value={status.value}
+                          className={isStatusCompleted(status.value, selectedMarker.booking.status) ? "line-through text-gray-400" : ""}
+                        >
+                          <span className="flex items-center gap-2">
+                            {status.step > 0 && (
+                              <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
+                                {status.step}
+                              </span>
+                            )}
+                            <span className={isStatusCompleted(status.value, selectedMarker.booking.status) ? "line-through" : ""}>
+                              {status.label}
+                            </span>
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
