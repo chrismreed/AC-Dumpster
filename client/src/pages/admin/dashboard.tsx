@@ -391,7 +391,8 @@ export default function DashboardPage() {
                                 <SelectItem value="pending">Pending</SelectItem>
                                 <SelectItem value="confirmed">Confirmed</SelectItem>
                                 <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="picked_up">Picked Up</SelectItem>
+                                <SelectItem value="complete">Complete</SelectItem>
                                 <SelectItem value="cancelled">Cancelled</SelectItem>
                               </SelectContent>
                             </Select>
@@ -451,7 +452,7 @@ export default function DashboardPage() {
                     
                     // Determine what the next task should be based on current status
                     let nextTask: 'delivery' | 'pickup' | null = null;
-                    let nextTaskDate: Date;
+                    let nextTaskDate: Date | null = null;
                     
                     if (['pending', 'confirmed'].includes(booking.status)) {
                       // Next task is delivery
@@ -466,7 +467,7 @@ export default function DashboardPage() {
                     }
                     // If status is 'picked_up' or 'complete', no next task needed
                     
-                    if (nextTask && nextTaskDate > today) {
+                    if (nextTask && nextTaskDate && nextTaskDate > today) {
                       upcomingTasks.push({
                         id: booking.id,
                         customerName: booking.customerName,
@@ -475,36 +476,6 @@ export default function DashboardPage() {
                         taskType: nextTask,
                         taskDate: nextTaskDate,
                         sortDate: nextTaskDate.getTime()
-                      });
-                    }
-                    
-                    const pickupDate = new Date(deliveryDate);
-                    pickupDate.setDate(deliveryDate.getDate() + rentalDays);
-                    pickupDate.setHours(0, 0, 0, 0);
-                    
-                    // Add delivery task if it's today or in the future (for active bookings)
-                    if (deliveryDate >= today && ['pending', 'confirmed', 'delivered'].includes(booking.status)) {
-                      upcomingTasks.push({
-                        id: booking.id,
-                        customerName: booking.customerName,
-                        dumpsterId: booking.dumpsterId,
-                        deliveryAddress: booking.deliveryAddress,
-                        taskType: 'delivery',
-                        taskDate: deliveryDate,
-                        sortDate: deliveryDate.getTime()
-                      });
-                    }
-                    
-                    // Add pickup task if it's today or in the future (for active bookings)
-                    if (pickupDate >= today && ['pending', 'confirmed', 'delivered'].includes(booking.status)) {
-                      upcomingTasks.push({
-                        id: booking.id + 1000, // Avoid duplicate keys
-                        customerName: booking.customerName,
-                        dumpsterId: booking.dumpsterId,
-                        deliveryAddress: booking.deliveryAddress,
-                        taskType: 'pickup',
-                        taskDate: pickupDate,
-                        sortDate: pickupDate.getTime()
                       });
                     }
                   });

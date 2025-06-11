@@ -872,6 +872,7 @@ export default function BookingsPage() {
                           <SelectItem value="confirmed">Confirmed</SelectItem>
                           <SelectItem value="delivered">Delivered</SelectItem>
                           <SelectItem value="picked_up">Picked Up</SelectItem>
+                          <SelectItem value="complete">Complete</SelectItem>
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
