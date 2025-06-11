@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertHubSchema } from "@shared/schema";
 import { z } from "zod";
+import { GooglePlacesAutocomplete } from "@/components/booking/google-places-autocomplete";
 
 const hubFormSchema = insertHubSchema.extend({
   name: z.string().min(1, "Hub name is required"),
@@ -25,11 +26,20 @@ const hubFormSchema = insertHubSchema.extend({
 
 type HubFormData = z.infer<typeof hubFormSchema>;
 
+interface PlaceData {
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  coordinates: { lat: number; lng: number };
+}
+
 export default function HubsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingHub, setEditingHub] = useState<Hub | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceData | null>(null);
 
   const { data: hubs = [], isLoading } = useQuery<Hub[]>({
     queryKey: ['/api/hubs'],
@@ -49,22 +59,18 @@ export default function HubsPage() {
   });
 
   const createHubMutation = useMutation({
-    mutationFn: async (data: HubFormData) => {
-      // First geocode the address
-      const geocodeResponse = await apiRequest('POST', '/api/hubs/geocode', {
+    mutationFn: async (data: HubFormData & { lat?: number; lng?: number }) => {
+      // Create hub with coordinates (already provided by Google Places)
+      return await apiRequest('POST', '/api/hubs', {
+        name: data.name,
         address: data.address,
         city: data.city,
         state: data.state,
         zipCode: data.zipCode,
-      });
-      
-      const coordinates = await geocodeResponse.json();
-      
-      // Create hub with coordinates
-      return await apiRequest('POST', '/api/hubs', {
-        ...data,
-        lat: coordinates.lat,
-        lng: coordinates.lng,
+        lat: data.lat,
+        lng: data.lng,
+        isMainHub: data.isMainHub,
+        isActive: data.isActive,
       });
     },
     onSuccess: () => {
@@ -163,11 +169,32 @@ export default function HubsPage() {
   });
 
   const onSubmit = (data: HubFormData) => {
+    if (!selectedPlace && !editingHub) {
+      toast({
+        title: "Address Required",
+        description: "Please select a valid address from the suggestions.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (editingHub) {
       updateHubMutation.mutate({ id: editingHub.id, data });
     } else {
-      createHubMutation.mutate(data);
+      createHubMutation.mutate({
+        ...data,
+        lat: selectedPlace?.coordinates.lat,
+        lng: selectedPlace?.coordinates.lng,
+      });
     }
+  };
+
+  const handlePlaceSelect = (place: PlaceData) => {
+    setSelectedPlace(place);
+    form.setValue("address", place.address);
+    form.setValue("city", place.city);
+    form.setValue("state", place.state);
+    form.setValue("zipCode", place.zipCode);
   };
 
   const handleEdit = (hub: Hub) => {
@@ -187,6 +214,7 @@ export default function HubsPage() {
   const handleCancel = () => {
     setShowAddForm(false);
     setEditingHub(null);
+    setSelectedPlace(null);
     form.reset();
   };
 
