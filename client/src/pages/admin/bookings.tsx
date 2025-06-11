@@ -384,11 +384,11 @@ export default function BookingsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
-        <div className="flex justify-between items-center">
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Bookings</h1>
-            <p className="text-gray-500">Manage and track all your dumpster rental bookings</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Bookings</h1>
+            <p className="text-gray-500 text-sm">Manage and track all your dumpster rental bookings</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm">Filter by status:</span>

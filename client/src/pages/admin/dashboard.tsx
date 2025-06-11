@@ -183,58 +183,58 @@ export default function DashboardPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-500 text-sm sm:text-base">Overview of your dumpster rental business</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+          <p className="text-gray-500 text-sm">Overview of your dumpster rental business</p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
-              <div className="bg-gray-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+            <CardContent className="p-3 sm:p-4 flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-gray-100 p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Bookings</p>
-                <h3 className="text-xl sm:text-2xl font-bold">{totalBookings}</h3>
+                <p className="text-xs font-medium text-gray-500">Total Bookings</p>
+                <h3 className="text-lg sm:text-xl font-bold">{totalBookings}</h3>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
-              <div className="bg-gray-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                <Truck className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
+            <CardContent className="p-3 sm:p-4 flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-gray-100 p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Active Deliveries</p>
-                <h3 className="text-xl sm:text-2xl font-bold">{activeBookings}</h3>
+                <p className="text-xs font-medium text-gray-500">Active Deliveries</p>
+                <h3 className="text-lg sm:text-xl font-bold">{activeBookings}</h3>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
-              <div className="bg-yellow-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
+            <CardContent className="p-3 sm:p-4 flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-yellow-100 p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Total Revenue</p>
-                <h3 className="text-lg sm:text-2xl font-bold">${(totalRevenue / 100).toFixed(2)}</h3>
+                <p className="text-xs font-medium text-gray-500">Total Revenue</p>
+                <h3 className="text-lg sm:text-xl font-bold">${(totalRevenue / 100).toFixed(2)}</h3>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4 sm:p-6 flex items-center space-x-3 sm:space-x-4">
-              <div className="bg-gray-100 p-2 sm:p-3 rounded-full flex-shrink-0">
-                <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700" />
+            <CardContent className="p-3 sm:p-4 flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-gray-100 p-1.5 sm:p-2 rounded-full flex-shrink-0">
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-gray-500">Service Zones</p>
-                <h3 className="text-xl sm:text-2xl font-bold">{serviceZoneCount}</h3>
+                <p className="text-xs font-medium text-gray-500">Service Zones</p>
+                <h3 className="text-lg sm:text-xl font-bold">{serviceZoneCount}</h3>
               </div>
             </CardContent>
           </Card>
