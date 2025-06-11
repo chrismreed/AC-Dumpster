@@ -255,8 +255,12 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
             <InfoWindow
               position={selectedMarker.position}
               onCloseClick={() => setSelectedMarker(null)}
+              options={{
+                maxWidth: 600,
+                minWidth: 400,
+              }}
             >
-              <div className="p-3 w-[480px]">
+              <div className="p-3 w-full min-w-[380px]">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-base">{selectedMarker.booking.customerName}</h3>
                   <span className="text-lg font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
