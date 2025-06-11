@@ -104,8 +104,8 @@ export function GooglePlacesAutocomplete({
 
               console.log('Parsed address data:', parsedData);
               
-              // Don't update input value here to prevent overwriting
-              // setInputValue(fullAddress);
+              // Update input value to show the selected address
+              setInputValue(fullAddress);
 
               onPlaceSelect(parsedData);
             }
