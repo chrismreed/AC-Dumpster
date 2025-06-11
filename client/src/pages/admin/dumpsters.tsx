@@ -328,9 +328,10 @@ export default function DumpstersPage() {
   // Get deployed count for a dumpster
   const getDeployedCount = (dumpsterId: number) => {
     if (!bookings) return 0;
+    // Count bookings where dumpsters are actively deployed (not available for new bookings)
     return bookings.filter(booking => 
       booking.dumpsterId === dumpsterId && 
-      booking.status === "scheduled"
+      ['confirmed', 'delivered', 'picked_up'].includes(booking.status)
     ).length;
   };
 

@@ -102,12 +102,13 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
         return total + availability;
       }, 0);
       
-      // Count booked dumpsters for this date
+      // Count booked dumpsters for this date (only active deployments)
       const bookedOnDate = Array.isArray(bookings) 
         ? bookings.filter((booking: any) => {
             if (!booking.deliveryDate) return false;
             const bookingDate = new Date(booking.deliveryDate).toISOString().split('T')[0];
-            return bookingDate === dateStr;
+            // Only count bookings that actually consume dumpster availability
+            return bookingDate === dateStr && ['pending', 'confirmed', 'delivered', 'picked_up'].includes(booking.status);
           }).length
         : 0;
       
