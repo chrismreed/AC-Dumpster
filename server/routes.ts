@@ -10,7 +10,8 @@ import {
   insertServiceZoneSchema,
   insertRentalDurationSchema,
   insertBookingSchema,
-  insertDumpsterPricingSchema 
+  insertDumpsterPricingSchema,
+  insertHubSchema 
 } from "@shared/schema";
 
 // Check for Stripe secret key
@@ -516,6 +517,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error deleting service zone:", err);
       res.status(500).json({ message: "Failed to delete service zone" });
+    }
+  });
+
+  // Hub management routes
+  app.get("/api/hubs", async (_req, res) => {
+    try {
+      const hubs = await storage.listHubs();
+      res.json(hubs);
+    } catch (err) {
+      console.error("Error fetching hubs:", err);
+      res.status(500).json({ message: "Failed to fetch hubs" });
+    }
+  });
+
+  app.post("/api/hubs", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertHubSchema.parse(req.body);
+      
+      // If this is being set as main hub, unset other main hubs first
+      if (validatedData.isMainHub) {
+        await storage.unsetMainHub();
+      }
+      
+      const hub = await storage.createHub(validatedData);
+      res.status(201).json(hub);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid hub data", errors: err.errors });
+      }
+      console.error("Error creating hub:", err);
+      res.status(500).json({ message: "Failed to create hub" });
+    }
+  });
+
+  app.put("/api/hubs/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const validatedData = insertHubSchema.parse(req.body);
+      
+      // If this is being set as main hub, unset other main hubs first
+      if (validatedData.isMainHub) {
+        await storage.unsetMainHub();
+      }
+      
+      const hub = await storage.updateHub(id, validatedData);
+      if (!hub) {
+        return res.status(404).json({ message: "Hub not found" });
+      }
+      res.json(hub);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid hub data", errors: err.errors });
+      }
+      console.error("Error updating hub:", err);
+      res.status(500).json({ message: "Failed to update hub" });
+    }
+  });
+
+  app.delete("/api/hubs/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const hub = await storage.getHub(id);
+      if (!hub) {
+        return res.status(404).json({ message: "Hub not found" });
+      }
+      
+      await storage.deleteHub(id);
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting hub:", err);
+      res.status(500).json({ message: "Failed to delete hub" });
+    }
+  });
+
+  app.post("/api/hubs/:id/set-main", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      
+      // Unset all other main hubs first
+      await storage.unsetMainHub();
+      
+      // Set this hub as main
+      const hub = await storage.updateHub(id, { isMainHub: true });
+      if (!hub) {
+        return res.status(404).json({ message: "Hub not found" });
+      }
+      res.json(hub);
+    } catch (err) {
+      console.error("Error setting main hub:", err);
+      res.status(500).json({ message: "Failed to set main hub" });
+    }
+  });
+
+  // Geocode hub address
+  app.post("/api/hubs/geocode", isAdmin, async (req, res) => {
+    try {
+      const { address, city, state, zipCode } = req.body;
+      const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
+      
+      const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "Geocoding service unavailable" });
+      }
+      
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`;
+      const geocodeResponse = await fetch(geocodeUrl);
+      const geocodeData = await geocodeResponse.json();
+      
+      if (geocodeData.status === 'OK' && geocodeData.results.length > 0) {
+        const location = geocodeData.results[0].geometry.location;
+        res.json({ lat: location.lat, lng: location.lng });
+      } else {
+        res.status(400).json({ message: "Could not geocode address" });
+      }
+    } catch (err) {
+      console.error("Error geocoding address:", err);
+      res.status(500).json({ message: "Failed to geocode address" });
     }
   });
 

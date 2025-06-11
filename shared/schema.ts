@@ -36,6 +36,21 @@ export const addOns = pgTable("add_ons", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Hub Locations (dumpster storage locations)
+export const hubs = pgTable("hubs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code").notNull(),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  isMainHub: boolean("is_main_hub").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Service Zones (for location-based pricing)
 export const serviceZones = pgTable("service_zones", {
   id: serial("id").primaryKey(),
@@ -153,6 +168,12 @@ export const insertBookingSchema = createInsertSchema(bookings)
     })
   });
 
+export const insertHubSchema = createInsertSchema(hubs)
+  .omit({
+    id: true,
+    createdAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -174,3 +195,6 @@ export type InsertDumpsterPricing = z.infer<typeof insertDumpsterPricingSchema>;
 
 export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
+
+export type Hub = typeof hubs.$inferSelect;
+export type InsertHub = z.infer<typeof insertHubSchema>;
