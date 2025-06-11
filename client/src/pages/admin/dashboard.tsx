@@ -302,7 +302,7 @@ export default function DashboardPage() {
                   
                   // Get all bookings and create delivery/pickup tasks
                   bookings?.forEach(booking => {
-                    if (!booking.deliveryDate || booking.status !== 'scheduled') return;
+                    if (!booking.deliveryDate) return;
                     
                     const pricing = allPricing.find(p => p.id === booking.pricingId);
                     const rentalDays = pricing?.days || 3;
@@ -313,31 +313,27 @@ export default function DashboardPage() {
                     pickupDate.setDate(deliveryDate.getDate() + rentalDays);
                     pickupDate.setHours(0, 0, 0, 0);
                     
-                    // Add delivery task if it's in the future
-                    if (deliveryDate > today) {
-                      upcomingTasks.push({
-                        id: booking.id,
-                        customerName: booking.customerName,
-                        dumpsterId: booking.dumpsterId,
-                        deliveryAddress: booking.deliveryAddress,
-                        taskType: 'delivery',
-                        taskDate: deliveryDate,
-                        sortDate: deliveryDate.getTime()
-                      });
-                    }
+                    // Show all delivery tasks for now (for debugging)
+                    upcomingTasks.push({
+                      id: booking.id,
+                      customerName: booking.customerName,
+                      dumpsterId: booking.dumpsterId,
+                      deliveryAddress: booking.deliveryAddress,
+                      taskType: 'delivery',
+                      taskDate: deliveryDate,
+                      sortDate: deliveryDate.getTime()
+                    });
                     
-                    // Add pickup task if it's in the future
-                    if (pickupDate > today) {
-                      upcomingTasks.push({
-                        id: booking.id,
-                        customerName: booking.customerName,
-                        dumpsterId: booking.dumpsterId,
-                        deliveryAddress: booking.deliveryAddress,
-                        taskType: 'pickup',
-                        taskDate: pickupDate,
-                        sortDate: pickupDate.getTime()
-                      });
-                    }
+                    // Show all pickup tasks for now (for debugging)
+                    upcomingTasks.push({
+                      id: booking.id + 1000, // Avoid duplicate keys
+                      customerName: booking.customerName,
+                      dumpsterId: booking.dumpsterId,
+                      deliveryAddress: booking.deliveryAddress,
+                      taskType: 'pickup',
+                      taskDate: pickupDate,
+                      sortDate: pickupDate.getTime()
+                    });
                   });
                   
                   // Sort by date and take first 10
@@ -350,6 +346,9 @@ export default function DashboardPage() {
                       <div className="text-center py-8 text-gray-500">
                         <Truck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                         <p>No upcoming deliveries or pickups scheduled</p>
+                        <p className="text-xs mt-2">
+                          {bookings?.length ? `Found ${bookings.length} total bookings` : 'No bookings found'}
+                        </p>
                       </div>
                     );
                   }
