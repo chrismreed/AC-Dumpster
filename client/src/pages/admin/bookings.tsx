@@ -818,12 +818,12 @@ export default function BookingsPage() {
             )}
 
             <Card>
-              <CardHeader>
-                <CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
                   {statusFilter === 'all' ? 'All Bookings' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Bookings`}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6">
                 <div className="rounded-md border overflow-x-auto">
                   <Table className="min-w-[800px]">
                     <TableHeader>
@@ -1021,7 +1021,7 @@ export default function BookingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="map" className="mt-6">
+          <TabsContent value="map" className="mt-4">
             <DeliveryMap bookings={sortedAndFilteredBookings} dumpsters={dumpsters || []} />
           </TabsContent>
         </Tabs>
