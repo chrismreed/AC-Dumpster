@@ -256,12 +256,12 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
               position={selectedMarker.position}
               onCloseClick={() => setSelectedMarker(null)}
             >
-              <div className="p-3 max-w-[350px]">
-                <h3 className="font-bold text-lg mb-2">{selectedMarker.booking.customerName}</h3>
-                <p className="text-gray-700 mb-2">
+              <div className="p-2 max-w-[320px]">
+                <h3 className="font-bold text-base mb-1">{selectedMarker.booking.customerName}</h3>
+                <p className="text-gray-700 text-sm mb-2">
                   {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryZipCode}
                 </p>
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   <div>
                     <span className="text-xs text-gray-500">Delivery Date</span>
                     <p className="text-sm">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
@@ -272,23 +272,22 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                   </div>
                 </div>
                 
-                <div className="mb-3">
+                <div className="mb-2">
                   <div className="flex items-center justify-between mb-2">
-                    <Badge style={getBadgeStyle(selectedMarker.booking.status)}>
-                      {selectedMarker.booking.status}
-                    </Badge>
-                    <span className="text-sm font-medium">${selectedMarker.booking.totalPrice}</span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-xs text-gray-500">Update Status:</label>
                     <Select 
                       value={selectedMarker.booking.status} 
                       onValueChange={(value) => handleStatusChange(selectedMarker.booking.id, value)}
                       disabled={updateStatusMutation.isPending}
                     >
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue />
+                      <SelectTrigger className="w-auto h-auto p-0 border-0 focus:ring-0">
+                        <SelectValue asChild>
+                          <Badge 
+                            style={getBadgeStyle(selectedMarker.booking.status)}
+                            className="cursor-pointer hover:opacity-80"
+                          >
+                            {selectedMarker.booking.status === 'picked_up' ? 'Picked Up' : selectedMarker.booking.status.charAt(0).toUpperCase() + selectedMarker.booking.status.slice(1)}
+                          </Badge>
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">Pending</SelectItem>
@@ -298,9 +297,10 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                    <span className="text-lg font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
                   </div>
                   
-                  <div className="mt-3">
+                  <div className="mt-2">
                     <Button 
                       onClick={() => {
                         const address = `${selectedMarker.booking.deliveryAddress}, ${selectedMarker.booking.deliveryCity}, ${selectedMarker.booking.deliveryZipCode}`;
