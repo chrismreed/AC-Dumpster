@@ -1002,7 +1002,7 @@ export default function BookingsPage() {
                               <div className="hidden md:block">
                                 <Select 
                                   value={booking.status} 
-                                  onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
+                                  onValueChange={(value) => handleStatusChange(booking.id, value)}
                                 >
                                   <SelectTrigger className="w-20 h-7 text-xs">
                                     <SelectValue />
@@ -1012,6 +1012,7 @@ export default function BookingsPage() {
                                     <SelectItem value="confirmed">Confirmed</SelectItem>
                                     <SelectItem value="delivered">Delivered</SelectItem>
                                     <SelectItem value="picked_up">Picked Up</SelectItem>
+                                    <SelectItem value="complete">Complete</SelectItem>
                                     <SelectItem value="cancelled">Cancelled</SelectItem>
                                   </SelectContent>
                                 </Select>
