@@ -256,65 +256,61 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
               position={selectedMarker.position}
               onCloseClick={() => setSelectedMarker(null)}
             >
-              <div className="p-2 max-w-[320px]">
-                <h3 className="font-bold text-base mb-1">{selectedMarker.booking.customerName}</h3>
-                <p className="text-gray-700 text-sm mb-2">
+              <div className="p-1.5 max-w-[280px]">
+                <h3 className="font-bold text-sm mb-0.5">{selectedMarker.booking.customerName}</h3>
+                <p className="text-gray-700 text-xs mb-1.5 leading-tight">
                   {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryZipCode}
                 </p>
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-2 gap-1.5 mb-1.5 text-xs">
                   <div>
-                    <span className="text-xs text-gray-500">Delivery Date</span>
-                    <p className="text-sm">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
+                    <span className="text-gray-500">Delivery Date</span>
+                    <p className="font-medium">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500">Created At</span>
-                    <p className="text-sm">{formatDate(selectedMarker.booking.createdAt.toString())}</p>
+                    <span className="text-gray-500">Created At</span>
+                    <p className="font-medium">{formatDate(selectedMarker.booking.createdAt.toString())}</p>
                   </div>
                 </div>
                 
-                <div className="mb-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <Select 
-                      value={selectedMarker.booking.status} 
-                      onValueChange={(value) => handleStatusChange(selectedMarker.booking.id, value)}
-                      disabled={updateStatusMutation.isPending}
-                    >
-                      <SelectTrigger className="w-auto h-auto p-0 border-0 focus:ring-0">
-                        <SelectValue asChild>
-                          <Badge 
-                            style={getBadgeStyle(selectedMarker.booking.status)}
-                            className="cursor-pointer hover:opacity-80"
-                          >
-                            {selectedMarker.booking.status === 'picked_up' ? 'Picked Up' : selectedMarker.booking.status.charAt(0).toUpperCase() + selectedMarker.booking.status.slice(1)}
-                          </Badge>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="picked_up">Picked Up</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span className="text-lg font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="mt-2">
-                    <Button 
-                      onClick={() => {
-                        const address = `${selectedMarker.booking.deliveryAddress}, ${selectedMarker.booking.deliveryCity}, ${selectedMarker.booking.deliveryZipCode}`;
-                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                        window.open(mapsUrl, '_blank');
-                      }}
-                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full h-8 text-xs"
-                      size="sm"
-                    >
-                      <MapPin className="h-3 w-3 mr-1" />
-                      Navigate to Address
-                    </Button>
-                  </div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Select 
+                    value={selectedMarker.booking.status} 
+                    onValueChange={(value) => handleStatusChange(selectedMarker.booking.id, value)}
+                    disabled={updateStatusMutation.isPending}
+                  >
+                    <SelectTrigger className="w-auto h-auto p-0 border-0 focus:ring-0">
+                      <SelectValue asChild>
+                        <Badge 
+                          style={getBadgeStyle(selectedMarker.booking.status)}
+                          className="cursor-pointer hover:opacity-80 text-xs px-2 py-0.5"
+                        >
+                          {selectedMarker.booking.status === 'picked_up' ? 'Picked Up' : selectedMarker.booking.status.charAt(0).toUpperCase() + selectedMarker.booking.status.slice(1)}
+                        </Badge>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="picked_up">Picked Up</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-base font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
                 </div>
+                
+                <Button 
+                  onClick={() => {
+                    const address = `${selectedMarker.booking.deliveryAddress}, ${selectedMarker.booking.deliveryCity}, ${selectedMarker.booking.deliveryZipCode}`;
+                    const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                    window.open(mapsUrl, '_blank');
+                  }}
+                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full h-7 text-xs px-2"
+                  size="sm"
+                >
+                  <MapPin className="h-3 w-3 mr-1" />
+                  Navigate to Address
+                </Button>
               </div>
             </InfoWindow>
           )}
