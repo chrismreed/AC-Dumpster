@@ -363,8 +363,8 @@ export default function DashboardPage() {
                     pickupDate.setDate(deliveryDate.getDate() + rentalDays);
                     pickupDate.setHours(0, 0, 0, 0);
                     
-                    // Add delivery task if it's today or in the future and status is scheduled
-                    if (deliveryDate >= today && booking.status === 'scheduled') {
+                    // Add delivery task if it's today or in the future (for active bookings)
+                    if (deliveryDate >= today && ['pending', 'confirmed', 'scheduled'].includes(booking.status)) {
                       upcomingTasks.push({
                         id: booking.id,
                         customerName: booking.customerName,
@@ -376,8 +376,8 @@ export default function DashboardPage() {
                       });
                     }
                     
-                    // Add pickup task if it's today or in the future and status is scheduled
-                    if (pickupDate >= today && booking.status === 'scheduled') {
+                    // Add pickup task if it's today or in the future (for active bookings)
+                    if (pickupDate >= today && ['pending', 'confirmed', 'scheduled'].includes(booking.status)) {
                       upcomingTasks.push({
                         id: booking.id + 1000, // Avoid duplicate keys
                         customerName: booking.customerName,
