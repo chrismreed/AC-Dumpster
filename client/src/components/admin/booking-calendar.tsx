@@ -298,10 +298,11 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
               events={events}
               eventClick={handleEventClick}
               headerToolbar={{
-                left: 'prev,next today',
+                left: 'prev,next',
                 center: 'title',
-                right: 'dayGridMonth,timeGridWeek'
+                right: 'today dayGridMonth,timeGridWeek'
               }}
+              footerToolbar={false}
               viewDidMount={(info) => {
                 // Update current view when view changes
                 setCurrentView(info.view.type);
@@ -313,10 +314,14 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                 meridiem: 'short'
               }}
               eventContent={(arg) => (
-                <div className="fc-event-main-inner px-2 py-1 text-xs">
-                  <div className="font-medium">{arg.event.title}</div>
+                <div className="fc-event-main-inner px-1 py-1 text-xs">
+                  <div className="font-medium truncate">{arg.event.title}</div>
                 </div>
               )}
+              dayMaxEvents={2}
+              moreLinkClick="popover"
+              dayHeaderFormat={{ weekday: 'short' }}
+              titleFormat={{ year: 'numeric', month: 'short' }}
             />
           </div>
         </CardContent>
@@ -330,20 +335,20 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
           modal={true}
         >
           <DialogContent 
-            className="max-w-3xl max-h-[90vh] overflow-y-auto"
+            className="max-w-3xl max-h-[90vh] overflow-y-auto p-4 md:p-6"
             onEscapeKeyDown={() => setIsDetailsOpen(false)}
             onPointerDownOutside={() => setIsDetailsOpen(false)}
           >
-            <DialogHeader>
-              <DialogTitle>Booking Details</DialogTitle>
-              <DialogDescription className="flex items-center justify-between">
-                <span>Booking #{selectedBooking.id}</span>
-                <div className="flex items-center gap-3">
+            <DialogHeader className="space-y-3">
+              <DialogTitle className="text-lg">Booking Details</DialogTitle>
+              <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <span className="text-sm font-medium">Booking #{selectedBooking.id}</span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <Select 
                     value={selectedBooking.status} 
                     onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: selectedBooking.id, status: value })}
                   >
-                    <SelectTrigger className="w-32 h-8 text-xs">
+                    <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -373,11 +378,12 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                       const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
                       window.open(mapsUrl, '_blank');
                     }}
-                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
+                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-9 px-4"
                     size="sm"
                   >
-                    <MapPin className="h-3 w-3 mr-1" />
-                    Navigate
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Navigate</span>
+                    <span className="sm:hidden">Nav</span>
                   </Button>
                 </div>
               </DialogDescription>

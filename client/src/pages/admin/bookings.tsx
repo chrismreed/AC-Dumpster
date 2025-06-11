@@ -812,18 +812,21 @@ export default function BookingsPage() {
 
         <Tabs defaultValue="list" className="w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-            <TabsList className="w-full md:w-auto">
-              <TabsTrigger value="list" className="flex items-center">
-                <List className="mr-2 h-4 w-4" />
-                List View
+            <TabsList className="w-full md:w-auto grid grid-cols-3 gap-1 p-1">
+              <TabsTrigger value="list" className="flex items-center justify-center px-2 py-2 text-xs md:text-sm">
+                <List className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">List View</span>
+                <span className="sm:hidden">List</span>
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex items-center">
-                <Calendar className="mr-2 h-4 w-4" />
-                Calendar View
+              <TabsTrigger value="calendar" className="flex items-center justify-center px-2 py-2 text-xs md:text-sm">
+                <Calendar className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Calendar View</span>
+                <span className="sm:hidden">Calendar</span>
               </TabsTrigger>
-              <TabsTrigger value="map" className="flex items-center">
-                <MapPin className="mr-2 h-4 w-4" />
-                Delivery Map
+              <TabsTrigger value="map" className="flex items-center justify-center px-2 py-2 text-xs md:text-sm">
+                <MapPin className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Delivery Map</span>
+                <span className="sm:hidden">Map</span>
               </TabsTrigger>
             </TabsList>
             
