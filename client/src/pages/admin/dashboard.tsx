@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Booking, Dumpster } from "@shared/schema";
 import { 
   BarChart, 
@@ -29,6 +31,8 @@ export default function DashboardPage() {
   // Always initialize state hooks first - never conditionally
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [dumpsterDistribution, setDumpsterDistribution] = useState<any[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
 
   // Always call all query hooks - no early returns or conditions
   // Fetch bookings
@@ -256,7 +260,14 @@ export default function DashboardPage() {
                     const isDelivery = deliveryDate.getTime() === today.getTime();
                     
                     return (
-                      <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div 
+                        key={booking.id} 
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => {
+                          setSelectedBooking(booking);
+                          setIsBookingDialogOpen(true);
+                        }}
+                      >
                         <div className="flex items-center space-x-4">
                           <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
                             <Truck className={`h-4 w-4 ${isDelivery ? 'text-blue-600' : 'text-green-600'}`} />
@@ -356,9 +367,19 @@ export default function DashboardPage() {
                   return sortedTasks.map((task, index) => {
                     const dumpster = dumpsters?.find(d => d.id === task.dumpsterId);
                     const isDelivery = task.taskType === 'delivery';
+                    const booking = bookings?.find(b => b.id === (task.id > 1000 ? task.id - 1000 : task.id));
                     
                     return (
-                      <div key={`${task.id}-${task.taskType}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div 
+                        key={`${task.id}-${task.taskType}`} 
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => {
+                          if (booking) {
+                            setSelectedBooking(booking);
+                            setIsBookingDialogOpen(true);
+                          }
+                        }}
+                      >
                         <div className="flex items-center space-x-4">
                           <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
                             <Truck className={`h-4 w-4 ${isDelivery ? 'text-blue-600' : 'text-green-600'}`} />
@@ -509,7 +530,106 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Booking Details Dialog */}
+        {selectedBooking && (
+          <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Booking Details</DialogTitle>
+                <DialogDescription>
+                  Booking #{selectedBooking.id} - {getStatusBadge(selectedBooking.status)}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* Customer Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
+                    <div className="space-y-2">
+                      <p><span className="font-medium">Name:</span> {selectedBooking.customerName}</p>
+                      <p><span className="font-medium">Email:</span> {selectedBooking.customerEmail}</p>
+                      <p><span className="font-medium">Phone:</span> {selectedBooking.customerPhone}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Delivery Information</h3>
+                    <div className="space-y-2">
+                      <p><span className="font-medium">Address:</span> {selectedBooking.deliveryAddress}</p>
+                      <p><span className="font-medium">City:</span> {selectedBooking.deliveryCity}</p>
+                      <p><span className="font-medium">Zip Code:</span> {selectedBooking.deliveryZipCode}</p>
+                      <p><span className="font-medium">Date:</span> {new Date(selectedBooking.deliveryDate).toLocaleDateString()}</p>
+                      <p><span className="font-medium">Time Preference:</span> {selectedBooking.deliveryTimePreference}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dumpster & Pricing Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Dumpster Details</h3>
+                    <div className="space-y-2">
+                      {(() => {
+                        const dumpster = dumpsters?.find(d => d.id === selectedBooking.dumpsterId);
+                        const pricing = allPricing.find(p => p.id === selectedBooking.pricingId);
+                        return (
+                          <>
+                            <p><span className="font-medium">Type:</span> {dumpster?.name || 'Unknown'}</p>
+                            <p><span className="font-medium">Dimensions:</span> {dumpster?.dimensions || 'N/A'}</p>
+                            <p><span className="font-medium">Rental Period:</span> {pricing?.days || 'N/A'} days</p>
+                            <p><span className="font-medium">Placement:</span> {selectedBooking.placementLocation}</p>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
+                    <div className="space-y-2">
+                      <p><span className="font-medium">Total Price:</span> ${(selectedBooking.totalPrice / 100).toFixed(2)}</p>
+                      <p><span className="font-medium">Payment Status:</span> 
+                        <Badge variant={selectedBooking.paymentStatus === 'completed' ? 'default' : 'secondary'} className="ml-2">
+                          {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
+                        </Badge>
+                      </p>
+                      <p><span className="font-medium">Booking Status:</span> 
+                        {getStatusBadge(selectedBooking.status)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                {selectedBooking.deliveryInstructions && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Delivery Instructions</h3>
+                    <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedBooking.deliveryInstructions}</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </AdminLayout>
   );
+
+  // Helper function to render status badges
+  function getStatusBadge(status: string) {
+    const statusColors = {
+      scheduled: 'bg-yellow-100 text-yellow-800',
+      completed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      pending: 'bg-gray-100 text-gray-800',
+    };
+    
+    return (
+      <Badge className={statusColors[status as keyof typeof statusColors] || statusColors.pending}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  }
 }
