@@ -328,7 +328,8 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                           style={getBadgeStyle(selectedMarker.booking.status)}
                           className="cursor-pointer hover:opacity-80"
                         >
-                          {selectedMarker.booking.status === 'picked_up' ? 'Picked Up' : selectedMarker.booking.status.charAt(0).toUpperCase() + selectedMarker.booking.status.slice(1)}
+                          {selectedMarker.booking.status === 'picked_up' ? 'Picked Up' : 
+                           selectedMarker.booking.status.charAt(0).toUpperCase() + selectedMarker.booking.status.slice(1)}
                         </Badge>
                       </SelectValue>
                     </SelectTrigger>
@@ -377,6 +378,10 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-full bg-purple-500"></div>
             <span>Picked Up</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#059669' }}></div>
+            <span>Complete</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
