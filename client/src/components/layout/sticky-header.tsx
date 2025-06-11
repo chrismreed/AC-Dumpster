@@ -50,22 +50,36 @@ export function StickyHeader() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            <button onClick={() => scrollToSection('services')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+          <nav className="hidden md:flex items-center space-x-2">
+            <button 
+              onClick={() => scrollToSection('services')} 
+              className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium"
+            >
               Services
             </button>
-            <button onClick={() => scrollToSection('about')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+            <button 
+              onClick={() => scrollToSection('about')} 
+              className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium"
+            >
               About Us
             </button>
-            <button onClick={() => scrollToSection('faq')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+            <button 
+              onClick={() => scrollToSection('faq')} 
+              className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium"
+            >
               FAQ
             </button>
-            <button onClick={() => scrollToSection('contact')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/10'}`}>
+            <button 
+              onClick={() => scrollToSection('contact')} 
+              className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium"
+            >
               Contact
             </button>
             
             {user && (
-              <NavLink href="/admin/dashboard" label="Dashboard" isActive={location.startsWith('/admin')} isScrolled={isScrolled} />
+              <Link href="/admin/dashboard" className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium">
+                Dashboard
+              </Link>
             )}
           </nav>
 
@@ -97,62 +111,58 @@ export function StickyHeader() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-[#0f172a]/95 shadow-lg backdrop-blur-sm border-t border-[#d1d5db]">
-          <div className="container mx-auto px-4 py-5">
-            <nav className="flex flex-col space-y-4">
-              <button onClick={() => handleScrollToSection('services')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
-                Services
-              </button>
-              <button onClick={() => handleScrollToSection('about')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
-                About Us
-              </button>
-              <button onClick={() => handleScrollToSection('faq')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
-                FAQ
-              </button>
-              <button onClick={() => handleScrollToSection('contact')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
-                Contact
-              </button>
-              
-              {user && (
-                <MobileNavLink href="/admin/dashboard" label="Dashboard" onClick={() => setIsMobileMenuOpen(false)} />
-              )}
-              
-              <div className="pt-4">
-                <Button 
-                  onClick={() => handleScrollToSection('booking-form')}
-                  className="w-full font-bold bg-white text-[#111827] hover:bg-gray-100 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+        <>
+          {/* Backdrop */}
+          <div 
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          {/* Menu Panel */}
+          <div className="md:hidden fixed top-0 right-0 h-full w-80 bg-[#0f172a]/95 shadow-lg backdrop-blur-sm z-50 slide-in-right">
+            <div className="px-4 py-5">
+              {/* Close button */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white">Menu</h2>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-white hover:text-primary p-2"
+                  aria-label="Close menu"
                 >
-                  RENT NOW
-                </Button>
+                  <X className="h-6 w-6" />
+                </button>
               </div>
-            </nav>
+              <nav className="flex flex-col space-y-4">
+                <button onClick={() => handleScrollToSection('services')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                  Services
+                </button>
+                <button onClick={() => handleScrollToSection('about')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                  About Us
+                </button>
+                <button onClick={() => handleScrollToSection('faq')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                  FAQ
+                </button>
+                <button onClick={() => handleScrollToSection('contact')} className="text-left text-white hover:text-primary transition-colors py-2 text-lg font-medium">
+                  Contact
+                </button>
+                
+                {user && (
+                  <MobileNavLink href="/admin/dashboard" label="Dashboard" onClick={() => setIsMobileMenuOpen(false)} />
+                )}
+                
+                <div className="pt-4">
+                  <Button 
+                    onClick={() => handleScrollToSection('booking-form')}
+                    className="w-full font-bold bg-white text-[#111827] hover:bg-gray-100 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                  >
+                    RENT NOW
+                  </Button>
+                </div>
+              </nav>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </header>
-  );
-}
-
-// Desktop navigation link
-function NavLink({ 
-  href, 
-  label, 
-  isActive = false, 
-  isScrolled = false 
-}: { 
-  href: string; 
-  label: string; 
-  isActive?: boolean; 
-  isScrolled: boolean;
-}) {
-  return (
-    <Link href={href}>
-      <div 
-        className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium"
-      >
-        {label}
-      </div>
-    </Link>
   );
 }
 

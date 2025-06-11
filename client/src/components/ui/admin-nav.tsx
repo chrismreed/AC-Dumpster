@@ -89,7 +89,13 @@ export function AdminNav() {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="bg-white w-64 h-full shadow-lg" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="bg-white w-64 h-full shadow-lg ml-auto transform transition-transform duration-300 ease-in-out" 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              animation: isMobileMenuOpen ? 'slideInRight 0.3s ease-out' : 'slideOutRight 0.3s ease-in'
+            }}
+          >
             <div className="p-4 border-b">
               <h1 className="text-lg font-bold text-gray-900">DumpsterDirect</h1>
               <p className="text-sm text-gray-500">Admin Dashboard</p>
