@@ -304,29 +304,46 @@ export default function DashboardPage() {
                     return (
                       <div 
                         key={booking.id} 
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer md:cursor-default"
+                        onClick={() => {
+                          // Mobile: Make entire card clickable
+                          if (window.innerWidth < 768) {
+                            setSelectedBooking(booking);
+                            setIsBookingDialogOpen(true);
+                          }
+                        }}
                       >
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-4 flex-1 min-w-0">
                           <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
                             <Truck className={`h-4 w-4 ${isDelivery ? 'text-blue-600' : 'text-green-600'}`} />
                           </div>
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <h4 className="font-medium">{booking.customerName}</h4>
                             <p className="text-sm text-gray-600">
                               {dumpster?.name || `Dumpster #${booking.dumpsterId}`}
                             </p>
                             <p className="text-sm text-gray-500">{booking.deliveryAddress}</p>
                             <div className="flex items-center gap-2 mt-2">
-                              {/* Mobile: Clickable status badge that opens booking dialog */}
-                              <div 
-                                className="md:hidden cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedBooking(booking);
-                                  setIsBookingDialogOpen(true);
-                                }}
-                              >
-                                {getStatusBadge(booking.status)}
+                              {/* Mobile: Status dropdown */}
+                              <div className="md:hidden">
+                                <Select 
+                                  value={booking.status} 
+                                  onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                                >
+                                  <SelectTrigger 
+                                    className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {getStatusBadge(booking.status)}
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
                               {/* Desktop: Regular status badge */}
                               <div className="hidden md:block">
@@ -342,16 +359,17 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 md:gap-2">
-                          {/* Mobile: Only navigation button, status is clickable */}
+                        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+                          {/* Mobile: Only navigation button */}
                           <div className="md:hidden">
                             <Button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
                                 const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
                                 window.open(mapsUrl, '_blank');
                               }}
-                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-2"
+                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 w-8 p-0"
                               size="sm"
                             >
                               <MapPin className="h-3 w-3" />
@@ -485,13 +503,20 @@ export default function DashboardPage() {
                     return (
                       <div 
                         key={`${task.id}-${task.taskType}`} 
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer md:cursor-default"
+                        onClick={() => {
+                          // Mobile: Make entire card clickable
+                          if (booking && window.innerWidth < 768) {
+                            setSelectedBooking(booking);
+                            setIsBookingDialogOpen(true);
+                          }
+                        }}
                       >
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-4 flex-1 min-w-0">
                           <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
                             <Truck className={`h-4 w-4 ${isDelivery ? 'text-blue-600' : 'text-green-600'}`} />
                           </div>
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <h4 className="font-medium">{task.customerName}</h4>
                             <p className="text-sm text-gray-600">
                               {dumpster?.name || `Dumpster #${task.dumpsterId}`}
@@ -500,16 +525,26 @@ export default function DashboardPage() {
                             <div className="flex items-center gap-2 mt-2">
                               {booking && (
                                 <>
-                                  {/* Mobile: Clickable status badge */}
-                                  <div 
-                                    className="md:hidden cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedBooking(booking);
-                                      setIsBookingDialogOpen(true);
-                                    }}
-                                  >
-                                    {getStatusBadge(booking.status)}
+                                  {/* Mobile: Status dropdown */}
+                                  <div className="md:hidden">
+                                    <Select 
+                                      value={booking.status} 
+                                      onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                                    >
+                                      <SelectTrigger 
+                                        className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {getStatusBadge(booking.status)}
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                                        <SelectItem value="delivered">Delivered</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                   </div>
                                   {/* Desktop: Regular status badge */}
                                   <div className="hidden md:block">
@@ -530,16 +565,17 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 md:gap-2">
+                        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                           {/* Mobile: Only navigation button */}
                           <div className="md:hidden">
                             <Button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 const address = `${task.deliveryAddress}`;
                                 const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
                                 window.open(mapsUrl, '_blank');
                               }}
-                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-2"
+                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 w-8 p-0"
                               size="sm"
                             >
                               <MapPin className="h-3 w-3" />
