@@ -256,23 +256,23 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
               position={selectedMarker.position}
               onCloseClick={() => setSelectedMarker(null)}
             >
-              <div className="p-1.5 max-w-[280px]">
-                <h3 className="font-bold text-sm mb-0.5">{selectedMarker.booking.customerName}</h3>
-                <p className="text-gray-700 text-xs mb-1.5 leading-tight">
+              <div className="p-3 max-w-[380px] min-w-[320px]">
+                <h3 className="font-bold text-base mb-2">{selectedMarker.booking.customerName}</h3>
+                <p className="text-gray-700 text-sm mb-3">
                   {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryZipCode}
                 </p>
-                <div className="grid grid-cols-2 gap-1.5 mb-1.5 text-xs">
+                <div className="grid grid-cols-2 gap-3 mb-3">
                   <div>
-                    <span className="text-gray-500">Delivery Date</span>
-                    <p className="font-medium">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
+                    <span className="text-xs text-gray-500">Delivery Date</span>
+                    <p className="text-sm font-medium">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Created At</span>
-                    <p className="font-medium">{formatDate(selectedMarker.booking.createdAt.toString())}</p>
+                    <span className="text-xs text-gray-500">Created At</span>
+                    <p className="text-sm font-medium">{formatDate(selectedMarker.booking.createdAt.toString())}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-3">
                   <Select 
                     value={selectedMarker.booking.status} 
                     onValueChange={(value) => handleStatusChange(selectedMarker.booking.id, value)}
@@ -282,7 +282,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                       <SelectValue asChild>
                         <Badge 
                           style={getBadgeStyle(selectedMarker.booking.status)}
-                          className="cursor-pointer hover:opacity-80 text-xs px-2 py-0.5"
+                          className="cursor-pointer hover:opacity-80"
                         >
                           {selectedMarker.booking.status === 'picked_up' ? 'Picked Up' : selectedMarker.booking.status.charAt(0).toUpperCase() + selectedMarker.booking.status.slice(1)}
                         </Badge>
@@ -296,7 +296,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="text-base font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
+                  <span className="text-lg font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
                 </div>
                 
                 <Button 
@@ -305,10 +305,10 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                     const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
                     window.open(mapsUrl, '_blank');
                   }}
-                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full h-7 text-xs px-2"
+                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full h-9 text-sm"
                   size="sm"
                 >
-                  <MapPin className="h-3 w-3 mr-1" />
+                  <MapPin className="h-4 w-4 mr-2" />
                   Navigate to Address
                 </Button>
               </div>
