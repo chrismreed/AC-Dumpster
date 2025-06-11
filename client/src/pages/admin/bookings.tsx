@@ -824,8 +824,8 @@ export default function BookingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border">
-                  <Table>
+                <div className="rounded-md border overflow-x-auto">
+                  <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">
@@ -855,7 +855,7 @@ export default function BookingsPage() {
                           </div>
                         </TableHead>
                         <TableHead>Customer</TableHead>
-                        <TableHead>Dumpster</TableHead>
+                        <TableHead className="hidden md:table-cell">Dumpster</TableHead>
                         <TableHead 
                           className="cursor-pointer hover:text-primary"
                           onClick={() => {
@@ -877,7 +877,7 @@ export default function BookingsPage() {
                           </div>
                         </TableHead>
                         <TableHead 
-                          className="cursor-pointer hover:text-primary"
+                          className="hidden lg:table-cell cursor-pointer hover:text-primary"
                           onClick={() => {
                             if (sortBy === "pickupDate") {
                               setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -896,10 +896,10 @@ export default function BookingsPage() {
                             )}
                           </div>
                         </TableHead>
-                        <TableHead>Location</TableHead>
+                        <TableHead className="hidden sm:table-cell">Location</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead className="w-[280px]">Actions</TableHead>
+                        <TableHead className="hidden sm:table-cell">Total</TableHead>
+                        <TableHead className="w-[120px] md:w-[280px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -920,10 +920,10 @@ export default function BookingsPage() {
                             </TableCell>
                             <TableCell>{booking.id}</TableCell>
                             <TableCell>{booking.customerName}</TableCell>
-                            <TableCell>{getDumpsterName(booking.dumpsterId)}</TableCell>
+                            <TableCell className="hidden md:table-cell">{getDumpsterName(booking.dumpsterId)}</TableCell>
                             <TableCell>{formatDate(booking.deliveryDate)}</TableCell>
-                            <TableCell>{getPickupDate(booking.deliveryDate, booking.pricingId)}</TableCell>
-                            <TableCell>{booking.deliveryZipCode}</TableCell>
+                            <TableCell className="hidden lg:table-cell">{getPickupDate(booking.deliveryDate, booking.pricingId)}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{booking.deliveryZipCode}</TableCell>
                             <TableCell>
                               {/* Mobile: Clickable status badge */}
                               <div className="md:hidden">
@@ -954,9 +954,25 @@ export default function BookingsPage() {
                                 </Select>
                               </div>
                             </TableCell>
-                            <TableCell>${(booking.totalPrice / 100).toFixed(2)}</TableCell>
+                            <TableCell className="hidden sm:table-cell">${(booking.totalPrice / 100).toFixed(2)}</TableCell>
                             <TableCell>
-                              <div className="flex gap-1">
+                              {/* Mobile: Only navigation button, other actions via status badge */}
+                              <div className="md:hidden">
+                                <Button 
+                                  onClick={() => {
+                                    const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                    const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                    window.open(mapsUrl, '_blank');
+                                  }}
+                                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-2"
+                                  size="sm"
+                                >
+                                  <MapPin className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              
+                              {/* Desktop: Full action buttons */}
+                              <div className="hidden md:flex md:gap-1">
                                 <Button 
                                   onClick={() => {
                                     const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
