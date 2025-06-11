@@ -16,7 +16,7 @@ import DumpstersPage from "@/pages/admin/dumpsters";
 import AddOnsPage from "@/pages/admin/add-ons";
 import ServiceZonesPage from "@/pages/admin/zones-new-layout";
 import BookingsPage from "@/pages/admin/bookings";
-
+import HubsPage from "@/pages/admin/hubs";
 import PaymentSettingsPage from "@/pages/admin/payment-settings";
 import BookingConfirmationPage from "@/pages/booking-confirmation";
 import { StickyHeader } from "@/components/layout/sticky-header";
@@ -33,8 +33,8 @@ function Router() {
       <ProtectedRoute path="/admin/dumpsters" component={DumpstersPage} adminOnly />
       <ProtectedRoute path="/admin/add-ons" component={AddOnsPage} adminOnly />
       <ProtectedRoute path="/admin/zones" component={ServiceZonesPage} adminOnly />
+      <ProtectedRoute path="/admin/hubs" component={HubsPage} adminOnly />
       <ProtectedRoute path="/admin/bookings" component={BookingsPage} adminOnly />
-
       <ProtectedRoute path="/admin/payment-settings" component={PaymentSettingsPage} adminOnly />
       <Route component={NotFound} />
     </Switch>
