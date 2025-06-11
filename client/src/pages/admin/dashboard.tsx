@@ -325,14 +325,16 @@ export default function DashboardPage() {
                             <p className="text-sm text-gray-500">{booking.deliveryAddress}</p>
                             <div className="flex items-center gap-2 mt-2">
                               {/* Mobile: Status dropdown */}
-                              <div className="md:hidden">
+                              <div 
+                                className="md:hidden"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <Select 
                                   value={booking.status} 
                                   onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
                                 >
                                   <SelectTrigger 
                                     className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0"
-                                    onClick={(e) => e.stopPropagation()}
                                   >
                                     {getStatusBadge(booking.status)}
                                   </SelectTrigger>
@@ -526,14 +528,16 @@ export default function DashboardPage() {
                               {booking && (
                                 <>
                                   {/* Mobile: Status dropdown */}
-                                  <div className="md:hidden">
+                                  <div 
+                                    className="md:hidden"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     <Select 
                                       value={booking.status} 
                                       onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
                                     >
                                       <SelectTrigger 
                                         className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0"
-                                        onClick={(e) => e.stopPropagation()}
                                       >
                                         {getStatusBadge(booking.status)}
                                       </SelectTrigger>
