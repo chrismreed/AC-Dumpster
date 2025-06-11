@@ -19,7 +19,10 @@ import {
   type InsertBooking,
   dumpsterPricing,
   type DumpsterPricing,
-  type InsertDumpsterPricing
+  type InsertDumpsterPricing,
+  hubs,
+  type Hub,
+  type InsertHub
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -84,6 +87,15 @@ export interface IStorage {
   // Inventory management methods
   checkDumpsterAvailability(dumpsterId: number, deliveryDate: string, rentalDays: number): Promise<boolean>;
   getAvailableDumpsters(deliveryDate: string, rentalDays: number): Promise<Dumpster[]>;
+
+  // Hub methods
+  getHub(id: number): Promise<Hub | undefined>;
+  listHubs(): Promise<Hub[]>;
+  createHub(hub: InsertHub): Promise<Hub>;
+  updateHub(id: number, hub: Partial<InsertHub>): Promise<Hub | undefined>;
+  deleteHub(id: number): Promise<boolean>;
+  unsetMainHub(): Promise<void>;
+  getMainHub(): Promise<Hub | undefined>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -938,6 +950,44 @@ export class DatabaseStorage implements IStorage {
     }
 
     return availableDumpsters;
+  }
+
+  // Hub methods
+  async getHub(id: number): Promise<Hub | undefined> {
+    const [hub] = await db.select().from(hubs).where(eq(hubs.id, id));
+    return hub;
+  }
+
+  async listHubs(): Promise<Hub[]> {
+    return db.select().from(hubs).where(eq(hubs.isActive, true));
+  }
+
+  async createHub(insertHub: InsertHub): Promise<Hub> {
+    const [hub] = await db.insert(hubs).values(insertHub).returning();
+    return hub;
+  }
+
+  async updateHub(id: number, hubUpdate: Partial<InsertHub>): Promise<Hub | undefined> {
+    const [updatedHub] = await db
+      .update(hubs)
+      .set(hubUpdate)
+      .where(eq(hubs.id, id))
+      .returning();
+    return updatedHub;
+  }
+
+  async deleteHub(id: number): Promise<boolean> {
+    const result = await db.delete(hubs).where(eq(hubs.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async unsetMainHub(): Promise<void> {
+    await db.update(hubs).set({ isMainHub: false }).where(eq(hubs.isMainHub, true));
+  }
+
+  async getMainHub(): Promise<Hub | undefined> {
+    const [hub] = await db.select().from(hubs).where(and(eq(hubs.isMainHub, true), eq(hubs.isActive, true)));
+    return hub;
   }
 }
 

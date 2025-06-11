@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ServiceZone } from "@shared/schema";
+import { ServiceZone, Hub } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Trash } from "lucide-react";
 import {
@@ -15,51 +16,97 @@ import { useGoogleMaps } from "@/providers/google-maps-provider";
 const DEFAULT_CENTER = { lat: 39.8283, lng: -98.5795 };
 const DEFAULT_ZOOM = 5;
 
-// Calculate center point from existing zones
-function calculateZoneCenter(zones: ServiceZone[]): { lat: number; lng: number; zoom: number } {
+// Calculate optimal center point prioritizing hubs, then zones
+function calculateOptimalCenter(hubs: Hub[], zones: ServiceZone[]): { lat: number; lng: number; zoom: number } {
+  // First priority: Use main hub if available
+  const mainHub = hubs.find(h => h.isMainHub && h.lat && h.lng);
+  if (mainHub) {
+    return { lat: mainHub.lat!, lng: mainHub.lng!, zoom: 11 };
+  }
+  
+  // Second priority: Use any hub with coordinates
+  const hubsWithCoords = hubs.filter(h => h.lat && h.lng);
+  if (hubsWithCoords.length > 0) {
+    if (hubsWithCoords.length === 1) {
+      const hub = hubsWithCoords[0];
+      return { lat: hub.lat!, lng: hub.lng!, zoom: 11 };
+    }
+    
+    // Calculate center of all hubs
+    let minLat = hubsWithCoords[0].lat!;
+    let maxLat = hubsWithCoords[0].lat!;
+    let minLng = hubsWithCoords[0].lng!;
+    let maxLng = hubsWithCoords[0].lng!;
+    
+    hubsWithCoords.forEach(hub => {
+      minLat = Math.min(minLat, hub.lat!);
+      maxLat = Math.max(maxLat, hub.lat!);
+      minLng = Math.min(minLng, hub.lng!);
+      maxLng = Math.max(maxLng, hub.lng!);
+    });
+    
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    
+    // Calculate zoom based on hub spread
+    const latDiff = maxLat - minLat;
+    const lngDiff = maxLng - minLng;
+    const maxDiff = Math.max(latDiff, lngDiff);
+    
+    let zoom = 10;
+    if (maxDiff > 2) zoom = 8;
+    else if (maxDiff > 1) zoom = 9;
+    else if (maxDiff > 0.5) zoom = 10;
+    else if (maxDiff > 0.1) zoom = 11;
+    else zoom = 12;
+    
+    return { lat: centerLat, lng: centerLng, zoom };
+  }
+  
+  // Third priority: Fall back to zones with coordinates
   const zonesWithCoords = zones.filter(z => z.centerLat && z.centerLng);
-  
-  if (zonesWithCoords.length === 0) {
-    return { lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, zoom: DEFAULT_ZOOM };
+  if (zonesWithCoords.length > 0) {
+    if (zonesWithCoords.length === 1) {
+      return { 
+        lat: zonesWithCoords[0].centerLat!, 
+        lng: zonesWithCoords[0].centerLng!, 
+        zoom: 11 
+      };
+    }
+    
+    // Calculate bounds of all zones
+    let minLat = zonesWithCoords[0].centerLat!;
+    let maxLat = zonesWithCoords[0].centerLat!;
+    let minLng = zonesWithCoords[0].centerLng!;
+    let maxLng = zonesWithCoords[0].centerLng!;
+    
+    zonesWithCoords.forEach(zone => {
+      minLat = Math.min(minLat, zone.centerLat!);
+      maxLat = Math.max(maxLat, zone.centerLat!);
+      minLng = Math.min(minLng, zone.centerLng!);
+      maxLng = Math.max(maxLng, zone.centerLng!);
+    });
+    
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    
+    // Calculate appropriate zoom level based on bounds
+    const latDiff = maxLat - minLat;
+    const lngDiff = maxLng - minLng;
+    const maxDiff = Math.max(latDiff, lngDiff);
+    
+    let zoom = 10;
+    if (maxDiff > 2) zoom = 8;
+    else if (maxDiff > 1) zoom = 9;
+    else if (maxDiff > 0.5) zoom = 10;
+    else if (maxDiff > 0.1) zoom = 11;
+    else zoom = 12;
+    
+    return { lat: centerLat, lng: centerLng, zoom };
   }
   
-  if (zonesWithCoords.length === 1) {
-    return { 
-      lat: zonesWithCoords[0].centerLat!, 
-      lng: zonesWithCoords[0].centerLng!, 
-      zoom: 11 
-    };
-  }
-  
-  // Calculate bounds of all zones
-  let minLat = zonesWithCoords[0].centerLat!;
-  let maxLat = zonesWithCoords[0].centerLat!;
-  let minLng = zonesWithCoords[0].centerLng!;
-  let maxLng = zonesWithCoords[0].centerLng!;
-  
-  zonesWithCoords.forEach(zone => {
-    minLat = Math.min(minLat, zone.centerLat!);
-    maxLat = Math.max(maxLat, zone.centerLat!);
-    minLng = Math.min(minLng, zone.centerLng!);
-    maxLng = Math.max(maxLng, zone.centerLng!);
-  });
-  
-  const centerLat = (minLat + maxLat) / 2;
-  const centerLng = (minLng + maxLng) / 2;
-  
-  // Calculate appropriate zoom level based on bounds
-  const latDiff = maxLat - minLat;
-  const lngDiff = maxLng - minLng;
-  const maxDiff = Math.max(latDiff, lngDiff);
-  
-  let zoom = 10;
-  if (maxDiff > 2) zoom = 8;
-  else if (maxDiff > 1) zoom = 9;
-  else if (maxDiff > 0.5) zoom = 10;
-  else if (maxDiff > 0.1) zoom = 11;
-  else zoom = 12;
-  
-  return { lat: centerLat, lng: centerLng, zoom };
+  // Last resort: Default center
+  return { lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, zoom: DEFAULT_ZOOM };
 }
 
 // Map container styles
@@ -93,12 +140,17 @@ export function GeofenceEditor({
   const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
   
-  // Calculate optimal center based on available zones
+  // Fetch hub data for intelligent map centering
+  const { data: hubs = [] } = useQuery<Hub[]>({
+    queryKey: ['/api/hubs'],
+  });
+  
+  // Calculate optimal center based on hubs, then zones
   const optimalCenter = (() => {
     if (zone?.centerLat && zone?.centerLng) {
       return { lat: zone.centerLat, lng: zone.centerLng, zoom: 10 };
     }
-    return calculateZoneCenter(allZones);
+    return calculateOptimalCenter(hubs || [], allZones);
   })();
 
   const [center, setCenter] = useState({ lat: optimalCenter.lat, lng: optimalCenter.lng });
