@@ -47,6 +47,113 @@
   .text-primary {
     color: var(--color-primary);
   }
+
+  /* FullCalendar Custom Styling */
+  .fc-toolbar {
+    @apply flex-wrap gap-2 mb-4;
+  }
+
+  .fc-toolbar-title {
+    @apply text-xl font-semibold text-gray-800 tracking-tight;
+  }
+
+  .fc-button-group {
+    @apply inline-flex rounded-lg shadow-sm;
+  }
+
+  .fc-button {
+    @apply px-3 py-2 text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200;
+  }
+
+  .fc-button:first-child {
+    @apply rounded-l-lg;
+  }
+
+  .fc-button:last-child {
+    @apply rounded-r-lg;
+  }
+
+  .fc-button:not(:first-child):not(:last-child) {
+    @apply rounded-none;
+  }
+
+  .fc-button-active {
+    @apply bg-yellow-500 text-black border-yellow-500 hover:bg-yellow-600;
+  }
+
+  .fc-prev-button, .fc-next-button {
+    @apply px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-sm transition-colors duration-200;
+  }
+
+  .fc-today-button {
+    @apply px-4 py-2 rounded-lg bg-yellow-500 text-black border border-yellow-500 hover:bg-yellow-600 shadow-sm font-medium transition-colors duration-200;
+  }
+
+  .fc-toolbar-chunk {
+    @apply flex items-center gap-2;
+  }
+
+  .fc-direction-ltr .fc-toolbar > * > :not(:first-child) {
+    @apply ml-0;
+  }
+
+  .fc-daygrid-day-number {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  .fc-col-header-cell {
+    @apply bg-gray-50 border-gray-200 font-medium text-gray-600;
+  }
+
+  .fc-scrollgrid {
+    @apply border border-gray-200 rounded-lg overflow-hidden;
+  }
+
+  .fc-event {
+    @apply border-0 rounded-md shadow-sm;
+  }
+
+  /* Mobile responsive calendar styling */
+  @media (max-width: 768px) {
+    .fc-toolbar {
+      @apply flex-col gap-3;
+    }
+    
+    .fc-toolbar-title {
+      @apply text-lg text-center;
+    }
+    
+    .fc-button {
+      @apply px-2 py-1.5 text-xs;
+    }
+    
+    .fc-prev-button, .fc-next-button {
+      @apply px-3 py-1.5 text-xs;
+    }
+    
+    .fc-today-button {
+      @apply px-3 py-1.5 text-xs;
+    }
+    
+    .fc-toolbar-chunk {
+      @apply justify-center;
+    }
+    
+    .fc-daygrid-day-number {
+      @apply text-xs;
+    }
+  }
+
+  /* Better arrow icons for navigation */
+  .fc-icon-chevron-left:before {
+    content: "‹";
+    @apply text-lg font-bold;
+  }
+  
+  .fc-icon-chevron-right:before {
+    content: "›";
+    @apply text-lg font-bold;
+  }
   
   .border-primary {
     border-color: var(--color-primary);
