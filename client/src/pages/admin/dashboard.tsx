@@ -265,7 +265,7 @@ export default function DashboardPage() {
                     deliveryDate.setHours(0, 0, 0, 0);
                     
                     // Check if delivery is today
-                    if (deliveryDate.getTime() === today.getTime() && booking.status === 'scheduled') {
+                    if (deliveryDate.getTime() === today.getTime() && ['pending', 'confirmed'].includes(booking.status)) {
                       return true;
                     }
                     
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                     pickupDate.setDate(deliveryDate.getDate() + rentalDays);
                     pickupDate.setHours(0, 0, 0, 0);
                     
-                    return pickupDate.getTime() === today.getTime() && booking.status === 'scheduled';
+                    return pickupDate.getTime() === today.getTime() && ['pending', 'confirmed'].includes(booking.status);
                   }) || [];
 
                   if (todayBookings.length === 0) {
@@ -364,7 +364,7 @@ export default function DashboardPage() {
                     pickupDate.setHours(0, 0, 0, 0);
                     
                     // Add delivery task if it's today or in the future (for active bookings)
-                    if (deliveryDate >= today && ['pending', 'confirmed', 'scheduled'].includes(booking.status)) {
+                    if (deliveryDate >= today && ['pending', 'confirmed'].includes(booking.status)) {
                       upcomingTasks.push({
                         id: booking.id,
                         customerName: booking.customerName,
@@ -377,7 +377,7 @@ export default function DashboardPage() {
                     }
                     
                     // Add pickup task if it's today or in the future (for active bookings)
-                    if (pickupDate >= today && ['pending', 'confirmed', 'scheduled'].includes(booking.status)) {
+                    if (pickupDate >= today && ['pending', 'confirmed'].includes(booking.status)) {
                       upcomingTasks.push({
                         id: booking.id + 1000, // Avoid duplicate keys
                         customerName: booking.customerName,
@@ -583,8 +583,28 @@ export default function DashboardPage() {
                 <DialogDescription>
                   Booking #{selectedBooking.id}
                 </DialogDescription>
-                <div className="mt-2">
-                  {getStatusBadge(selectedBooking.status)}
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="font-medium">Status:</span>
+                  <Select
+                    value={selectedBooking.status}
+                    onValueChange={(newStatus) => {
+                      updateBookingStatusMutation.mutate({
+                        bookingId: selectedBooking.id,
+                        status: newStatus
+                      });
+                    }}
+                    disabled={updateBookingStatusMutation.isPending}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </DialogHeader>
               
@@ -655,29 +675,6 @@ export default function DashboardPage() {
                           {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Booking Status:</span>
-                        <Select
-                          value={selectedBooking.status}
-                          onValueChange={(newStatus) => {
-                            updateBookingStatusMutation.mutate({
-                              bookingId: selectedBooking.id,
-                              status: newStatus
-                            });
-                          }}
-                          disabled={updateBookingStatusMutation.isPending}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="scheduled">Scheduled</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -700,7 +697,7 @@ export default function DashboardPage() {
   // Helper function to render status badges
   function getStatusBadge(status: string) {
     const statusColors = {
-      scheduled: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-yellow-100 text-yellow-800',
       completed: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800',
       pending: 'bg-gray-100 text-gray-800',
