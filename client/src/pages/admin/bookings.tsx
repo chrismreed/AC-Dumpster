@@ -32,14 +32,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing } from "@shared/schema";
-import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings } from "lucide-react";
+import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing, Hub } from "@shared/schema";
+import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BookingCalendar } from "@/components/admin/booking-calendar";
 import { DeliveryMap } from "@/components/admin/maps/delivery-map";
+import { Label } from "@/components/ui/label";
 
 export default function BookingsPage() {
   const { toast } = useToast();
@@ -47,7 +48,12 @@ export default function BookingsPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isDropOffDialogOpen, setIsDropOffDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [bookingToComplete, setBookingToComplete] = useState<Booking | null>(null);
+  const [selectedDropOffType, setSelectedDropOffType] = useState<string>("");
+  const [selectedHubId, setSelectedHubId] = useState<string>("");
+  const [selectedCustomerBookingId, setSelectedCustomerBookingId] = useState<string>("");
   const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
   const [selectedBookings, setSelectedBookings] = useState<Set<number>>(new Set());
   const [sortBy, setSortBy] = useState<string>("deliveryDate");
@@ -76,6 +82,10 @@ export default function BookingsPage() {
 
   const { data: allPricing } = useQuery<DumpsterPricing[]>({
     queryKey: ["/api/dumpster-pricing/all"],
+  });
+
+  const { data: hubs } = useQuery<Hub[]>({
+    queryKey: ["/api/hubs"],
   });
 
   // Update booking status mutation
@@ -188,6 +198,19 @@ export default function BookingsPage() {
 
   const handleStatusChange = (id: number, status: string) => {
     try {
+      // If changing to "complete", show drop-off location selection dialog
+      if (status === "complete") {
+        const booking = bookings?.find(b => b.id === id);
+        if (booking) {
+          setBookingToComplete(booking);
+          setSelectedDropOffType("");
+          setSelectedHubId("");
+          setSelectedCustomerBookingId("");
+          setIsDropOffDialogOpen(true);
+          return; // Don't update status yet, wait for drop-off selection
+        }
+      }
+      
       updateBookingStatusMutation.mutate({ id, status });
     } catch (error) {
       console.error("Error in handleStatusChange:", error);
@@ -202,6 +225,53 @@ export default function BookingsPage() {
   const handleDeleteBooking = (booking: Booking) => {
     setBookingToDelete(booking);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleCompleteBooking = () => {
+    if (!bookingToComplete || !selectedDropOffType) {
+      toast({
+        title: "Selection Required",
+        description: "Please select where the dumpster should be dropped off.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedDropOffType === "hub" && !selectedHubId) {
+      toast({
+        title: "Hub Selection Required",
+        description: "Please select which hub to drop off the dumpster.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedDropOffType === "customer" && !selectedCustomerBookingId) {
+      toast({
+        title: "Customer Selection Required",
+        description: "Please select which customer to deliver the dumpster to.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update booking status to complete
+    updateBookingStatusMutation.mutate({ 
+      id: bookingToComplete.id, 
+      status: "complete" 
+    });
+
+    // Close dialog and reset state
+    setIsDropOffDialogOpen(false);
+    setBookingToComplete(null);
+    setSelectedDropOffType("");
+    setSelectedHubId("");
+    setSelectedCustomerBookingId("");
+
+    toast({
+      title: "Booking Completed",
+      description: `Dumpster scheduled for drop-off at ${selectedDropOffType === "hub" ? "hub" : "customer location"}.`,
+    });
   };
 
   const confirmDeleteBooking = () => {
@@ -359,6 +429,8 @@ export default function BookingsPage() {
         return { backgroundColor: '#3b82f6', color: 'white', border: 'none' };
       case 'picked_up':
         return { backgroundColor: '#8b5cf6', color: 'white', border: 'none' };
+      case 'complete':
+        return { backgroundColor: '#059669', color: 'white', border: 'none' };
       case 'cancelled':
         return { backgroundColor: '#ef4444', color: 'white', border: 'none' };
       default:
@@ -405,6 +477,7 @@ export default function BookingsPage() {
                 <SelectItem value="confirmed">Confirmed</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
                 <SelectItem value="picked_up">Picked Up</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
