@@ -290,7 +290,15 @@ export default function DashboardPage() {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   
-                  const upcomingTasks: any[] = [];
+                  const upcomingTasks: Array<{
+                    id: number;
+                    customerName: string;
+                    dumpsterId: number;
+                    deliveryAddress: string;
+                    taskType: 'delivery' | 'pickup';
+                    taskDate: Date;
+                    sortDate: number;
+                  }> = [];
                   
                   // Get all bookings and create delivery/pickup tasks
                   bookings?.forEach(booking => {
@@ -308,7 +316,10 @@ export default function DashboardPage() {
                     // Add delivery task if it's in the future
                     if (deliveryDate > today) {
                       upcomingTasks.push({
-                        ...booking,
+                        id: booking.id,
+                        customerName: booking.customerName,
+                        dumpsterId: booking.dumpsterId,
+                        deliveryAddress: booking.deliveryAddress,
                         taskType: 'delivery',
                         taskDate: deliveryDate,
                         sortDate: deliveryDate.getTime()
@@ -318,7 +329,10 @@ export default function DashboardPage() {
                     // Add pickup task if it's in the future
                     if (pickupDate > today) {
                       upcomingTasks.push({
-                        ...booking,
+                        id: booking.id,
+                        customerName: booking.customerName,
+                        dumpsterId: booking.dumpsterId,
+                        deliveryAddress: booking.deliveryAddress,
                         taskType: 'pickup',
                         taskDate: pickupDate,
                         sortDate: pickupDate.getTime()
