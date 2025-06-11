@@ -28,6 +28,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/booking-confirmation" component={BookingConfirmationPage} />
+      <ProtectedRoute path="/admin" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dashboard" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dumpsters" component={DumpstersPage} adminOnly />
       <ProtectedRoute path="/admin/add-ons" component={AddOnsPage} adminOnly />
