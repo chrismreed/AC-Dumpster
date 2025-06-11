@@ -256,23 +256,18 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
               position={selectedMarker.position}
               onCloseClick={() => setSelectedMarker(null)}
             >
-              <div className="p-3 max-w-[380px] min-w-[320px]">
-                <h3 className="font-bold text-base mb-2">{selectedMarker.booking.customerName}</h3>
-                <p className="text-gray-700 text-sm mb-3">
+              <div className="p-3 w-[480px]">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold text-base">{selectedMarker.booking.customerName}</h3>
+                  <span className="text-lg font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
+                </div>
+                <p className="text-gray-700 text-sm mb-2">
                   {selectedMarker.booking.deliveryAddress}, {selectedMarker.booking.deliveryCity}, {selectedMarker.booking.deliveryZipCode}
                 </p>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <span className="text-xs text-gray-500">Delivery Date</span>
-                    <p className="text-sm font-medium">{formatDate(selectedMarker.booking.deliveryDate.toString())}</p>
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-xs text-gray-500">
+                    Delivery: {formatDate(selectedMarker.booking.deliveryDate.toString())}
                   </div>
-                  <div>
-                    <span className="text-xs text-gray-500">Created At</span>
-                    <p className="text-sm font-medium">{formatDate(selectedMarker.booking.createdAt.toString())}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between mb-3">
                   <Select 
                     value={selectedMarker.booking.status} 
                     onValueChange={(value) => handleStatusChange(selectedMarker.booking.id, value)}
@@ -296,7 +291,6 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="text-lg font-bold">${(selectedMarker.booking.totalPrice / 100).toFixed(2)}</span>
                 </div>
                 
                 <Button 
@@ -305,7 +299,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                     const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
                     window.open(mapsUrl, '_blank');
                   }}
-                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full h-9 text-sm"
+                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full h-8 text-sm"
                   size="sm"
                 >
                   <MapPin className="h-4 w-4 mr-2" />
