@@ -440,7 +440,7 @@ export default function DashboardPage() {
                     sortDate: number;
                   }> = [];
                   
-                  // Get all bookings and create delivery/pickup tasks
+                  // Get all bookings and create only the NEXT task for each booking
                   bookings?.forEach(booking => {
                     if (!booking.deliveryDate) return;
                     
@@ -448,6 +448,35 @@ export default function DashboardPage() {
                     const rentalDays = pricing?.days || 3;
                     const deliveryDate = new Date(booking.deliveryDate);
                     deliveryDate.setHours(0, 0, 0, 0);
+                    
+                    // Determine what the next task should be based on current status
+                    let nextTask: 'delivery' | 'pickup' | null = null;
+                    let nextTaskDate: Date;
+                    
+                    if (['pending', 'confirmed'].includes(booking.status)) {
+                      // Next task is delivery
+                      nextTask = 'delivery';
+                      nextTaskDate = deliveryDate;
+                    } else if (['delivered'].includes(booking.status)) {
+                      // Next task is pickup
+                      nextTask = 'pickup';
+                      nextTaskDate = new Date(deliveryDate);
+                      nextTaskDate.setDate(deliveryDate.getDate() + rentalDays);
+                      nextTaskDate.setHours(0, 0, 0, 0);
+                    }
+                    // If status is 'picked_up' or 'complete', no next task needed
+                    
+                    if (nextTask && nextTaskDate > today) {
+                      upcomingTasks.push({
+                        id: booking.id,
+                        customerName: booking.customerName,
+                        dumpsterId: booking.dumpsterId,
+                        deliveryAddress: booking.deliveryAddress,
+                        taskType: nextTask,
+                        taskDate: nextTaskDate,
+                        sortDate: nextTaskDate.getTime()
+                      });
+                    }
                     
                     const pickupDate = new Date(deliveryDate);
                     pickupDate.setDate(deliveryDate.getDate() + rentalDays);
