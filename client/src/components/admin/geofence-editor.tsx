@@ -11,9 +11,56 @@ import {
 } from "@react-google-maps/api";
 import { useGoogleMaps } from "@/providers/google-maps-provider";
 
-// Default map center coordinates (USA center)
+// Default map center coordinates (USA center) - fallback only
 const DEFAULT_CENTER = { lat: 39.8283, lng: -98.5795 };
 const DEFAULT_ZOOM = 5;
+
+// Calculate center point from existing zones
+function calculateZoneCenter(zones: ServiceZone[]): { lat: number; lng: number; zoom: number } {
+  const zonesWithCoords = zones.filter(z => z.centerLat && z.centerLng);
+  
+  if (zonesWithCoords.length === 0) {
+    return { lat: DEFAULT_CENTER.lat, lng: DEFAULT_CENTER.lng, zoom: DEFAULT_ZOOM };
+  }
+  
+  if (zonesWithCoords.length === 1) {
+    return { 
+      lat: zonesWithCoords[0].centerLat!, 
+      lng: zonesWithCoords[0].centerLng!, 
+      zoom: 11 
+    };
+  }
+  
+  // Calculate bounds of all zones
+  let minLat = zonesWithCoords[0].centerLat!;
+  let maxLat = zonesWithCoords[0].centerLat!;
+  let minLng = zonesWithCoords[0].centerLng!;
+  let maxLng = zonesWithCoords[0].centerLng!;
+  
+  zonesWithCoords.forEach(zone => {
+    minLat = Math.min(minLat, zone.centerLat!);
+    maxLat = Math.max(maxLat, zone.centerLat!);
+    minLng = Math.min(minLng, zone.centerLng!);
+    maxLng = Math.max(maxLng, zone.centerLng!);
+  });
+  
+  const centerLat = (minLat + maxLat) / 2;
+  const centerLng = (minLng + maxLng) / 2;
+  
+  // Calculate appropriate zoom level based on bounds
+  const latDiff = maxLat - minLat;
+  const lngDiff = maxLng - minLng;
+  const maxDiff = Math.max(latDiff, lngDiff);
+  
+  let zoom = 10;
+  if (maxDiff > 2) zoom = 8;
+  else if (maxDiff > 1) zoom = 9;
+  else if (maxDiff > 0.5) zoom = 10;
+  else if (maxDiff > 0.1) zoom = 11;
+  else zoom = 12;
+  
+  return { lat: centerLat, lng: centerLng, zoom };
+}
 
 // Map container styles
 const mapContainerStyle = {
@@ -46,13 +93,17 @@ export function GeofenceEditor({
   const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
   
-  const [center, setCenter] = useState(
-    zone?.centerLat && zone?.centerLng
-      ? { lat: zone.centerLat, lng: zone.centerLng }
-      : DEFAULT_CENTER
-  );
+  // Calculate optimal center based on available zones
+  const optimalCenter = (() => {
+    if (zone?.centerLat && zone?.centerLng) {
+      return { lat: zone.centerLat, lng: zone.centerLng, zoom: 10 };
+    }
+    return calculateZoneCenter(allZones);
+  })();
+
+  const [center, setCenter] = useState({ lat: optimalCenter.lat, lng: optimalCenter.lng });
   const [polygonPath, setPolygonPath] = useState<string | null>(zone?.polygonPath || null);
-  const [zoom, setZoom] = useState(zone?.centerLat && zone?.centerLng ? 10 : DEFAULT_ZOOM);
+  const [zoom, setZoom] = useState(optimalCenter.zoom);
   
   // Load Google Maps API using the shared provider
   const { isLoaded, loadError } = useGoogleMaps();

@@ -21,10 +21,47 @@ const containerStyle = {
   height: '500px'
 };
 
-const defaultCenter = {
-  lat: 39.1200,
-  lng: -88.5434
-};
+// Calculate center based on booking locations
+function calculateBookingCenter(markers: Array<{ booking: Booking; position: google.maps.LatLngLiteral }>): { center: google.maps.LatLngLiteral; zoom: number } {
+  if (markers.length === 0) {
+    // Fallback to a reasonable default if no bookings
+    return { center: { lat: 39.1200, lng: -88.5434 }, zoom: 10 };
+  }
+  
+  if (markers.length === 1) {
+    return { center: markers[0].position, zoom: 12 };
+  }
+  
+  // Calculate bounds of all markers
+  let minLat = markers[0].position.lat;
+  let maxLat = markers[0].position.lat;
+  let minLng = markers[0].position.lng;
+  let maxLng = markers[0].position.lng;
+  
+  markers.forEach(marker => {
+    minLat = Math.min(minLat, marker.position.lat);
+    maxLat = Math.max(maxLat, marker.position.lat);
+    minLng = Math.min(minLng, marker.position.lng);
+    maxLng = Math.max(maxLng, marker.position.lng);
+  });
+  
+  const centerLat = (minLat + maxLat) / 2;
+  const centerLng = (minLng + maxLng) / 2;
+  
+  // Calculate appropriate zoom level
+  const latDiff = maxLat - minLat;
+  const lngDiff = maxLng - minLng;
+  const maxDiff = Math.max(latDiff, lngDiff);
+  
+  let zoom = 10;
+  if (maxDiff > 2) zoom = 8;
+  else if (maxDiff > 1) zoom = 9;
+  else if (maxDiff > 0.5) zoom = 10;
+  else if (maxDiff > 0.1) zoom = 11;
+  else zoom = 12;
+  
+  return { center: { lat: centerLat, lng: centerLng }, zoom };
+}
 
 // Geocoding function
 async function geocodeAddress(address: string): Promise<google.maps.LatLngLiteral | null> {
@@ -80,7 +117,8 @@ function getBadgeStyle(status: string): React.CSSProperties {
 export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   const [markers, setMarkers] = useState<Array<{ booking: Booking; position: google.maps.LatLngLiteral }>>([]);
   const [selectedMarker, setSelectedMarker] = useState<{ booking: Booking; position: google.maps.LatLngLiteral } | null>(null);
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [mapCenter, setMapCenter] = useState({ lat: 39.1200, lng: -88.5434 });
+  const [mapZoom, setMapZoom] = useState(10);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const customMarkersRef = useRef<google.maps.Marker[]>([]);
 
@@ -152,16 +190,11 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
         if (!isCancelled) {
           setMarkers(resolvedMarkers);
 
-          // Update map center to show all markers
+          // Update map center and zoom to show all markers optimally
           if (resolvedMarkers.length > 0) {
-            const bounds = new google.maps.LatLngBounds();
-            resolvedMarkers.forEach(({ position }) => bounds.extend(position));
-            
-            // Calculate center from bounds
-            const center = bounds.getCenter();
-            if (center) {
-              setMapCenter({ lat: center.lat(), lng: center.lng() });
-            }
+            const { center, zoom } = calculateBookingCenter(resolvedMarkers);
+            setMapCenter(center);
+            setMapZoom(zoom);
           }
         }
       } catch (error) {
@@ -243,7 +276,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
         <GoogleMap
           mapContainerStyle={containerStyle}
           center={mapCenter}
-          zoom={10}
+          zoom={mapZoom}
           onLoad={onLoad}
           options={{
             mapTypeControl: true,
