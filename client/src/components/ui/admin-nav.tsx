@@ -97,8 +97,19 @@ export function AdminNav() {
             }}
           >
             <div className="p-4 border-b">
-              <h1 className="text-lg font-bold text-gray-900">DumpsterDirect</h1>
-              <p className="text-sm text-gray-500">Admin Dashboard</p>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">DumpsterDirect</h1>
+                  <p className="text-sm text-gray-500">Admin Dashboard</p>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-gray-600 hover:text-gray-900 p-2"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
             <nav className="mt-2">
               {navItems.map((item, index) => (
