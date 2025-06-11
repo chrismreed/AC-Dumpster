@@ -156,7 +156,7 @@ export default function HubsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/hubs'] });
       toast({
         title: "Main Hub Set",
-        description: "This hub is now your main location for map centering.",
+        description: "This hub is now your main location.",
       });
     },
     onError: (error: any) => {
@@ -243,7 +243,7 @@ export default function HubsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Hub Locations</h1>
             <p className="text-muted-foreground">
-              Manage your dumpster storage locations for optimal map centering
+              Manage your dumpster storage locations
             </p>
           </div>
           <Button
@@ -361,7 +361,7 @@ export default function HubsPage() {
                       <Label htmlFor="isMainHub">Set as Main Hub</Label>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Main hub will be used for map centering
+                      Set this as your main hub location
                     </p>
                   </div>
                 </div>
@@ -396,7 +396,7 @@ export default function HubsPage() {
                   <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No Hub Locations</h3>
                   <p className="text-muted-foreground mb-4">
-                    Add your first hub location to improve map centering and track your dumpster storage facilities.
+                    Add your first hub location to track your dumpster storage facilities.
                   </p>
                   <Button onClick={() => setShowAddForm(true)}>
                     <Plus className="h-4 w-4 mr-2" />
