@@ -190,11 +190,19 @@ export default function HubsPage() {
   };
 
   const handlePlaceSelect = (place: PlaceData) => {
+    console.log("Place selected:", place);
     setSelectedPlace(place);
-    form.setValue("address", place.address);
-    form.setValue("city", place.city);
-    form.setValue("state", place.state);
-    form.setValue("zipCode", place.zipCode);
+    
+    // Use setTimeout to ensure form updates are processed
+    setTimeout(() => {
+      form.setValue("address", place.address);
+      form.setValue("city", place.city);
+      form.setValue("state", place.state);
+      form.setValue("zipCode", place.zipCode);
+      
+      // Trigger form validation
+      form.trigger(["address", "city", "state", "zipCode"]);
+    }, 100);
   };
 
   const handleEdit = (hub: Hub) => {
@@ -276,10 +284,17 @@ export default function HubsPage() {
                     <GooglePlacesAutocomplete
                       onPlaceSelect={handlePlaceSelect}
                       placeholder="Start typing an address..."
-                      value={form.watch("address")}
-                      onChange={(value) => form.setValue("address", value)}
+                      value=""
                       className="w-full"
                     />
+                    {selectedPlace && (
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                        <span className="font-medium text-green-800">Selected: </span>
+                        <span className="text-green-700">
+                          {selectedPlace.address}, {selectedPlace.city}, {selectedPlace.state} {selectedPlace.zipCode}
+                        </span>
+                      </div>
+                    )}
                     {form.formState.errors.address && (
                       <p className="text-sm text-destructive">
                         {form.formState.errors.address.message}

@@ -71,6 +71,8 @@ export function GooglePlacesAutocomplete({
               let state = '';
               let zipCode = '';
 
+              console.log('Address components:', addressComponents);
+
               addressComponents.forEach(component => {
                 const types = component.types;
                 
@@ -88,9 +90,8 @@ export function GooglePlacesAutocomplete({
               });
 
               const fullAddress = `${streetNumber} ${route}`.trim();
-              setInputValue(fullAddress);
-
-              onPlaceSelect({
+              
+              const parsedData = {
                 address: fullAddress,
                 city,
                 state,
@@ -99,7 +100,14 @@ export function GooglePlacesAutocomplete({
                   lat: place.geometry.location.lat(),
                   lng: place.geometry.location.lng()
                 }
-              });
+              };
+
+              console.log('Parsed address data:', parsedData);
+              
+              // Don't update input value here to prevent overwriting
+              // setInputValue(fullAddress);
+
+              onPlaceSelect(parsedData);
             }
           });
         }
