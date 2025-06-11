@@ -58,6 +58,8 @@ export default function BookingsPage() {
   const [selectedBookings, setSelectedBookings] = useState<Set<number>>(new Set());
   const [sortBy, setSortBy] = useState<string>("deliveryDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(new Set());
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
   // Fetch bookings and related data
   const { data: bookings, isLoading: isLoadingBookings } = useQuery<Booking[]>({
