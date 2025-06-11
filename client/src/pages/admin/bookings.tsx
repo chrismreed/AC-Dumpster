@@ -925,21 +925,34 @@ export default function BookingsPage() {
                             <TableCell>{getPickupDate(booking.deliveryDate, booking.pricingId)}</TableCell>
                             <TableCell>{booking.deliveryZipCode}</TableCell>
                             <TableCell>
-                              <Select 
-                                value={booking.status} 
-                                onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
-                              >
-                                <SelectTrigger className="w-32 h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                                  <SelectItem value="delivered">Delivered</SelectItem>
-                                  <SelectItem value="picked_up">Picked Up</SelectItem>
-                                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              {/* Mobile: Clickable status badge */}
+                              <div className="md:hidden">
+                                <div 
+                                  className="cursor-pointer"
+                                  onClick={() => handleViewBooking(booking)}
+                                >
+                                  {getStatusBadge(booking.status)}
+                                </div>
+                              </div>
+                              
+                              {/* Desktop: Status dropdown */}
+                              <div className="hidden md:block">
+                                <Select 
+                                  value={booking.status} 
+                                  onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
+                                >
+                                  <SelectTrigger className="w-32 h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                                    <SelectItem value="delivered">Delivered</SelectItem>
+                                    <SelectItem value="picked_up">Picked Up</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </TableCell>
                             <TableCell>${(booking.totalPrice / 100).toFixed(2)}</TableCell>
                             <TableCell>

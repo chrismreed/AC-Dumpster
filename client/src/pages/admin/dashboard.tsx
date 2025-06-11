@@ -317,7 +317,21 @@ export default function DashboardPage() {
                             </p>
                             <p className="text-sm text-gray-500">{booking.deliveryAddress}</p>
                             <div className="flex items-center gap-2 mt-2">
-                              {getStatusBadge(booking.status)}
+                              {/* Mobile: Clickable status badge that opens booking dialog */}
+                              <div 
+                                className="md:hidden cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBooking(booking);
+                                  setIsBookingDialogOpen(true);
+                                }}
+                              >
+                                {getStatusBadge(booking.status)}
+                              </div>
+                              {/* Desktop: Regular status badge */}
+                              <div className="hidden md:block">
+                                {getStatusBadge(booking.status)}
+                              </div>
                               <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 isDelivery 
                                   ? 'bg-blue-100 text-blue-800' 
@@ -328,44 +342,62 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Select 
-                            value={booking.status} 
-                            onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
-                          >
-                            <SelectTrigger className="w-32 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button 
-                            onClick={() => {
-                              const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
-                              const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                              window.open(mapsUrl, '_blank');
-                            }}
-                            className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
-                            size="sm"
-                          >
-                            <MapPin className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            onClick={() => {
-                              setSelectedBooking(booking);
-                              setIsBookingDialogOpen(true);
-                            }}
-                            variant="outline"
-                            className="h-8 px-3"
-                            size="sm"
-                          >
-                            View
-                          </Button>
+                        <div className="flex items-center gap-1 md:gap-2">
+                          {/* Mobile: Only navigation button, status is clickable */}
+                          <div className="md:hidden">
+                            <Button 
+                              onClick={() => {
+                                const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                window.open(mapsUrl, '_blank');
+                              }}
+                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-2"
+                              size="sm"
+                            >
+                              <MapPin className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          {/* Desktop: Full controls */}
+                          <div className="hidden md:flex md:items-center md:gap-2">
+                            <Select 
+                              value={booking.status} 
+                              onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                            >
+                              <SelectTrigger className="w-32 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              onClick={() => {
+                                const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                window.open(mapsUrl, '_blank');
+                              }}
+                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
+                              size="sm"
+                            >
+                              <MapPin className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                setSelectedBooking(booking);
+                                setIsBookingDialogOpen(true);
+                              }}
+                              variant="outline"
+                              className="h-8 px-3"
+                              size="sm"
+                            >
+                              View
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -466,7 +498,25 @@ export default function DashboardPage() {
                             </p>
                             <p className="text-sm text-gray-500">{task.deliveryAddress}</p>
                             <div className="flex items-center gap-2 mt-2">
-                              {booking && getStatusBadge(booking.status)}
+                              {booking && (
+                                <>
+                                  {/* Mobile: Clickable status badge */}
+                                  <div 
+                                    className="md:hidden cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedBooking(booking);
+                                      setIsBookingDialogOpen(true);
+                                    }}
+                                  >
+                                    {getStatusBadge(booking.status)}
+                                  </div>
+                                  {/* Desktop: Regular status badge */}
+                                  <div className="hidden md:block">
+                                    {getStatusBadge(booking.status)}
+                                  </div>
+                                </>
+                              )}
                               <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 isDelivery 
                                   ? 'bg-blue-100 text-blue-800' 
@@ -480,48 +530,66 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {booking && (
-                            <Select 
-                              value={booking.status} 
-                              onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                        <div className="flex items-center gap-1 md:gap-2">
+                          {/* Mobile: Only navigation button */}
+                          <div className="md:hidden">
+                            <Button 
+                              onClick={() => {
+                                const address = `${task.deliveryAddress}`;
+                                const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                window.open(mapsUrl, '_blank');
+                              }}
+                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-2"
+                              size="sm"
                             >
-                              <SelectTrigger className="w-32 h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                          <Button 
-                            onClick={() => {
-                              const address = `${task.deliveryAddress}`;
-                              const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                              window.open(mapsUrl, '_blank');
-                            }}
-                            className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
-                            size="sm"
-                          >
-                            <MapPin className="h-3 w-3" />
-                          </Button>
-                          <Button 
-                            onClick={() => {
-                              if (booking) {
-                                setSelectedBooking(booking);
-                                setIsBookingDialogOpen(true);
-                              }
-                            }}
-                            variant="outline"
-                            className="h-8 px-3"
-                            size="sm"
-                          >
-                            View
-                          </Button>
+                              <MapPin className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          {/* Desktop: Full controls */}
+                          <div className="hidden md:flex md:items-center md:gap-2">
+                            {booking && (
+                              <Select 
+                                value={booking.status} 
+                                onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                              >
+                                <SelectTrigger className="w-32 h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="delivered">Delivered</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                            <Button 
+                              onClick={() => {
+                                const address = `${task.deliveryAddress}`;
+                                const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                window.open(mapsUrl, '_blank');
+                              }}
+                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
+                              size="sm"
+                            >
+                              <MapPin className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                if (booking) {
+                                  setSelectedBooking(booking);
+                                  setIsBookingDialogOpen(true);
+                                }
+                              }}
+                              variant="outline"
+                              className="h-8 px-3"
+                              size="sm"
+                            >
+                              View
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );

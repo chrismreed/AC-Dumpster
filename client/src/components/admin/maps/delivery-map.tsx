@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Booking, Dumpster } from '@shared/schema';
+import { MapPin } from 'lucide-react';
 
 interface DeliveryMapProps {
   bookings: Booking[];
@@ -297,6 +298,21 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div className="mt-3">
+                    <Button 
+                      onClick={() => {
+                        const address = `${selectedMarker.booking.deliveryAddress}, ${selectedMarker.booking.deliveryCity}, ${selectedMarker.booking.deliveryZipCode}`;
+                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full h-8 text-xs"
+                      size="sm"
+                    >
+                      <MapPin className="h-3 w-3 mr-1" />
+                      Navigate to Address
+                    </Button>
                   </div>
                 </div>
               </div>
