@@ -271,12 +271,14 @@ export default function HubsPage() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Street Address</Label>
-                    <Input
-                      id="address"
-                      placeholder="123 Industrial Ave"
-                      {...form.register("address")}
+                  <div className="md:col-span-2 space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <GooglePlacesAutocomplete
+                      onPlaceSelect={handlePlaceSelect}
+                      placeholder="Start typing an address..."
+                      value={form.watch("address")}
+                      onChange={(value) => form.setValue("address", value)}
+                      className="w-full"
                     />
                     {form.formState.errors.address && (
                       <p className="text-sm text-destructive">
@@ -289,8 +291,10 @@ export default function HubsPage() {
                     <Label htmlFor="city">City</Label>
                     <Input
                       id="city"
-                      placeholder="Springfield"
+                      placeholder="Auto-filled from address"
                       {...form.register("city")}
+                      readOnly
+                      className="bg-gray-50"
                     />
                     {form.formState.errors.city && (
                       <p className="text-sm text-destructive">
@@ -303,8 +307,10 @@ export default function HubsPage() {
                     <Label htmlFor="state">State</Label>
                     <Input
                       id="state"
-                      placeholder="IL"
+                      placeholder="Auto-filled"
                       {...form.register("state")}
+                      readOnly
+                      className="bg-gray-50"
                     />
                     {form.formState.errors.state && (
                       <p className="text-sm text-destructive">
@@ -317,8 +323,10 @@ export default function HubsPage() {
                     <Label htmlFor="zipCode">ZIP Code</Label>
                     <Input
                       id="zipCode"
-                      placeholder="62701"
+                      placeholder="Auto-filled"
                       {...form.register("zipCode")}
+                      readOnly
+                      className="bg-gray-50"
                     />
                     {form.formState.errors.zipCode && (
                       <p className="text-sm text-destructive">
