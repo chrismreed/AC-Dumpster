@@ -304,11 +304,7 @@ export default function DashboardPage() {
                     return (
                       <div 
                         key={booking.id} 
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => {
-                          setSelectedBooking(booking);
-                          setIsBookingDialogOpen(true);
-                        }}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center space-x-4">
                           <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
@@ -320,17 +316,56 @@ export default function DashboardPage() {
                               {dumpster?.name || `Dumpster #${booking.dumpsterId}`}
                             </p>
                             <p className="text-sm text-gray-500">{booking.deliveryAddress}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              {getStatusBadge(booking.status)}
+                              <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isDelivery 
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {isDelivery ? 'Delivery' : 'Pickup'}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            isDelivery 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {isDelivery ? 'Delivery' : 'Pickup'}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">Today</p>
+                        <div className="flex items-center gap-2">
+                          <Select 
+                            value={booking.status} 
+                            onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                          >
+                            <SelectTrigger className="w-32 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                              <SelectItem value="delivered">Delivered</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            onClick={() => {
+                              const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                              const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                              window.open(mapsUrl, '_blank');
+                            }}
+                            className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
+                            size="sm"
+                          >
+                            <MapPin className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setIsBookingDialogOpen(true);
+                            }}
+                            variant="outline"
+                            className="h-8 px-3"
+                            size="sm"
+                          >
+                            View
+                          </Button>
                         </div>
                       </div>
                     );
@@ -418,13 +453,7 @@ export default function DashboardPage() {
                     return (
                       <div 
                         key={`${task.id}-${task.taskType}`} 
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => {
-                          if (booking) {
-                            setSelectedBooking(booking);
-                            setIsBookingDialogOpen(true);
-                          }
-                        }}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center space-x-4">
                           <div className={`p-2 rounded-full ${isDelivery ? 'bg-blue-100' : 'bg-green-100'}`}>
@@ -436,19 +465,63 @@ export default function DashboardPage() {
                               {dumpster?.name || `Dumpster #${task.dumpsterId}`}
                             </p>
                             <p className="text-sm text-gray-500">{task.deliveryAddress}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              {booking && getStatusBadge(booking.status)}
+                              <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                isDelivery 
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {isDelivery ? 'Delivery' : 'Pickup'}
+                              </div>
+                              <span className="text-xs text-gray-500">
+                                {task.taskDate.toLocaleDateString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            isDelivery 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {isDelivery ? 'Delivery' : 'Pickup'}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {task.taskDate.toLocaleDateString()}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          {booking && (
+                            <Select 
+                              value={booking.status} 
+                              onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                            >
+                              <SelectTrigger className="w-32 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                          <Button 
+                            onClick={() => {
+                              const address = `${task.deliveryAddress}`;
+                              const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                              window.open(mapsUrl, '_blank');
+                            }}
+                            className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-3"
+                            size="sm"
+                          >
+                            <MapPin className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            onClick={() => {
+                              if (booking) {
+                                setSelectedBooking(booking);
+                                setIsBookingDialogOpen(true);
+                              }
+                            }}
+                            variant="outline"
+                            className="h-8 px-3"
+                            size="sm"
+                          >
+                            View
+                          </Button>
                         </div>
                       </div>
                     );

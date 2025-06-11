@@ -899,7 +899,7 @@ export default function BookingsPage() {
                         <TableHead>Location</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Total</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="w-[280px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -924,26 +924,52 @@ export default function BookingsPage() {
                             <TableCell>{formatDate(booking.deliveryDate)}</TableCell>
                             <TableCell>{getPickupDate(booking.deliveryDate, booking.pricingId)}</TableCell>
                             <TableCell>{booking.deliveryZipCode}</TableCell>
-                            <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                            <TableCell>
+                              <Select 
+                                value={booking.status} 
+                                onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
+                              >
+                                <SelectTrigger className="w-32 h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="delivered">Delivered</SelectItem>
+                                  <SelectItem value="picked_up">Picked Up</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
                             <TableCell>${(booking.totalPrice / 100).toFixed(2)}</TableCell>
                             <TableCell>
-                              <div className="flex gap-2">
+                              <div className="flex gap-1">
                                 <Button 
-                                  variant="ghost" 
+                                  onClick={() => {
+                                    const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                    const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                    window.open(mapsUrl, '_blank');
+                                  }}
+                                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 px-2"
+                                  size="sm"
+                                >
+                                  <MapPin className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
                                   size="sm"
                                   onClick={() => handleViewBooking(booking)}
+                                  className="h-8 px-2"
                                 >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  View
+                                  <Eye className="h-3 w-3" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
                                   onClick={() => handleDeleteBooking(booking)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2"
                                 >
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  Delete
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
                             </TableCell>

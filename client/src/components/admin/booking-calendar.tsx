@@ -10,6 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Booking, Dumpster, RentalDuration, DumpsterPricing } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +29,9 @@ import {
   Mail,
   DollarSign
 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface BookingCalendarProps {
   bookings: Booking[];
