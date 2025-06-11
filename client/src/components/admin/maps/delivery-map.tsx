@@ -96,6 +96,8 @@ function getMarkerColor(status: string): string {
       return '#3b82f6'; // blue
     case 'picked_up':
       return '#8b5cf6'; // purple
+    case 'complete':
+      return '#059669'; // dark green
     case 'cancelled':
       return '#ef4444'; // red
     case 'pending':
@@ -148,6 +150,16 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
   });
 
   const handleStatusChange = (bookingId: number, newStatus: string) => {
+    // If changing to "complete", show a toast message about the drop-off workflow
+    if (newStatus === "complete") {
+      toast({
+        title: "Complete Booking",
+        description: "Use the detailed booking view to complete this booking and select drop-off location.",
+        variant: "default",
+      });
+      return; // Don't change status from map view for complete workflow
+    }
+    
     updateStatusMutation.mutate({ bookingId, status: newStatus });
     
     // Update the selected marker to reflect the new status immediately
@@ -325,6 +337,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
                       <SelectItem value="confirmed">Confirmed</SelectItem>
                       <SelectItem value="delivered">Delivered</SelectItem>
                       <SelectItem value="picked_up">Picked Up</SelectItem>
+                      <SelectItem value="complete">Complete</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>

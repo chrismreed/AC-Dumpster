@@ -648,6 +648,7 @@ export default function BookingsPage() {
                             <SelectItem value="confirmed">Confirmed</SelectItem>
                             <SelectItem value="delivered">Delivered</SelectItem>
                             <SelectItem value="picked_up">Picked Up</SelectItem>
+                            <SelectItem value="complete">Complete</SelectItem>
                             <SelectItem value="cancelled">Cancelled</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1043,6 +1044,149 @@ export default function BookingsPage() {
             <DeliveryMap bookings={sortedAndFilteredBookings} dumpsters={dumpsters || []} />
           </TabsContent>
         </Tabs>
+
+        {/* Drop-off Location Selection Dialog */}
+        {bookingToComplete && (
+          <Dialog open={isDropOffDialogOpen} onOpenChange={setIsDropOffDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Complete Booking - Select Drop-off Location</DialogTitle>
+                <DialogDescription>
+                  Booking #{bookingToComplete.id} - {bookingToComplete.customerName}
+                  <br />
+                  Where should the dumpster be dropped off after pickup?
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Drop-off Type Selection */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Drop-off Destination</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        id="hub-option"
+                        name="dropoff-type"
+                        value="hub"
+                        checked={selectedDropOffType === "hub"}
+                        onChange={(e) => setSelectedDropOffType(e.target.value)}
+                        className="w-4 h-4 text-[#f7c948] border-gray-300"
+                      />
+                      <Label htmlFor="hub-option" className="flex items-center cursor-pointer">
+                        <Building2 className="mr-2 h-4 w-4" />
+                        Return to Hub
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        id="customer-option"
+                        name="dropoff-type"
+                        value="customer"
+                        checked={selectedDropOffType === "customer"}
+                        onChange={(e) => setSelectedDropOffType(e.target.value)}
+                        className="w-4 h-4 text-[#f7c948] border-gray-300"
+                      />
+                      <Label htmlFor="customer-option" className="flex items-center cursor-pointer">
+                        <Users className="mr-2 h-4 w-4" />
+                        Direct Transfer to Another Customer
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hub Selection */}
+                {selectedDropOffType === "hub" && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Select Hub</Label>
+                    <Select value={selectedHubId} onValueChange={setSelectedHubId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a hub location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hubs?.map((hub) => (
+                          <SelectItem key={hub.id} value={hub.id.toString()}>
+                            <div className="flex items-center">
+                              <Building2 className="mr-2 h-4 w-4" />
+                              {hub.name} - {hub.address}, {hub.city}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Customer Transfer Selection */}
+                {selectedDropOffType === "customer" && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Select Customer for Direct Transfer</Label>
+                    <Select value={selectedCustomerBookingId} onValueChange={setSelectedCustomerBookingId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a customer booking for delivery" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bookings?.filter(b => 
+                          b.status === "confirmed" && 
+                          b.id !== bookingToComplete.id &&
+                          b.dumpsterId === bookingToComplete.dumpsterId
+                        ).map((booking) => (
+                          <SelectItem key={booking.id} value={booking.id.toString()}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{booking.customerName}</span>
+                              <span className="text-sm text-gray-500">
+                                {booking.deliveryAddress}, {booking.deliveryCity} - {formatDate(booking.deliveryDate)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedDropOffType === "customer" && bookings?.filter(b => 
+                      b.status === "confirmed" && 
+                      b.id !== bookingToComplete.id &&
+                      b.dumpsterId === bookingToComplete.dumpsterId
+                    ).length === 0 && (
+                      <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded">
+                        No compatible customer bookings available for direct transfer. 
+                        Consider returning to hub instead.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Efficiency Note */}
+                {selectedDropOffType === "customer" && selectedCustomerBookingId && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-800">
+                      <strong>Smart Route:</strong> This direct transfer maximizes efficiency by skipping the hub completely.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDropOffDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCompleteBooking}
+                  disabled={!selectedDropOffType || 
+                    (selectedDropOffType === "hub" && !selectedHubId) ||
+                    (selectedDropOffType === "customer" && !selectedCustomerBookingId)
+                  }
+                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
+                >
+                  Complete Booking
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </AdminLayout>
   );
