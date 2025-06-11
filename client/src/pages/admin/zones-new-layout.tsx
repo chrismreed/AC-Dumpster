@@ -311,14 +311,14 @@ export default function ZonesNewLayoutPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
           <div>
-            <h1 className="text-3xl font-bold">Service Zones</h1>
-            <p className="text-gray-500">Manage your service areas and location-based pricing</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Service Zones</h1>
+            <p className="text-gray-500 text-sm sm:text-base">Manage your service areas and location-based pricing</p>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" /> Add Zone
               </Button>
             </DialogTrigger>
@@ -434,80 +434,82 @@ export default function ZonesNewLayoutPage() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid grid-cols-[300px_1fr] gap-4">
+          <div className="space-y-4 lg:grid lg:grid-cols-[320px_1fr] lg:gap-6 lg:space-y-0">
             {/* Zone List */}
-            <Card className="h-[calc(100vh-12rem)] overflow-hidden flex flex-col">
-              <CardHeader className="py-3">
+            <Card className="lg:h-[calc(100vh-12rem)] overflow-hidden flex flex-col">
+              <CardHeader className="py-3 px-4">
                 <CardTitle className="text-lg">Zones</CardTitle>
-                <CardDescription>Select a zone to edit</CardDescription>
+                <CardDescription className="hidden sm:block">Select a zone to edit</CardDescription>
               </CardHeader>
-              <CardContent className="p-0 overflow-y-auto flex-grow">
+              <CardContent className="p-0 lg:overflow-y-auto lg:flex-grow">
                 <div className="divide-y">
                   {zones && zones.length > 0 ? (
                     zones.map((zone) => (
                       <div
                         key={zone.id}
                         className={cn(
-                          "w-full p-3 hover:bg-muted flex items-center space-x-2 transition-colors border-b last:border-b-0",
+                          "w-full p-4 hover:bg-muted transition-colors",
                           selectedZone?.id === zone.id && "bg-muted"
                         )}
                       >
-                        <button
-                          className="flex-1 text-left flex items-center space-x-2"
-                          onClick={() => handleSelectZone(zone)}
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium">{zone.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {zone.zipCodes && zone.zipCodes.trim().length > 0 ? (
-                                // Has ZIP codes - this zone uses ZIP codes
-                                `ZIP codes: ${zone.zipCodes}`
-                              ) : zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
-                                // Has custom boundary and no ZIP codes - this zone uses custom boundary
-                                "Custom boundary defined"
-                              ) : zone.polygonPath ? (
-                                // Has empty polygonPath but no ZIP codes - boundary undefined
-                                <span className="text-red-500">Boundary undefined</span>
-                              ) : (
-                                // No ZIP codes and no polygon path
-                                "No service area defined"
-                              )}
+                        <div className="flex items-start justify-between">
+                          <button
+                            className="flex-1 text-left"
+                            onClick={() => handleSelectZone(zone)}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="font-medium text-base">{zone.name}</div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {zone.zipCodes && zone.zipCodes.trim().length > 0 ? (
+                                    `ZIP codes: ${zone.zipCodes}`
+                                  ) : zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
+                                    "Custom boundary defined"
+                                  ) : zone.polygonPath ? (
+                                    <span className="text-red-500">Boundary undefined</span>
+                                  ) : (
+                                    "No service area defined"
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center ml-2">
+                                {zone.zipCodes && zone.zipCodes.trim().length > 0 ? (
+                                  <MapPin className="h-4 w-4 text-blue-500" />
+                                ) : zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
+                                  <MapPin className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <MapPin className="h-4 w-4 text-red-500" />
+                                )}
+                              </div>
                             </div>
-                            <div className="text-xs mt-1 text-primary">
-                              ${(zone.deliveryFee / 100).toFixed(2)}
+                            <div className="text-sm font-medium text-primary">
+                              Delivery Fee: ${(zone.deliveryFee / 100).toFixed(2)}
                             </div>
-                          </div>
-                          <div className="flex items-center">
-                            {zone.zipCodes && zone.zipCodes.trim().length > 0 ? (
-                              <MapPin className="h-4 w-4 text-blue-500" />
-                            ) : zone.polygonPath && zone.polygonPath.trim().length > 0 ? (
-                              <MapPin className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <MapPin className="h-4 w-4 text-red-500" />
-                            )}
-                          </div>
-                        </button>
-                        <div className="flex space-x-1">
+                          </button>
+                        </div>
+                        <div className="flex justify-end space-x-2 mt-3 pt-3 border-t">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEdit(zone);
                             }}
-                            className="h-8 w-8 p-0"
+                            className="flex-1 sm:flex-none"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
                                 onClick={(e) => e.stopPropagation()}
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                className="text-red-500 hover:text-red-700 border-red-200 hover:border-red-300 flex-1 sm:flex-none"
                               >
-                                <Trash className="h-4 w-4" />
+                                <Trash className="h-4 w-4 mr-2" />
+                                Delete
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -533,8 +535,9 @@ export default function ZonesNewLayoutPage() {
                       </div>
                     ))
                   ) : (
-                    <div className="p-4 text-center text-muted-foreground">
-                      No service zones found. Add your first zone to get started.
+                    <div className="p-6 text-center text-muted-foreground">
+                      <div className="text-base mb-2">No service zones found</div>
+                      <div className="text-sm">Add your first zone to get started</div>
                     </div>
                   )}
                 </div>
