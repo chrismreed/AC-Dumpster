@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Booking, Dumpster } from "@shared/schema";
 import { 
   BarChart, 
@@ -570,6 +571,19 @@ export default function DashboardPage() {
                       <p><span className="font-medium">Zip Code:</span> {selectedBooking.deliveryZipCode}</p>
                       <p><span className="font-medium">Date:</span> {new Date(selectedBooking.deliveryDate).toLocaleDateString()}</p>
                       <p><span className="font-medium">Time Preference:</span> {selectedBooking.deliveryTimePreference}</p>
+                      <div className="mt-3">
+                        <Button 
+                          onClick={() => {
+                            const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                            const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                            window.open(mapsUrl, '_blank');
+                          }}
+                          className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
+                          size="sm"
+                        >
+                          Navigate to Address
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
