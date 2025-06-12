@@ -56,7 +56,6 @@ export default function BookingsPage() {
   const [selectedCustomerBookingId, setSelectedCustomerBookingId] = useState<string>("");
   const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
   const [selectedBookings, setSelectedBookings] = useState<Set<number>>(new Set());
-  const [expandedBookings, setExpandedBookings] = useState<Set<number>>(new Set());
   const [sortBy, setSortBy] = useState<string>("deliveryDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   // Define status progression order
@@ -315,16 +314,6 @@ export default function BookingsPage() {
       newSelected.delete(bookingId);
     }
     setSelectedBookings(newSelected);
-  };
-
-  const toggleExpandedBooking = (bookingId: number) => {
-    const newExpanded = new Set(expandedBookings);
-    if (newExpanded.has(bookingId)) {
-      newExpanded.delete(bookingId);
-    } else {
-      newExpanded.add(bookingId);
-    }
-    setExpandedBookings(newExpanded);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -1016,9 +1005,9 @@ export default function BookingsPage() {
                             <TableRow 
                               className="md:hover:bg-gray-50 cursor-pointer md:cursor-default"
                               onClick={() => {
-                                // Only expand on mobile
+                                // Open view modal on mobile
                                 if (window.innerWidth < 768) {
-                                  toggleExpandedBooking(booking.id);
+                                  handleViewBooking(booking);
                                 }
                               }}
                             >
@@ -1123,56 +1112,6 @@ export default function BookingsPage() {
                                 </div>
                               </TableCell>
                             </TableRow>
-                            {/* Mobile Expanded Details */}
-                            {expandedBookings.has(booking.id) && (
-                              <TableRow className="md:hidden bg-gray-50">
-                                <TableCell colSpan={8} className="p-4">
-                                  <div className="space-y-3">
-                                    {/* Customer Info */}
-                                    <div>
-                                      <h4 className="font-medium text-sm mb-2">Customer Information</h4>
-                                      <div className="grid grid-cols-2 gap-2 text-xs">
-                                        <div>
-                                          <span className="text-gray-500">Email:</span>
-                                          <div>{booking.customerEmail}</div>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">Phone:</span>
-                                          <div>{booking.customerPhone}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Delivery Info */}
-                                    <div>
-                                      <h4 className="font-medium text-sm mb-2">Delivery Details</h4>
-                                      <div className="text-xs space-y-1">
-                                        <div>
-                                          <span className="text-gray-500">Address:</span>
-                                          <div>{booking.deliveryAddress}</div>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">City & ZIP:</span>
-                                          <div>{booking.deliveryCity}, {booking.deliveryZipCode}</div>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">Dumpster:</span>
-                                          <div>{getDumpsterName(booking.dumpsterId)}</div>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">Pickup Date:</span>
-                                          <div>{getPickupDate(booking.deliveryDate, booking.pricingId)}</div>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">Total:</span>
-                                          <div className="font-medium">${(booking.totalPrice / 100).toFixed(2)}</div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
                           </React.Fragment>
                         ))
                       )}
@@ -1418,11 +1357,11 @@ export default function BookingsPage() {
                     </div>
                     <div>
                       <Label className="text-sm text-gray-500">Add-ons</Label>
-                      <p className="font-medium">{getAddonNames(selectedBooking.addons)}</p>
+                      <p className="font-medium">{getAddonNames(selectedBooking.selectedAddOns)}</p>
                     </div>
                     <div>
                       <Label className="text-sm text-gray-500">Zone</Label>
-                      <p className="font-medium">{getZoneName(selectedBooking.zoneId)}</p>
+                      <p className="font-medium">{getZoneName(selectedBooking.serviceZoneId)}</p>
                     </div>
                   </div>
                 </div>
@@ -1441,12 +1380,12 @@ export default function BookingsPage() {
                   </div>
                 </div>
 
-                {/* Special Instructions */}
-                {selectedBooking.specialInstructions && (
+                {/* Delivery Instructions */}
+                {selectedBooking.deliveryInstructions && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Special Instructions</h3>
+                    <h3 className="text-lg font-semibold mb-3">Delivery Instructions</h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <p>{selectedBooking.specialInstructions}</p>
+                      <p>{selectedBooking.deliveryInstructions}</p>
                     </div>
                   </div>
                 )}
