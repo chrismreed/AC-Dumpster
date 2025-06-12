@@ -307,6 +307,11 @@ export default function BookingsPage() {
     }
   };
 
+  const handleViewBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsViewDialogOpen(true);
+  };
+
   const handleSelectBooking = (bookingId: number, checked: boolean) => {
     const newSelected = new Set(selectedBookings);
     if (checked) {
@@ -1100,17 +1105,27 @@ export default function BookingsPage() {
                               </TableCell>
                               <TableCell className="hidden md:table-cell text-xs">${(booking.totalPrice / 100).toFixed(2)}</TableCell>
                               <TableCell onClick={(e) => e.stopPropagation()}>
-                                <Button 
-                                  onClick={() => {
-                                    const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
-                                    const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                                    window.open(mapsUrl, '_blank');
-                                  }}
-                                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
-                                  size="sm"
-                                >
-                                  <MapPin className="h-3 w-3" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button 
+                                    onClick={() => handleViewBooking(booking)}
+                                    variant="outline"
+                                    className="h-6 w-6 p-0"
+                                    size="sm"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    onClick={() => {
+                                      const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                      const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                      window.open(mapsUrl, '_blank');
+                                    }}
+                                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
+                                    size="sm"
+                                  >
+                                    <MapPin className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                             {/* Mobile Expanded Details */}
