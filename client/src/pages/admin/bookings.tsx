@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ export default function BookingsPage() {
   const [selectedCustomerBookingId, setSelectedCustomerBookingId] = useState<string>("");
   const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
   const [selectedBookings, setSelectedBookings] = useState<Set<number>>(new Set());
+  const [expandedBookings, setExpandedBookings] = useState<Set<number>>(new Set());
   const [sortBy, setSortBy] = useState<string>("deliveryDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   // Define status progression order
@@ -314,6 +315,16 @@ export default function BookingsPage() {
       newSelected.delete(bookingId);
     }
     setSelectedBookings(newSelected);
+  };
+
+  const toggleExpandedBooking = (bookingId: number) => {
+    const newExpanded = new Set(expandedBookings);
+    if (newExpanded.has(bookingId)) {
+      newExpanded.delete(bookingId);
+    } else {
+      newExpanded.add(bookingId);
+    }
+    setExpandedBookings(newExpanded);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -1001,98 +1012,158 @@ export default function BookingsPage() {
                         </TableRow>
                       ) : (
                         sortedAndFilteredBookings.map((booking) => (
-                          <TableRow key={booking.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedBookings.has(booking.id)}
-                                onCheckedChange={(checked) => handleSelectBooking(booking.id, checked as boolean)}
-                              />
-                            </TableCell>
-                            <TableCell className="text-xs">{booking.id}</TableCell>
-                            <TableCell className="text-xs">{booking.customerName}</TableCell>
-                            <TableCell className="hidden lg:table-cell text-xs">{getDumpsterName(booking.dumpsterId)?.replace('Yard Dumpster', 'yd') || 'N/A'}</TableCell>
-                            <TableCell className="text-xs">{formatDate(booking.deliveryDate)}</TableCell>
-                            <TableCell className="hidden xl:table-cell text-xs">{booking.deliveryZipCode}</TableCell>
-                            <TableCell>
-                              {/* Mobile: Status dropdown */}
-                              <div className="md:hidden">
-                                <Select 
-                                  value={booking.status} 
-                                  onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
-                                >
-                                  <SelectTrigger className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0">
-                                    {getStatusBadge(booking.status)}
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {statusOrder.map((status) => (
-                                      <SelectItem 
-                                        key={status.value} 
-                                        value={status.value}
-                                        className={isStatusCompleted(status.value, booking.status) ? "line-through text-gray-400" : ""}
-                                      >
-                                        <span className="flex items-center gap-2">
-                                          {status.step > 0 && (
-                                            <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
-                                              {status.step}
+                          <React.Fragment key={booking.id}>
+                            <TableRow 
+                              className="md:hover:bg-gray-50 cursor-pointer md:cursor-default"
+                              onClick={() => {
+                                // Only expand on mobile
+                                if (window.innerWidth < 768) {
+                                  toggleExpandedBooking(booking.id);
+                                }
+                              }}
+                            >
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedBookings.has(booking.id)}
+                                  onCheckedChange={(checked) => handleSelectBooking(booking.id, checked as boolean)}
+                                />
+                              </TableCell>
+                              <TableCell className="text-xs">{booking.id}</TableCell>
+                              <TableCell className="text-xs">{booking.customerName}</TableCell>
+                              <TableCell className="hidden lg:table-cell text-xs">{getDumpsterName(booking.dumpsterId)?.replace('Yard Dumpster', 'yd') || 'N/A'}</TableCell>
+                              <TableCell className="text-xs">{formatDate(booking.deliveryDate)}</TableCell>
+                              <TableCell className="hidden xl:table-cell text-xs">{booking.deliveryZipCode}</TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                {/* Mobile: Status dropdown */}
+                                <div className="md:hidden">
+                                  <Select 
+                                    value={booking.status} 
+                                    onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
+                                  >
+                                    <SelectTrigger className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0">
+                                      {getStatusBadge(booking.status)}
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {statusOrder.map((status) => (
+                                        <SelectItem 
+                                          key={status.value} 
+                                          value={status.value}
+                                          className={isStatusCompleted(status.value, booking.status) ? "line-through text-gray-400" : ""}
+                                        >
+                                          <span className="flex items-center gap-2">
+                                            {status.step > 0 && (
+                                              <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
+                                                {status.step}
+                                              </span>
+                                            )}
+                                            <span className={isStatusCompleted(status.value, booking.status) ? "line-through" : ""}>
+                                              {status.label}
                                             </span>
-                                          )}
-                                          <span className={isStatusCompleted(status.value, booking.status) ? "line-through" : ""}>
-                                            {status.label}
                                           </span>
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              {/* Desktop: Status dropdown */}
-                              <div className="hidden md:block">
-                                <Select 
-                                  value={booking.status} 
-                                  onValueChange={(value) => handleStatusChange(booking.id, value)}
-                                >
-                                  <SelectTrigger className="w-24 h-7 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {statusOrder.map((status) => (
-                                      <SelectItem 
-                                        key={status.value} 
-                                        value={status.value}
-                                        className={isStatusCompleted(status.value, booking.status) ? "line-through text-gray-400" : ""}
-                                      >
-                                        <span className="flex items-center gap-2">
-                                          {status.step > 0 && (
-                                            <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
-                                              {status.step}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                {/* Desktop: Status dropdown */}
+                                <div className="hidden md:block">
+                                  <Select 
+                                    value={booking.status} 
+                                    onValueChange={(value) => handleStatusChange(booking.id, value)}
+                                  >
+                                    <SelectTrigger className="w-24 h-7 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {statusOrder.map((status) => (
+                                        <SelectItem 
+                                          key={status.value} 
+                                          value={status.value}
+                                          className={isStatusCompleted(status.value, booking.status) ? "line-through text-gray-400" : ""}
+                                        >
+                                          <span className="flex items-center gap-2">
+                                            {status.step > 0 && (
+                                              <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
+                                                {status.step}
+                                              </span>
+                                            )}
+                                            <span className={isStatusCompleted(status.value, booking.status) ? "line-through" : ""}>
+                                              {status.label}
                                             </span>
-                                          )}
-                                          <span className={isStatusCompleted(status.value, booking.status) ? "line-through" : ""}>
-                                            {status.label}
                                           </span>
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell text-xs">${(booking.totalPrice / 100).toFixed(2)}</TableCell>
-                            <TableCell>
-                              <Button 
-                                onClick={() => {
-                                  const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
-                                  const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                                  window.open(mapsUrl, '_blank');
-                                }}
-                                className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
-                                size="sm"
-                              >
-                                <MapPin className="h-3 w-3" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell text-xs">${(booking.totalPrice / 100).toFixed(2)}</TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <Button 
+                                  onClick={() => {
+                                    const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                    const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                    window.open(mapsUrl, '_blank');
+                                  }}
+                                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
+                                  size="sm"
+                                >
+                                  <MapPin className="h-3 w-3" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                            {/* Mobile Expanded Details */}
+                            {expandedBookings.has(booking.id) && (
+                              <TableRow className="md:hidden bg-gray-50">
+                                <TableCell colSpan={8} className="p-4">
+                                  <div className="space-y-3">
+                                    {/* Customer Info */}
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2">Customer Information</h4>
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <span className="text-gray-500">Email:</span>
+                                          <div>{booking.customerEmail}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Phone:</span>
+                                          <div>{booking.customerPhone}</div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Delivery Info */}
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2">Delivery Details</h4>
+                                      <div className="text-xs space-y-1">
+                                        <div>
+                                          <span className="text-gray-500">Address:</span>
+                                          <div>{booking.deliveryAddress}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">City & ZIP:</span>
+                                          <div>{booking.deliveryCity}, {booking.deliveryZipCode}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Dumpster:</span>
+                                          <div>{getDumpsterName(booking.dumpsterId)}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Pickup Date:</span>
+                                          <div>{getPickupDate(booking.deliveryDate, booking.pricingId)}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Total:</span>
+                                          <div className="font-medium">${(booking.totalPrice / 100).toFixed(2)}</div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
                         ))
                       )}
                     </TableBody>
