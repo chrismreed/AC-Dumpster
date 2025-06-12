@@ -29,7 +29,7 @@ function calculateBookingCenter(markers: Array<{ booking: Booking; position: goo
   }
   
   if (markers.length === 1) {
-    return { center: markers[0].position, zoom: 12 };
+    return { center: markers[0].position, zoom: 10 };
   }
   
   // Calculate bounds of all markers
@@ -48,17 +48,20 @@ function calculateBookingCenter(markers: Array<{ booking: Booking; position: goo
   const centerLat = (minLat + maxLat) / 2;
   const centerLng = (minLng + maxLng) / 2;
   
-  // Calculate appropriate zoom level
+  // Calculate appropriate zoom level with padding
   const latDiff = maxLat - minLat;
   const lngDiff = maxLng - minLng;
   const maxDiff = Math.max(latDiff, lngDiff);
   
+  // Add padding factor to zoom out a bit more
+  const paddedDiff = maxDiff * 1.5; // 50% more area for padding
+  
   let zoom = 10;
-  if (maxDiff > 2) zoom = 8;
-  else if (maxDiff > 1) zoom = 9;
-  else if (maxDiff > 0.5) zoom = 10;
-  else if (maxDiff > 0.1) zoom = 11;
-  else zoom = 12;
+  if (paddedDiff > 2) zoom = 7;
+  else if (paddedDiff > 1) zoom = 8;
+  else if (paddedDiff > 0.5) zoom = 9;
+  else if (paddedDiff > 0.1) zoom = 10;
+  else zoom = 11;
   
   return { center: { lat: centerLat, lng: centerLng }, zoom };
 }
