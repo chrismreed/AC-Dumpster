@@ -1197,22 +1197,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const totalAmount = unpaidCharges.reduce((sum, charge) => sum + charge.amount, 0);
 
+      // Create Stripe products and prices first, then payment link
+      const lineItems = [];
+      
+      for (const charge of unpaidCharges) {
+        const product = await stripe.products.create({
+          name: `Additional Charge: ${charge.description}`,
+          metadata: {
+            booking_id: bookingId.toString(),
+            charge_id: charge.id.toString(),
+          }
+        });
+        
+        const price = await stripe.prices.create({
+          currency: 'usd',
+          unit_amount: charge.amount,
+          product: product.id,
+        });
+        
+        lineItems.push({
+          price: price.id,
+          quantity: 1,
+        });
+      }
+
       // Create Stripe payment link
       const paymentLink = await stripe.paymentLinks.create({
-        line_items: unpaidCharges.map(charge => ({
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Additional Charge: ${charge.description}`,
-              metadata: {
-                booking_id: bookingId.toString(),
-                charge_id: charge.id.toString(),
-              }
-            },
-            unit_amount: charge.amount,
-          },
-          quantity: 1,
-        })),
+        line_items: lineItems,
         metadata: {
           booking_id: bookingId.toString(),
           customer_name: booking.customerName,

@@ -118,9 +118,10 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
   // Create payment link mutation
   const createPaymentLinkMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", `/api/bookings/${bookingId}/payment-link`);
+      const response = await apiRequest("POST", `/api/bookings/${bookingId}/payment-link`);
+      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings", bookingId, "payment-links"] });
       toast({
         title: "Success",
@@ -128,11 +129,13 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
       });
       
       // Copy link to clipboard
-      navigator.clipboard.writeText(data.paymentLink);
-      toast({
-        title: "Copied",
-        description: "Payment link copied to clipboard",
-      });
+      if (data.paymentLink) {
+        navigator.clipboard.writeText(data.paymentLink);
+        toast({
+          title: "Copied",
+          description: "Payment link copied to clipboard",
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -146,17 +149,18 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
   // Send payment link mutation
   const sendPaymentLinkMutation = useMutation({
     mutationFn: async (data: { method: string; recipient: string; paymentLinkId: number }) => {
-      return apiRequest("POST", `/api/payment-links/${data.paymentLinkId}/send`, {
+      const response = await apiRequest("POST", `/api/payment-links/${data.paymentLinkId}/send`, {
         method: data.method,
         recipient: data.recipient,
       });
+      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setIsSendDialogOpen(false);
       sendLinkForm.reset();
       toast({
         title: "Success",
-        description: data.message,
+        description: data.message || "Payment link sent successfully",
       });
     },
     onError: (error) => {
@@ -168,7 +172,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
     },
   });
 
-  const unpaidCharges = charges.filter((charge: AdditionalCharge) => !charge.isPaid);
+  const unpaidCharges = (charges as AdditionalCharge[]).filter((charge: AdditionalCharge) => !charge.isPaid);
   const totalUnpaid = unpaidCharges.reduce((sum: number, charge: AdditionalCharge) => sum + charge.amount, 0);
   const hasUnpaidCharges = unpaidCharges.length > 0;
 
@@ -305,13 +309,13 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {charges.length === 0 ? (
+        {(charges as AdditionalCharge[]).length === 0 ? (
           <p className="text-muted-foreground text-center py-4">
             No additional charges for this booking
           </p>
         ) : (
           <div className="space-y-3">
-            {charges.map((charge: AdditionalCharge) => (
+            {(charges as AdditionalCharge[]).map((charge: AdditionalCharge) => (
               <div key={charge.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex-1">
                   <p className="font-medium">{charge.description}</p>
@@ -373,7 +377,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
             <Separator />
             <div className="space-y-3">
               <h4 className="font-medium">Payment Links</h4>
-              {paymentLinks.map((link: PaymentLink) => (
+              {(paymentLinks as PaymentLink[]).map((link: PaymentLink) => (
                 <div key={link.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium">${(link.totalAmount / 100).toFixed(2)}</p>

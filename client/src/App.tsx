@@ -19,6 +19,7 @@ import BookingsPage from "@/pages/admin/bookings";
 import HubsPage from "@/pages/admin/hubs";
 import PaymentSettingsPage from "@/pages/admin/payment-settings";
 import BookingConfirmationPage from "@/pages/booking-confirmation";
+import PaymentSuccessPage from "@/pages/payment-success";
 import { StickyHeader } from "@/components/layout/sticky-header";
 import { ImprovedFooter } from "@/components/layout/improved-footer";
 
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/booking-confirmation" component={BookingConfirmationPage} />
+      <Route path="/payment-success" component={PaymentSuccessPage} />
       <ProtectedRoute path="/admin" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dashboard" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dumpsters" component={DumpstersPage} adminOnly />
