@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { z } from "zod";
@@ -62,10 +62,11 @@ export default function AuthPage() {
   });
 
   // Redirect if already logged in
-  if (user) {
-    navigate(user.isAdmin ? "/admin/dashboard" : "/");
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate(user.isAdmin ? "/admin/dashboard" : "/");
+    }
+  }, [user, navigate]);
 
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data);
