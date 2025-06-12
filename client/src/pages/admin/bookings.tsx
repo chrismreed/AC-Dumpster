@@ -40,6 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BookingCalendar } from "@/components/admin/booking-calendar";
 import { DeliveryMap } from "@/components/admin/maps/delivery-map";
+import { AdditionalCharges } from "@/components/admin/additional-charges";
 import { Label } from "@/components/ui/label";
 
 export default function BookingsPage() {
@@ -1453,6 +1454,14 @@ export default function BookingsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Additional Charges */}
+                <AdditionalCharges 
+                  bookingId={selectedBooking.id}
+                  customerName={selectedBooking.customerName}
+                  customerEmail={selectedBooking.customerEmail}
+                  customerPhone={selectedBooking.customerPhone}
+                />
               </div>
             )}
             
