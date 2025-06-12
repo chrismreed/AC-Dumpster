@@ -218,11 +218,6 @@ export default function BookingsPage() {
     },
   });
 
-  const handleViewBooking = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setIsViewDialogOpen(true);
-  };
-
   const handleStatusChange = (id: number, status: string) => {
     try {
       // If changing to "complete", show drop-off location selection dialog
@@ -305,11 +300,6 @@ export default function BookingsPage() {
     if (bookingToDelete) {
       deleteBookingMutation.mutate(bookingToDelete.id);
     }
-  };
-
-  const handleViewBooking = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setIsViewDialogOpen(true);
   };
 
   const handleSelectBooking = (bookingId: number, checked: boolean) => {
@@ -1335,6 +1325,157 @@ export default function BookingsPage() {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* View Booking Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Booking Details</DialogTitle>
+              <DialogDescription>
+                Complete information for booking #{selectedBooking?.id}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedBooking && (
+              <div className="space-y-6">
+                {/* Customer Information */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <Users className="mr-2 h-5 w-5" />
+                    Customer Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-500">Name</Label>
+                      <p className="font-medium">{selectedBooking.customerName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Email</Label>
+                      <p className="font-medium">{selectedBooking.customerEmail}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Phone</Label>
+                      <p className="font-medium">{selectedBooking.customerPhone}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Status</Label>
+                      <div className="mt-1">
+                        {getStatusBadge(selectedBooking.status)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Information */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <MapPin className="mr-2 h-5 w-5" />
+                    Delivery Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-500">Address</Label>
+                      <p className="font-medium">{selectedBooking.deliveryAddress}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">City</Label>
+                      <p className="font-medium">{selectedBooking.deliveryCity}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">ZIP Code</Label>
+                      <p className="font-medium">{selectedBooking.deliveryZipCode}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Delivery Date</Label>
+                      <p className="font-medium">{formatDate(selectedBooking.deliveryDate)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Pickup Date</Label>
+                      <p className="font-medium">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Information */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <Package className="mr-2 h-5 w-5" />
+                    Service Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-500">Dumpster</Label>
+                      <p className="font-medium">{getDumpsterName(selectedBooking.dumpsterId)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Rental Duration</Label>
+                      <p className="font-medium">{getDurationDays(selectedBooking.pricingId)} days</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Add-ons</Label>
+                      <p className="font-medium">{getAddonNames(selectedBooking.addons)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Zone</Label>
+                      <p className="font-medium">{getZoneName(selectedBooking.zoneId)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing Information */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <DollarSign className="mr-2 h-5 w-5" />
+                    Pricing Details
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-center text-lg font-semibold">
+                      <span>Total Amount</span>
+                      <span>${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Special Instructions */}
+                {selectedBooking.specialInstructions && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Special Instructions</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p>{selectedBooking.specialInstructions}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Booking Metadata */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <Calendar className="mr-2 h-5 w-5" />
+                    Booking Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-gray-500">Booking ID</Label>
+                      <p className="font-medium">#{selectedBooking.id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-500">Created</Label>
+                      <p className="font-medium">{formatDate(selectedBooking.createdAt)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button 
+                onClick={() => setIsViewDialogOpen(false)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
