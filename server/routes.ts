@@ -1267,7 +1267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bookingId = Number(req.params.id);
       const paymentLinks = await storage.getPaymentLinks(bookingId);
-      console.log("Fetched payment links:", JSON.stringify(paymentLinks, null, 2));
+
       res.json(paymentLinks);
     } catch (err) {
       console.error("Error fetching payment links:", err);
