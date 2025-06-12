@@ -1027,7 +1027,7 @@ export default function BookingsPage() {
                                 <div className="md:hidden">
                                   <Select 
                                     value={booking.status} 
-                                    onValueChange={(value) => updateBookingStatusMutation.mutate({ id: booking.id, status: value })}
+                                    onValueChange={(value) => handleStatusChange(booking.id, value)}
                                   >
                                     <SelectTrigger className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0">
                                       {getStatusBadge(booking.status)}

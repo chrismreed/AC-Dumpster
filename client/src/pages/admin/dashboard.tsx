@@ -38,6 +38,11 @@ export default function DashboardPage() {
   const [dumpsterDistribution, setDumpsterDistribution] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [bookingToComplete, setBookingToComplete] = useState<Booking | null>(null);
+  const [isDropOffDialogOpen, setIsDropOffDialogOpen] = useState(false);
+  const [selectedDropOffType, setSelectedDropOffType] = useState<string>("");
+  const [selectedHubId, setSelectedHubId] = useState<string>("");
+  const [selectedCustomerBookingId, setSelectedCustomerBookingId] = useState<string>("");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -89,6 +94,84 @@ export default function DashboardPage() {
   const { data: addOns = [] } = useQuery({
     queryKey: ['/api/addons'],
   });
+
+  // Fetch hubs for drop-off selection
+  const { data: hubs = [] } = useQuery({
+    queryKey: ['/api/hubs'],
+  });
+
+  // Handle status change with drop-off dialog for completion
+  const handleStatusChange = (bookingId: number, newStatus: string) => {
+    const booking = bookings?.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    if (newStatus === "complete") {
+      // Set up for drop-off selection
+      setBookingToComplete(booking);
+      setSelectedDropOffType("");
+      setSelectedHubId("");
+      setSelectedCustomerBookingId("");
+      setIsDropOffDialogOpen(true);
+    } else {
+      // Direct status update for non-completion statuses
+      updateBookingStatusMutation.mutate({ bookingId, status: newStatus });
+    }
+  };
+
+  // Complete booking mutation
+  const completeBookingMutation = useMutation({
+    mutationFn: async ({ bookingId, dropOffLocation }: { bookingId: number; dropOffLocation: any }) => {
+      return apiRequest("PUT", `/api/bookings/${bookingId}`, {
+        status: "complete",
+        dropOffLocation,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      setIsDropOffDialogOpen(false);
+      setBookingToComplete(null);
+      toast({
+        title: "Booking Completed",
+        description: "The booking has been marked as complete with drop-off location.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to complete booking",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle completing booking with drop-off location
+  const handleCompleteBooking = () => {
+    if (!bookingToComplete) return;
+
+    let dropOffLocation;
+    if (selectedDropOffType === "hub" && selectedHubId) {
+      const hub = hubs.find(h => h.id === parseInt(selectedHubId));
+      dropOffLocation = {
+        type: "hub",
+        hubId: parseInt(selectedHubId),
+        address: `${hub.address}, ${hub.city}, ${hub.zipCode}`,
+      };
+    } else if (selectedDropOffType === "customer" && selectedCustomerBookingId) {
+      const customerBooking = bookings?.find(b => b.id === parseInt(selectedCustomerBookingId));
+      dropOffLocation = {
+        type: "customer",
+        bookingId: parseInt(selectedCustomerBookingId),
+        address: `${customerBooking?.deliveryAddress}, ${customerBooking?.deliveryCity}, ${customerBooking?.deliveryZipCode}`,
+      };
+    }
+
+    if (dropOffLocation) {
+      completeBookingMutation.mutate({
+        bookingId: bookingToComplete.id,
+        dropOffLocation,
+      });
+    }
+  };
 
   // Mutation for updating booking status
   const updateBookingStatusMutation = useMutation({
