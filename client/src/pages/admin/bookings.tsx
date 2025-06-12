@@ -1148,7 +1148,7 @@ export default function BookingsPage() {
         {/* Drop-off Location Selection Dialog */}
         {bookingToComplete && (
           <Dialog open={isDropOffDialogOpen} onOpenChange={setIsDropOffDialogOpen}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
               <DialogHeader>
                 <DialogTitle>Complete Booking - Select Drop-off Location</DialogTitle>
                 <DialogDescription>
@@ -1266,10 +1266,11 @@ export default function BookingsPage() {
                 )}
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="flex-col sm:flex-row gap-3">
                 <Button 
                   variant="outline" 
                   onClick={() => setIsDropOffDialogOpen(false)}
+                  className="w-full sm:w-auto order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -1279,7 +1280,7 @@ export default function BookingsPage() {
                     (selectedDropOffType === "hub" && !selectedHubId) ||
                     (selectedDropOffType === "customer" && !selectedCustomerBookingId)
                   }
-                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
+                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full sm:w-auto order-1 sm:order-2"
                 >
                   Complete Booking
                 </Button>
@@ -1459,9 +1460,11 @@ export default function BookingsPage() {
               <div className="flex gap-2">
                 <Button 
                   onClick={() => {
-                    const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
-                    const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                    window.open(mapsUrl, '_blank');
+                    if (selectedBooking) {
+                      const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                      const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                      window.open(mapsUrl, '_blank');
+                    }
                   }}
                   className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
                 >
