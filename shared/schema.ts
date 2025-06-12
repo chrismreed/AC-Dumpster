@@ -129,6 +129,29 @@ export const bookings = pgTable("bookings", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Additional charges for bookings
+export const additionalCharges = pgTable("additional_charges", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").notNull().references(() => bookings.id),
+  description: text("description").notNull(),
+  amount: integer("amount").notNull(), // In cents
+  isPaid: boolean("is_paid").default(false),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Payment links for additional charges
+export const paymentLinks = pgTable("payment_links", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").notNull().references(() => bookings.id),
+  stripePaymentLinkId: text("stripe_payment_link_id").notNull(),
+  totalAmount: integer("total_amount").notNull(), // In cents
+  status: text("status").notNull().default("pending"), // "pending", "paid", "expired"
+  expiresAt: timestamp("expires_at"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Schemas for insert operations
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -198,6 +221,18 @@ export const insertFleetUnitSchema = createInsertSchema(fleetUnits)
     updatedAt: true,
   });
 
+export const insertAdditionalChargeSchema = createInsertSchema(additionalCharges)
+  .omit({
+    id: true,
+    createdAt: true,
+  });
+
+export const insertPaymentLinkSchema = createInsertSchema(paymentLinks)
+  .omit({
+    id: true,
+    createdAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -225,3 +260,9 @@ export type InsertBooking = z.infer<typeof insertBookingSchema>;
 
 export type Hub = typeof hubs.$inferSelect;
 export type InsertHub = z.infer<typeof insertHubSchema>;
+
+export type AdditionalCharge = typeof additionalCharges.$inferSelect;
+export type InsertAdditionalCharge = z.infer<typeof insertAdditionalChargeSchema>;
+
+export type PaymentLink = typeof paymentLinks.$inferSelect;
+export type InsertPaymentLink = z.infer<typeof insertPaymentLinkSchema>;
