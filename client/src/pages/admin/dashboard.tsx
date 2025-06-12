@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -150,11 +152,11 @@ export default function DashboardPage() {
 
     let dropOffLocation;
     if (selectedDropOffType === "hub" && selectedHubId) {
-      const hub = hubs.find(h => h.id === parseInt(selectedHubId));
+      const hub = (hubs as any[]).find((h: any) => h.id === parseInt(selectedHubId));
       dropOffLocation = {
         type: "hub",
         hubId: parseInt(selectedHubId),
-        address: `${hub.address}, ${hub.city}, ${hub.zipCode}`,
+        address: `${hub?.address}, ${hub?.city}, ${hub?.zipCode}`,
       };
     } else if (selectedDropOffType === "customer" && selectedCustomerBookingId) {
       const customerBooking = bookings?.find(b => b.id === parseInt(selectedCustomerBookingId));
@@ -656,7 +658,7 @@ export default function DashboardPage() {
                                   >
                                     <Select 
                                       value={booking.status} 
-                                      onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                                      onValueChange={(value) => handleStatusChange(booking.id, value)}
                                     >
                                       <SelectTrigger 
                                         className="w-auto h-auto border-none p-0 shadow-none bg-transparent focus:ring-0"
@@ -726,7 +728,7 @@ export default function DashboardPage() {
                             {booking && (
                               <Select 
                                 value={booking.status} 
-                                onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: booking.id, status: value })}
+                                onValueChange={(value) => handleStatusChange(booking.id, value)}
                               >
                                 <SelectTrigger className="w-32 h-8 text-xs">
                                   <SelectValue />
@@ -906,12 +908,7 @@ export default function DashboardPage() {
                   <span className="font-medium">Status:</span>
                   <Select
                     value={selectedBooking.status}
-                    onValueChange={(newStatus) => {
-                      updateBookingStatusMutation.mutate({
-                        bookingId: selectedBooking.id,
-                        status: newStatus
-                      });
-                    }}
+                    onValueChange={(newStatus) => handleStatusChange(selectedBooking.id, newStatus)}
                     disabled={updateBookingStatusMutation.isPending}
                   >
                     <SelectTrigger className="w-32">
@@ -1020,6 +1017,109 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Drop-off Location Selection Dialog */}
+        {bookingToComplete && (
+          <Dialog open={isDropOffDialogOpen} onOpenChange={setIsDropOffDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+              <DialogHeader>
+                <DialogTitle>Complete Booking - Select Drop-off Location</DialogTitle>
+                <DialogDescription>
+                  Booking #{bookingToComplete.id} - {bookingToComplete.customerName}
+                  <br />
+                  Where should the dumpster be dropped off after pickup?
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                {/* Drop-off Type Selection */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Drop-off Destination</Label>
+                  <RadioGroup value={selectedDropOffType} onValueChange={setSelectedDropOffType}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="hub" id="hub" />
+                      <Label htmlFor="hub">Drop off at Hub</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="customer" id="customer" />
+                      <Label htmlFor="customer">Transfer to Another Customer</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Hub Selection */}
+                {selectedDropOffType === "hub" && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Select Hub</Label>
+                    <Select value={selectedHubId} onValueChange={setSelectedHubId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a hub..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(hubs as any[]).map((hub: any) => (
+                          <SelectItem key={hub.id} value={hub.id.toString()}>
+                            {hub.name} - {hub.address}, {hub.city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Customer Booking Selection */}
+                {selectedDropOffType === "customer" && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Select Customer Booking</Label>
+                    <Select value={selectedCustomerBookingId} onValueChange={setSelectedCustomerBookingId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a customer booking..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bookings?.filter(b => 
+                          b.id !== bookingToComplete.id && 
+                          b.status === "confirmed"
+                        ).map((booking) => (
+                          <SelectItem key={booking.id} value={booking.id.toString()}>
+                            {booking.customerName} - {booking.deliveryAddress}, {booking.deliveryCity}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Smart Route Notice */}
+                {selectedDropOffType === "customer" && selectedCustomerBookingId && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-800">
+                      <strong>Smart Route:</strong> This direct transfer maximizes efficiency by skipping the hub completely.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="flex-col sm:flex-row gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDropOffDialogOpen(false)}
+                  className="w-full sm:w-auto order-2 sm:order-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCompleteBooking}
+                  disabled={!selectedDropOffType || 
+                    (selectedDropOffType === "hub" && !selectedHubId) ||
+                    (selectedDropOffType === "customer" && !selectedCustomerBookingId)
+                  }
+                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full sm:w-auto order-1 sm:order-2"
+                >
+                  Complete Booking
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         )}
