@@ -11,7 +11,8 @@ import {
   insertRentalDurationSchema,
   insertBookingSchema,
   insertDumpsterPricingSchema,
-  insertHubSchema 
+  insertHubSchema,
+  insertAdditionalChargeSchema
 } from "@shared/schema";
 
 // Check for Stripe secret key
@@ -1107,6 +1108,220 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json({ received: true });
+  });
+
+  // Additional charges routes
+  app.get("/api/bookings/:id/additional-charges", isAdmin, async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      const charges = await storage.getAdditionalCharges(bookingId);
+      res.json(charges);
+    } catch (err) {
+      console.error("Error fetching additional charges:", err);
+      res.status(500).json({ message: "Failed to fetch additional charges" });
+    }
+  });
+
+  app.post("/api/bookings/:id/additional-charges", isAdmin, async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const validatedData = insertAdditionalChargeSchema.parse({
+        ...req.body,
+        bookingId,
+        createdBy: userId,
+      });
+
+      const charge = await storage.createAdditionalCharge(validatedData);
+      res.status(201).json(charge);
+    } catch (err) {
+      console.error("Error creating additional charge:", err);
+      res.status(500).json({ message: "Failed to create additional charge" });
+    }
+  });
+
+  app.put("/api/additional-charges/:id", isAdmin, async (req, res) => {
+    try {
+      const chargeId = Number(req.params.id);
+      const { description, amount } = req.body;
+
+      const charge = await storage.updateAdditionalCharge(chargeId, { description, amount });
+      if (!charge) {
+        return res.status(404).json({ message: "Additional charge not found" });
+      }
+      res.json(charge);
+    } catch (err) {
+      console.error("Error updating additional charge:", err);
+      res.status(500).json({ message: "Failed to update additional charge" });
+    }
+  });
+
+  app.delete("/api/additional-charges/:id", isAdmin, async (req, res) => {
+    try {
+      const chargeId = Number(req.params.id);
+      const success = await storage.deleteAdditionalCharge(chargeId);
+      if (!success) {
+        return res.status(404).json({ message: "Additional charge not found" });
+      }
+      res.json({ message: "Additional charge deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting additional charge:", err);
+      res.status(500).json({ message: "Failed to delete additional charge" });
+    }
+  });
+
+  // Payment link routes
+  app.post("/api/bookings/:id/payment-link", isAdmin, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
+
+      const bookingId = Number(req.params.id);
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Get additional charges for this booking
+      const additionalCharges = await storage.getAdditionalCharges(bookingId);
+      const unpaidCharges = additionalCharges.filter(charge => !charge.isPaid);
+      
+      if (unpaidCharges.length === 0) {
+        return res.status(400).json({ message: "No unpaid charges found" });
+      }
+
+      const totalAmount = unpaidCharges.reduce((sum, charge) => sum + charge.amount, 0);
+
+      // Create Stripe payment link
+      const paymentLink = await stripe.paymentLinks.create({
+        line_items: unpaidCharges.map(charge => ({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Additional Charge: ${charge.description}`,
+              metadata: {
+                booking_id: bookingId.toString(),
+                charge_id: charge.id.toString(),
+              }
+            },
+            unit_amount: charge.amount,
+          },
+          quantity: 1,
+        })),
+        metadata: {
+          booking_id: bookingId.toString(),
+          customer_name: booking.customerName,
+          customer_email: booking.customerEmail,
+        },
+        after_completion: {
+          type: 'redirect',
+          redirect: {
+            url: `${req.protocol}://${req.get('host')}/payment-success?booking=${bookingId}`,
+          },
+        },
+        automatic_tax: { enabled: false },
+        billing_address_collection: 'auto',
+        shipping_address_collection: {
+          allowed_countries: ['US'],
+        },
+      });
+
+      // Store payment link in database
+      const paymentLinkRecord = await storage.createPaymentLink({
+        bookingId,
+        stripePaymentLinkId: paymentLink.id,
+        totalAmount,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+      });
+
+      res.json({
+        paymentLink: paymentLink.url,
+        paymentLinkId: paymentLinkRecord.id,
+        totalAmount,
+        unpaidCharges,
+      });
+    } catch (err) {
+      console.error("Error creating payment link:", err);
+      res.status(500).json({ message: "Failed to create payment link" });
+    }
+  });
+
+  app.get("/api/bookings/:id/payment-links", isAdmin, async (req, res) => {
+    try {
+      const bookingId = Number(req.params.id);
+      const paymentLinks = await storage.getPaymentLinks(bookingId);
+      res.json(paymentLinks);
+    } catch (err) {
+      console.error("Error fetching payment links:", err);
+      res.status(500).json({ message: "Failed to fetch payment links" });
+    }
+  });
+
+  // Send payment link via email/SMS
+  app.post("/api/payment-links/:id/send", isAdmin, async (req, res) => {
+    try {
+      const paymentLinkId = Number(req.params.id);
+      const { method, recipient } = req.body; // method: 'email' or 'sms', recipient: email or phone
+
+      const paymentLinkRecord = await storage.getPaymentLink(paymentLinkId);
+      if (!paymentLinkRecord) {
+        return res.status(404).json({ message: "Payment link not found" });
+      }
+
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
+
+      // Get the actual Stripe payment link
+      const stripePaymentLink = await stripe.paymentLinks.retrieve(paymentLinkRecord.stripePaymentLinkId);
+      const booking = await storage.getBooking(paymentLinkRecord.bookingId);
+
+      if (method === 'email') {
+        // In a production environment, you would integrate with an email service
+        // For now, we'll return the email content that should be sent
+        const emailContent = {
+          to: recipient,
+          subject: `Payment Required - Additional Charges for Booking #${booking?.id}`,
+          html: `
+            <h2>Payment Required</h2>
+            <p>Dear ${booking?.customerName},</p>
+            <p>Additional charges have been added to your dumpster rental booking #${booking?.id}.</p>
+            <p><strong>Total Amount Due:</strong> $${(paymentLinkRecord.totalAmount / 100).toFixed(2)}</p>
+            <p>Please click the link below to complete your payment:</p>
+            <a href="${stripePaymentLink.url}" style="background: #f7c948; color: black; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Pay Now</a>
+            <p>This payment link will expire in 24 hours.</p>
+            <p>Thank you for your business!</p>
+          `,
+          text: `Payment Required - Additional charges for booking #${booking?.id}. Amount due: $${(paymentLinkRecord.totalAmount / 100).toFixed(2)}. Pay now: ${stripePaymentLink.url}`
+        };
+
+        res.json({ 
+          message: "Email content generated", 
+          emailContent,
+          note: "Integrate with email service to actually send"
+        });
+      } else if (method === 'sms') {
+        // In a production environment, you would integrate with Twilio or similar SMS service
+        const smsContent = `Payment required for dumpster rental booking #${booking?.id}. Amount due: $${(paymentLinkRecord.totalAmount / 100).toFixed(2)}. Pay now: ${stripePaymentLink.url}`;
+        
+        res.json({ 
+          message: "SMS content generated", 
+          smsContent,
+          to: recipient,
+          note: "Integrate with SMS service to actually send"
+        });
+      } else {
+        res.status(400).json({ message: "Invalid method. Use 'email' or 'sms'" });
+      }
+    } catch (err) {
+      console.error("Error sending payment link:", err);
+      res.status(500).json({ message: "Failed to send payment link" });
+    }
   });
 
   const httpServer = createServer(app);

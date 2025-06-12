@@ -22,7 +22,13 @@ import {
   type InsertDumpsterPricing,
   hubs,
   type Hub,
-  type InsertHub
+  type InsertHub,
+  additionalCharges,
+  type AdditionalCharge,
+  type InsertAdditionalCharge,
+  paymentLinks,
+  type PaymentLink,
+  type InsertPaymentLink
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -96,6 +102,18 @@ export interface IStorage {
   deleteHub(id: number): Promise<boolean>;
   unsetMainHub(): Promise<void>;
   getMainHub(): Promise<Hub | undefined>;
+
+  // Additional charges methods
+  getAdditionalCharges(bookingId: number): Promise<AdditionalCharge[]>;
+  createAdditionalCharge(charge: InsertAdditionalCharge): Promise<AdditionalCharge>;
+  updateAdditionalCharge(id: number, charge: Partial<InsertAdditionalCharge>): Promise<AdditionalCharge | undefined>;
+  deleteAdditionalCharge(id: number): Promise<boolean>;
+
+  // Payment links methods
+  getPaymentLinks(bookingId: number): Promise<PaymentLink[]>;
+  getPaymentLink(id: number): Promise<PaymentLink | undefined>;
+  createPaymentLink(link: InsertPaymentLink): Promise<PaymentLink>;
+  updatePaymentLinkStatus(id: number, status: string, paidAt?: Date): Promise<PaymentLink | undefined>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -988,6 +1006,59 @@ export class DatabaseStorage implements IStorage {
   async getMainHub(): Promise<Hub | undefined> {
     const [hub] = await db.select().from(hubs).where(and(eq(hubs.isMainHub, true), eq(hubs.isActive, true)));
     return hub;
+  }
+
+  // Additional charges methods
+  async getAdditionalCharges(bookingId: number): Promise<AdditionalCharge[]> {
+    return db.select().from(additionalCharges).where(eq(additionalCharges.bookingId, bookingId));
+  }
+
+  async createAdditionalCharge(charge: InsertAdditionalCharge): Promise<AdditionalCharge> {
+    const [newCharge] = await db.insert(additionalCharges).values(charge).returning();
+    return newCharge;
+  }
+
+  async updateAdditionalCharge(id: number, charge: Partial<InsertAdditionalCharge>): Promise<AdditionalCharge | undefined> {
+    const [updatedCharge] = await db
+      .update(additionalCharges)
+      .set(charge)
+      .where(eq(additionalCharges.id, id))
+      .returning();
+    return updatedCharge;
+  }
+
+  async deleteAdditionalCharge(id: number): Promise<boolean> {
+    const result = await db.delete(additionalCharges).where(eq(additionalCharges.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Payment links methods
+  async getPaymentLinks(bookingId: number): Promise<PaymentLink[]> {
+    return db.select().from(paymentLinks).where(eq(paymentLinks.bookingId, bookingId));
+  }
+
+  async getPaymentLink(id: number): Promise<PaymentLink | undefined> {
+    const [link] = await db.select().from(paymentLinks).where(eq(paymentLinks.id, id));
+    return link;
+  }
+
+  async createPaymentLink(link: InsertPaymentLink): Promise<PaymentLink> {
+    const [newLink] = await db.insert(paymentLinks).values(link).returning();
+    return newLink;
+  }
+
+  async updatePaymentLinkStatus(id: number, status: string, paidAt?: Date): Promise<PaymentLink | undefined> {
+    const updateData: any = { status };
+    if (paidAt) {
+      updateData.paidAt = paidAt;
+    }
+    
+    const [updatedLink] = await db
+      .update(paymentLinks)
+      .set(updateData)
+      .where(eq(paymentLinks.id, id))
+      .returning();
+    return updatedLink;
   }
 }
 
