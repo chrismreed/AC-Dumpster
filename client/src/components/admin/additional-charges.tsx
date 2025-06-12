@@ -44,8 +44,10 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
 
   // Fetch additional charges
   const { data: charges = [], isLoading: chargesLoading } = useQuery({
-    queryKey: ["/api/bookings", bookingId, "additional-charges"],
+    queryKey: [`/api/bookings/${bookingId}/additional-charges`],
   });
+
+  console.log("Charges received in component:", charges);
 
   // Fetch payment links
   const { data: paymentLinks = [], isLoading: linksLoading } = useQuery({
@@ -326,6 +328,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="font-semibold">${(charge.amount / 100).toFixed(2)}</p>
+                    {console.log("Charge amount:", charge.amount, "Type:", typeof charge.amount)}
                     <Badge variant={charge.isPaid ? "default" : "secondary"}>
                       {charge.isPaid ? "Paid" : "Unpaid"}
                     </Badge>
