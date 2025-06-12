@@ -68,6 +68,16 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
     },
   });
 
+  // Auto-populate recipient field based on method selection
+  const watchedMethod = sendLinkForm.watch("method");
+  useEffect(() => {
+    if (watchedMethod === "email") {
+      sendLinkForm.setValue("recipient", customerEmail);
+    } else if (watchedMethod === "sms") {
+      sendLinkForm.setValue("recipient", customerPhone);
+    }
+  }, [watchedMethod, customerEmail, customerPhone]);
+
   // Add charge mutation
   const addChargeMutation = useMutation({
     mutationFn: async (data: { description: string; amount: number }) => {
