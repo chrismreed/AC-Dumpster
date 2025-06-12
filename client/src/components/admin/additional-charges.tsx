@@ -372,7 +372,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
           </>
         )}
 
-        {paymentLinks.length > 0 && (
+        {(paymentLinks as PaymentLink[]).length > 0 && (
           <>
             <Separator />
             <div className="space-y-3">
