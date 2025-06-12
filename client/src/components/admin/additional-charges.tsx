@@ -47,11 +47,9 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
     queryKey: [`/api/bookings/${bookingId}/additional-charges`],
   });
 
-  console.log("Charges received in component:", charges);
-
   // Fetch payment links
   const { data: paymentLinks = [], isLoading: linksLoading } = useQuery({
-    queryKey: ["/api/bookings", bookingId, "payment-links"],
+    queryKey: [`/api/bookings/${bookingId}/payment-links`],
   });
 
   const addChargeForm = useForm({
@@ -328,7 +326,6 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="font-semibold">${(charge.amount / 100).toFixed(2)}</p>
-                    {console.log("Charge amount:", charge.amount, "Type:", typeof charge.amount)}
                     <Badge variant={charge.isPaid ? "default" : "secondary"}>
                       {charge.isPaid ? "Paid" : "Unpaid"}
                     </Badge>
@@ -383,7 +380,9 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
               {(paymentLinks as PaymentLink[]).map((link: PaymentLink) => (
                 <div key={link.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
-                    <p className="font-medium">${(link.totalAmount / 100).toFixed(2)}</p>
+                    <p className="font-medium">
+                      ${(link.totalAmount ? link.totalAmount / 100 : 0).toFixed(2)}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       Created {new Date(link.createdAt).toLocaleDateString()}
                     </p>
