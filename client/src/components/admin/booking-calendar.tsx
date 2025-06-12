@@ -9,7 +9,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -29,7 +32,7 @@ import {
   Mail,
   DollarSign
 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -61,6 +64,11 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [currentView, setCurrentView] = useState<string>('dayGridMonth');
+  const [bookingToComplete, setBookingToComplete] = useState<Booking | null>(null);
+  const [isDropOffDialogOpen, setIsDropOffDialogOpen] = useState(false);
+  const [selectedDropOffType, setSelectedDropOffType] = useState<string>("");
+  const [selectedHubId, setSelectedHubId] = useState<string>("");
+  const [selectedCustomerBookingId, setSelectedCustomerBookingId] = useState<string>("");
   const { toast } = useToast();
 
   // Define status progression order
@@ -88,6 +96,85 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
     
     // Strike through if current step is higher than this status step
     return currentStep > statusStep && statusStep > 0;
+  };
+
+  // Fetch hubs for drop-off selection
+  const { data: hubs = [] } = useQuery({
+    queryKey: ['/api/hubs'],
+  });
+
+  // Handle status change with drop-off dialog for completion
+  const handleStatusChange = (bookingId: number, newStatus: string) => {
+    const booking = bookings?.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    if (newStatus === "complete") {
+      // Set up for drop-off selection
+      setBookingToComplete(booking);
+      setSelectedDropOffType("");
+      setSelectedHubId("");
+      setSelectedCustomerBookingId("");
+      setIsDropOffDialogOpen(true);
+    } else {
+      // Direct status update for non-completion statuses
+      updateBookingStatusMutation.mutate({ bookingId, status: newStatus });
+    }
+  };
+
+  // Complete booking mutation
+  const completeBookingMutation = useMutation({
+    mutationFn: async ({ bookingId, dropOffLocation }: { bookingId: number; dropOffLocation: any }) => {
+      return apiRequest("PUT", `/api/bookings/${bookingId}`, {
+        status: "complete",
+        dropOffLocation,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      setIsDropOffDialogOpen(false);
+      setBookingToComplete(null);
+      setIsDetailsOpen(false);
+      toast({
+        title: "Booking Completed",
+        description: "The booking has been marked as complete with drop-off location.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to complete booking",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle completing booking with drop-off location
+  const handleCompleteBooking = () => {
+    if (!bookingToComplete) return;
+
+    let dropOffLocation;
+    if (selectedDropOffType === "hub" && selectedHubId) {
+      const hub = (hubs as any[]).find((h: any) => h.id === parseInt(selectedHubId));
+      dropOffLocation = {
+        type: "hub",
+        hubId: parseInt(selectedHubId),
+        address: `${hub?.address}, ${hub?.city}, ${hub?.zipCode}`,
+      };
+    } else if (selectedDropOffType === "customer" && selectedCustomerBookingId) {
+      const customerBooking = bookings?.find(b => b.id === parseInt(selectedCustomerBookingId));
+      dropOffLocation = {
+        type: "customer",
+        bookingId: parseInt(selectedCustomerBookingId),
+        address: `${customerBooking?.deliveryAddress}, ${customerBooking?.deliveryCity}, ${customerBooking?.deliveryZipCode}`,
+      };
+    }
+
+    if (dropOffLocation) {
+      completeBookingMutation.mutate({
+        bookingId: bookingToComplete.id,
+        dropOffLocation,
+      });
+    }
   };
 
   // Update booking status mutation
@@ -346,7 +433,7 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <Select 
                     value={selectedBooking.status} 
-                    onValueChange={(value) => updateBookingStatusMutation.mutate({ bookingId: selectedBooking.id, status: value })}
+                    onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
                   >
                     <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
                       <SelectValue />
@@ -499,6 +586,109 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                 </div>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Drop-off Location Selection Dialog */}
+      {bookingToComplete && (
+        <Dialog open={isDropOffDialogOpen} onOpenChange={setIsDropOffDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+            <DialogHeader>
+              <DialogTitle>Complete Booking - Select Drop-off Location</DialogTitle>
+              <DialogDescription>
+                Booking #{bookingToComplete.id} - {bookingToComplete.customerName}
+                <br />
+                Where should the dumpster be dropped off after pickup?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Drop-off Type Selection */}
+              <div className="space-y-3">
+                <Label className="text-base font-medium">Drop-off Destination</Label>
+                <RadioGroup value={selectedDropOffType} onValueChange={setSelectedDropOffType}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="hub" id="hub" />
+                    <Label htmlFor="hub">Drop off at Hub</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="customer" id="customer" />
+                    <Label htmlFor="customer">Transfer to Another Customer</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Hub Selection */}
+              {selectedDropOffType === "hub" && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Select Hub</Label>
+                  <Select value={selectedHubId} onValueChange={setSelectedHubId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a hub..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(hubs as any[]).map((hub: any) => (
+                        <SelectItem key={hub.id} value={hub.id.toString()}>
+                          {hub.name} - {hub.address}, {hub.city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Customer Booking Selection */}
+              {selectedDropOffType === "customer" && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Select Customer Booking</Label>
+                  <Select value={selectedCustomerBookingId} onValueChange={setSelectedCustomerBookingId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a customer booking..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bookings?.filter(b => 
+                        b.id !== bookingToComplete.id && 
+                        b.status === "confirmed"
+                      ).map((booking) => (
+                        <SelectItem key={booking.id} value={booking.id.toString()}>
+                          {booking.customerName} - {booking.deliveryAddress}, {booking.deliveryCity}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Smart Route Notice */}
+              {selectedDropOffType === "customer" && selectedCustomerBookingId && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-sm text-green-800">
+                    <strong>Smart Route:</strong> This direct transfer maximizes efficiency by skipping the hub completely.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsDropOffDialogOpen(false)}
+                className="w-full sm:w-auto order-2 sm:order-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCompleteBooking}
+                disabled={!selectedDropOffType || 
+                  (selectedDropOffType === "hub" && !selectedHubId) ||
+                  (selectedDropOffType === "customer" && !selectedCustomerBookingId)
+                }
+                className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full sm:w-auto order-1 sm:order-2"
+              >
+                Complete Booking
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
