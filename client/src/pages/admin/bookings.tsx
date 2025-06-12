@@ -1090,25 +1090,43 @@ export default function BookingsPage() {
                               <TableCell className="hidden md:table-cell text-xs">${(booking.totalPrice / 100).toFixed(2)}</TableCell>
                               <TableCell onClick={(e) => e.stopPropagation()}>
                                 <div className="flex gap-1">
-                                  <Button 
-                                    onClick={() => handleViewBooking(booking)}
-                                    variant="outline"
-                                    className="h-6 w-6 p-0"
-                                    size="sm"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                  </Button>
-                                  <Button 
-                                    onClick={() => {
-                                      const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
-                                      const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                                      window.open(mapsUrl, '_blank');
-                                    }}
-                                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
-                                    size="sm"
-                                  >
-                                    <MapPin className="h-3 w-3" />
-                                  </Button>
+                                  {/* Desktop: Show both view and map buttons */}
+                                  <div className="hidden md:flex gap-1">
+                                    <Button 
+                                      onClick={() => handleViewBooking(booking)}
+                                      variant="outline"
+                                      className="h-6 w-6 p-0"
+                                      size="sm"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+                                    <Button 
+                                      onClick={() => {
+                                        const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                        window.open(mapsUrl, '_blank');
+                                      }}
+                                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
+                                      size="sm"
+                                    >
+                                      <MapPin className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  
+                                  {/* Mobile: Show only map button */}
+                                  <div className="md:hidden">
+                                    <Button 
+                                      onClick={() => {
+                                        const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                        window.open(mapsUrl, '_blank');
+                                      }}
+                                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
+                                      size="sm"
+                                    >
+                                      <MapPin className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1304,7 +1322,34 @@ export default function BookingsPage() {
                     <div>
                       <Label className="text-sm text-gray-500">Status</Label>
                       <div className="mt-1">
-                        {getStatusBadge(selectedBooking.status)}
+                        <Select 
+                          value={selectedBooking.status} 
+                          onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {statusOrder.map((status) => (
+                              <SelectItem 
+                                key={status.value} 
+                                value={status.value}
+                                className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through text-gray-400" : ""}
+                              >
+                                <span className="flex items-center gap-2">
+                                  {status.step > 0 && (
+                                    <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
+                                      {status.step}
+                                    </span>
+                                  )}
+                                  <span className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through" : ""}>
+                                    {status.label}
+                                  </span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </div>
@@ -1411,12 +1456,25 @@ export default function BookingsPage() {
             )}
             
             <DialogFooter>
-              <Button 
-                onClick={() => setIsViewDialogOpen(false)}
-                variant="outline"
-              >
-                Close
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                    const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                    window.open(mapsUrl, '_blank');
+                  }}
+                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
+                >
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Navigate
+                </Button>
+                <Button 
+                  onClick={() => setIsViewDialogOpen(false)}
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
