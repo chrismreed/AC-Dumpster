@@ -302,6 +302,11 @@ export default function BookingsPage() {
     }
   };
 
+  const handleViewBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsViewDialogOpen(true);
+  };
+
   const handleSelectBooking = (bookingId: number, checked: boolean) => {
     const newSelected = new Set(selectedBookings);
     if (checked) {
