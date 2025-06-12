@@ -13,6 +13,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Booking, Dumpster } from "@shared/schema";
+import { AdditionalCharges } from "@/components/admin/additional-charges";
 import { 
   BarChart, 
   Bar, 
@@ -31,7 +32,8 @@ import {
   Truck, 
   DollarSign, 
   MapPin,
-  Loader2
+  Loader2,
+  CreditCard
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -45,6 +47,8 @@ export default function DashboardPage() {
   const [selectedDropOffType, setSelectedDropOffType] = useState<string>("");
   const [selectedHubId, setSelectedHubId] = useState<string>("");
   const [selectedCustomerBookingId, setSelectedCustomerBookingId] = useState<string>("");
+  const [chargesBooking, setChargesBooking] = useState<Booking | null>(null);
+  const [isChargesDialogOpen, setIsChargesDialogOpen] = useState(false);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -474,8 +478,21 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-                          {/* Mobile: Only navigation button */}
-                          <div className="md:hidden">
+                          {/* Mobile: Navigation and charges buttons */}
+                          <div className="md:hidden flex gap-1">
+                            <Button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setChargesBooking(booking);
+                                setIsChargesDialogOpen(true);
+                              }}
+                              variant="outline"
+                              className="h-8 w-8 p-0"
+                              size="sm"
+                              title="Additional Charges"
+                            >
+                              <CreditCard className="h-3 w-3" />
+                            </Button>
                             <Button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -530,6 +547,18 @@ export default function DashboardPage() {
                               size="sm"
                             >
                               <MapPin className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                setChargesBooking(booking);
+                                setIsChargesDialogOpen(true);
+                              }}
+                              variant="outline"
+                              className="h-8 px-2"
+                              size="sm"
+                              title="Additional Charges"
+                            >
+                              <CreditCard className="h-3 w-3" />
                             </Button>
                             <Button 
                               onClick={() => {
@@ -1118,6 +1147,36 @@ export default function DashboardPage() {
                   className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black w-full sm:w-auto order-1 sm:order-2"
                 >
                   Complete Booking
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Additional Charges Dialog */}
+        {chargesBooking && (
+          <Dialog open={isChargesDialogOpen} onOpenChange={setIsChargesDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Additional Charges</DialogTitle>
+                <DialogDescription>
+                  Manage additional charges for booking #{chargesBooking.id} - {chargesBooking.customerName}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <AdditionalCharges 
+                bookingId={chargesBooking.id}
+                customerName={chargesBooking.customerName}
+                customerEmail={chargesBooking.customerEmail}
+                customerPhone={chargesBooking.customerPhone}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  onClick={() => setIsChargesDialogOpen(false)}
+                  variant="outline"
+                >
+                  Close
                 </Button>
               </DialogFooter>
             </DialogContent>
