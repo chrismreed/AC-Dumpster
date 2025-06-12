@@ -736,8 +736,23 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-                          {/* Mobile: Only navigation button */}
-                          <div className="md:hidden">
+                          {/* Mobile: Navigation and charges buttons */}
+                          <div className="md:hidden flex gap-1">
+                            {booking && (
+                              <Button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setChargesBooking(booking);
+                                  setIsChargesDialogOpen(true);
+                                }}
+                                variant="outline"
+                                className="h-8 w-8 p-0"
+                                size="sm"
+                                title="Additional Charges"
+                              >
+                                <CreditCard className="h-3 w-3" />
+                              </Button>
+                            )}
                             <Button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -782,6 +797,20 @@ export default function DashboardPage() {
                             >
                               <MapPin className="h-3 w-3" />
                             </Button>
+                            {booking && (
+                              <Button 
+                                onClick={() => {
+                                  setChargesBooking(booking);
+                                  setIsChargesDialogOpen(true);
+                                }}
+                                variant="outline"
+                                className="h-8 px-2"
+                                size="sm"
+                                title="Additional Charges"
+                              >
+                                <CreditCard className="h-3 w-3" />
+                              </Button>
+                            )}
                             <Button 
                               onClick={() => {
                                 if (booking) {
