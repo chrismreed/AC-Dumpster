@@ -1337,6 +1337,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get payment link details for QR code page
+  app.get("/api/payment-links/:id", async (req, res) => {
+    try {
+      const paymentLinkId = Number(req.params.id);
+      const paymentLink = await storage.getPaymentLink(paymentLinkId);
+      
+      if (!paymentLink) {
+        return res.status(404).json({ message: "Payment link not found" });
+      }
+      
+      res.json(paymentLink);
+    } catch (err) {
+      console.error("Error fetching payment link:", err);
+      res.status(500).json({ message: "Failed to fetch payment link" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
