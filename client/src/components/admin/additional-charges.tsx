@@ -217,30 +217,43 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
 
   const openQrCodeDialog = async (paymentLink: PaymentLink) => {
     setSelectedPaymentLink(paymentLink);
+    setIsQrCodeDialogOpen(true);
     
     try {
       // Create a direct link to our payment processing using the payment link ID
       const paymentUrl = `${window.location.origin}/pay/${paymentLink.id}`;
-      
-      // Generate QR code
-      if (qrCodeCanvasRef.current) {
-        await QRCodeLib.toCanvas(qrCodeCanvasRef.current, paymentUrl, {
-          width: 256,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF',
-          },
-        });
-      }
-      
       setQrCodeUrl(paymentUrl);
-      setIsQrCodeDialogOpen(true);
+      
+      // Generate QR code after the dialog opens and canvas is rendered
+      setTimeout(async () => {
+        if (qrCodeCanvasRef.current) {
+          try {
+            await QRCodeLib.toCanvas(qrCodeCanvasRef.current, paymentUrl, {
+              width: 256,
+              margin: 2,
+              color: {
+                dark: '#000000',
+                light: '#FFFFFF',
+              },
+            });
+            console.log('QR code generated successfully');
+          } catch (qrError) {
+            console.error('QR code generation error:', qrError);
+            toast({
+              title: "Error",
+              description: "Failed to generate QR code",
+              variant: "destructive",
+            });
+          }
+        } else {
+          console.error('Canvas ref not available');
+        }
+      }, 100);
     } catch (error) {
-      console.error('Error generating QR code:', error);
+      console.error('Error in openQrCodeDialog:', error);
       toast({
         title: "Error",
-        description: "Failed to generate QR code",
+        description: "Failed to open QR code dialog",
         variant: "destructive",
       });
     }
@@ -540,7 +553,8 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                 <canvas
                   ref={qrCodeCanvasRef}
                   className="border rounded-lg"
-                  style={{ display: qrCodeUrl ? 'block' : 'none' }}
+                  width="256"
+                  height="256"
                 />
                 {qrCodeUrl && (
                   <div className="text-center space-y-2">
