@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing, Hub } from "@shared/schema";
-import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users } from "lucide-react";
+import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users, RefreshCw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -140,6 +140,28 @@ export default function BookingsPage() {
       toast({
         title: "Error",
         description: `Failed to update booking: ${error?.message || "Unknown error"}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Check payment status mutation
+  const checkPaymentStatusMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const response = await apiRequest("POST", `/api/bookings/${bookingId}/check-payment-status`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      toast({
+        title: "Payment Status Updated",
+        description: "Payment status has been checked and updated if needed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to check payment status: ${error?.message || "Unknown error"}`,
         variant: "destructive",
       });
     },
@@ -524,10 +546,24 @@ export default function BookingsPage() {
               onPointerDownOutside={() => setIsViewDialogOpen(false)}
             >
               <DialogHeader>
-                <DialogTitle>Booking Details</DialogTitle>
-                <DialogDescription>
-                  View and manage booking #{selectedBooking.id}
-                </DialogDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle>Booking Details</DialogTitle>
+                    <DialogDescription>
+                      View and manage booking #{selectedBooking.id}
+                    </DialogDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
+                    disabled={checkPaymentStatusMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                    Check Payment Status
+                  </Button>
+                </div>
               </DialogHeader>
               
               {/* Consolidated booking information in a single comprehensive view */}

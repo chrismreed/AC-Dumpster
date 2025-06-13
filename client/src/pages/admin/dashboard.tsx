@@ -33,7 +33,8 @@ import {
   DollarSign, 
   MapPin,
   Loader2,
-  CreditCard
+  CreditCard,
+  RefreshCw
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -123,6 +124,28 @@ export default function DashboardPage() {
       updateBookingStatusMutation.mutate({ bookingId, status: newStatus });
     }
   };
+
+  // Check payment status mutation
+  const checkPaymentStatusMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const response = await apiRequest("POST", `/api/bookings/${bookingId}/check-payment-status`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      toast({
+        title: "Payment Status Updated",
+        description: "Payment status has been checked and updated if needed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to check payment status: ${error?.message || "Unknown error"}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Complete booking mutation
   const completeBookingMutation = useMutation({

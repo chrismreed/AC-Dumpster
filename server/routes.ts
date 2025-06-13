@@ -1532,6 +1532,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check payment status for all payment links in a booking
+  app.post("/api/bookings/:bookingId/check-payment-status", isAdmin, async (req, res) => {
+    try {
+      const bookingId = Number(req.params.bookingId);
+      const paymentLinks = await storage.getPaymentLinks(bookingId);
+      
+      if (!paymentLinks || paymentLinks.length === 0) {
+        return res.json({ message: "No payment links found for this booking" });
+      }
+
+      let updatedCount = 0;
+      
+      for (const link of paymentLinks) {
+        if (link.status !== 'paid' && stripe) {
+          try {
+            // Retrieve the payment link from Stripe
+            const stripePaymentLink = await stripe.paymentLinks.retrieve(link.stripePaymentLinkId);
+            
+            // Check if there are any successful checkout sessions
+            const sessions = await stripe.checkout.sessions.list({
+              payment_link: link.stripePaymentLinkId,
+              status: 'complete'
+            });
+
+            if (sessions.data.length > 0) {
+              // Payment was completed, update status
+              await storage.updatePaymentLinkStatus(link.id, 'paid', new Date());
+              updatedCount++;
+            }
+          } catch (stripeError) {
+            console.warn(`Error checking Stripe payment link ${link.stripePaymentLinkId}:`, stripeError);
+          }
+        }
+      }
+
+      const message = updatedCount > 0 
+        ? `Updated ${updatedCount} payment link(s) to paid status`
+        : "No payment status updates needed";
+        
+      res.json({ message, updatedCount });
+    } catch (err) {
+      console.error("Error checking payment status:", err);
+      res.status(500).json({ message: "Failed to check payment status" });
+    }
+  });
+
   // Stripe webhook endpoint for automatic payment status updates
   app.post("/api/stripe-webhook", async (req, res) => {
     const sig = req.headers['stripe-signature'];
