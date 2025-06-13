@@ -214,6 +214,27 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
     },
   });
 
+  // Delete payment link mutation
+  const deletePaymentLinkMutation = useMutation({
+    mutationFn: async (paymentLinkId: number) => {
+      return apiRequest("DELETE", `/api/payment-links/${paymentLinkId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/${bookingId}/payment-links`] });
+      toast({
+        title: "Success",
+        description: "Payment link deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete payment link",
+        variant: "destructive",
+      });
+    },
+  });
+
   const unpaidCharges = (charges as AdditionalCharge[]).filter((charge: AdditionalCharge) => !charge.isPaid);
   const totalUnpaid = unpaidCharges.reduce((sum: number, charge: AdditionalCharge) => sum + charge.amount, 0);
   const hasUnpaidCharges = unpaidCharges.length > 0;
@@ -509,6 +530,21 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                     >
                       <Share2 className="h-4 w-4" />
                     </Button>
+                    {link.status !== "paid" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm("Are you sure you want to delete this payment link? This action cannot be undone.")) {
+                            deletePaymentLinkMutation.mutate(link.id);
+                          }
+                        }}
+                        disabled={deletePaymentLinkMutation.isPending}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

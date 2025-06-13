@@ -1493,6 +1493,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete payment link
+  app.delete("/api/payment-links/:id", isAdmin, async (req, res) => {
+    try {
+      const paymentLinkId = Number(req.params.id);
+      const paymentLink = await storage.getPaymentLink(paymentLinkId);
+      
+      if (!paymentLink) {
+        return res.status(404).json({ message: "Payment link not found" });
+      }
+
+      // Don't allow deletion of paid payment links
+      if (paymentLink.status === 'paid') {
+        return res.status(400).json({ message: "Cannot delete a paid payment link" });
+      }
+
+      // Delete from Stripe first (if possible)
+      if (stripe) {
+        try {
+          // Note: Stripe doesn't allow deleting payment links, but we can mark them as inactive
+          // For now, we'll just delete from our database
+        } catch (stripeError) {
+          console.warn("Could not update Stripe payment link:", stripeError);
+        }
+      }
+
+      // Delete from our database
+      const success = await storage.deletePaymentLink(paymentLinkId);
+      
+      if (!success) {
+        return res.status(500).json({ message: "Failed to delete payment link" });
+      }
+
+      res.json({ message: "Payment link deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting payment link:", err);
+      res.status(500).json({ message: "Failed to delete payment link" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

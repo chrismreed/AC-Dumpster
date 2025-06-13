@@ -114,6 +114,7 @@ export interface IStorage {
   getPaymentLink(id: number): Promise<PaymentLink | undefined>;
   createPaymentLink(link: InsertPaymentLink): Promise<PaymentLink>;
   updatePaymentLinkStatus(id: number, status: string, paidAt?: Date): Promise<PaymentLink | undefined>;
+  deletePaymentLink(id: number): Promise<boolean>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -1059,6 +1060,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(paymentLinks.id, id))
       .returning();
     return updatedLink;
+  }
+
+  async deletePaymentLink(id: number): Promise<boolean> {
+    const result = await db.delete(paymentLinks).where(eq(paymentLinks.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 
