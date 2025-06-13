@@ -30,27 +30,18 @@ export default function PaymentPage() {
     }
 
     try {
-      // Redirect to Stripe payment link
-      const response = await fetch(`https://api.stripe.com/v1/payment_links/${paymentLink.stripePaymentLinkId}`, {
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_STRIPE_PUBLIC_KEY}`,
-        },
-      });
-
+      // Use our backend to get the actual Stripe payment URL
+      const response = await fetch(`/api/payment-links/${id}/stripe-url`);
+      
       if (response.ok) {
-        const stripePaymentLink = await response.json();
-        window.location.href = stripePaymentLink.url;
-      } else {
-        // Fallback: try to process payment through our backend
-        const backendResponse = await fetch(`/api/payment-links/${id}/process`);
-        if (backendResponse.ok) {
-          const data = await backendResponse.json();
-          if (data.url) {
-            window.location.href = data.url;
-          }
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
         } else {
-          throw new Error('Payment processing failed');
+          throw new Error('No payment URL returned');
         }
+      } else {
+        throw new Error('Failed to get payment URL');
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -69,11 +60,6 @@ export default function PaymentPage() {
       </div>
     );
   }
-
-  // Debug logging
-  console.log('Payment link data:', paymentLink);
-  console.log('Error:', error);
-  console.log('Is loading:', isLoading);
 
   if (error || !paymentLink) {
     return (

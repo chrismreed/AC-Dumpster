@@ -1354,6 +1354,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get Stripe payment URL for a payment link
+  app.get("/api/payment-links/:id/stripe-url", async (req, res) => {
+    try {
+      const paymentLinkId = Number(req.params.id);
+      const paymentLink = await storage.getPaymentLink(paymentLinkId);
+      
+      if (!paymentLink) {
+        return res.status(404).json({ message: "Payment link not found" });
+      }
+
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe not configured" });
+      }
+
+      // Get the Stripe payment link URL
+      const stripePaymentLink = await stripe.paymentLinks.retrieve(paymentLink.stripePaymentLinkId);
+      
+      res.json({ url: stripePaymentLink.url });
+    } catch (err) {
+      console.error("Error fetching Stripe payment URL:", err);
+      res.status(500).json({ message: "Failed to get payment URL" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
