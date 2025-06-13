@@ -91,7 +91,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings", bookingId, "additional-charges"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/${bookingId}/additional-charges`] });
       setIsAddDialogOpen(false);
       addChargeForm.reset();
       toast({
@@ -114,7 +114,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
       return apiRequest("DELETE", `/api/additional-charges/${chargeId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings", bookingId, "additional-charges"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/${bookingId}/additional-charges`] });
       toast({
         title: "Success",
         description: "Additional charge deleted successfully",
