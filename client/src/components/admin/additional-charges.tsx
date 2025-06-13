@@ -98,6 +98,15 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
         title: "Success",
         description: "Additional charge added successfully",
       });
+      // Automatically create payment link if there isn't already an unpaid one
+      setTimeout(() => {
+        const hasUnpaidPaymentLink = (paymentLinks as PaymentLink[]).some(
+          (link: PaymentLink) => link.status !== "paid"
+        );
+        if (!hasUnpaidPaymentLink) {
+          createPaymentLinkMutation.mutate();
+        }
+      }, 500);
     },
     onError: (error) => {
       toast({
@@ -136,20 +145,8 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
       return response.json();
     },
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings", bookingId, "payment-links"] });
-      toast({
-        title: "Success",
-        description: "Payment link created successfully",
-      });
-      
-      // Copy link to clipboard
-      if (data.paymentLink) {
-        navigator.clipboard.writeText(data.paymentLink);
-        toast({
-          title: "Copied",
-          description: "Payment link copied to clipboard",
-        });
-      }
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/${bookingId}/payment-links`] });
+      // Don't show toast for automatic payment link creation
     },
     onError: (error) => {
       toast({
@@ -200,17 +197,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
     }
   };
 
-  const handleCreatePaymentLink = () => {
-    if (!hasUnpaidCharges) {
-      toast({
-        title: "No Charges",
-        description: "No unpaid charges to create payment link for",
-        variant: "destructive",
-      });
-      return;
-    }
-    createPaymentLinkMutation.mutate();
-  };
+
 
   const handleSendPaymentLink = (data: { method: string; recipient: string }) => {
     if (selectedPaymentLink) {
@@ -412,15 +399,8 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                 <span className="font-bold text-lg">${(totalUnpaid / 100).toFixed(2)}</span>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleCreatePaymentLink}
-                  disabled={createPaymentLinkMutation.isPending}
-                  className="flex-1"
-                >
-                  <QrCode className="h-4 w-4 mr-2" />
-                  {createPaymentLinkMutation.isPending ? "Creating..." : "Create Payment Link"}
-                </Button>
+              <div className="text-center text-sm text-muted-foreground">
+                Payment link will be created automatically
               </div>
             </div>
           </>
