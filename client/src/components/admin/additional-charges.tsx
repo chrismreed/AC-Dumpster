@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2, DollarSign, Share2, Send, QrCode, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, DollarSign, Share2, Send, QrCode, AlertTriangle, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import QRCodeLib from "qrcode";
 import type { AdditionalCharge, PaymentLink } from "@shared/schema";
 
 const additionalChargeSchema = z.object({
@@ -38,7 +39,10 @@ interface AdditionalChargesProps {
 export function AdditionalCharges({ bookingId, customerName, customerEmail, customerPhone }: AdditionalChargesProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
+  const [isQrCodeDialogOpen, setIsQrCodeDialogOpen] = useState(false);
   const [selectedPaymentLink, setSelectedPaymentLink] = useState<PaymentLink | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const qrCodeCanvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -222,6 +226,46 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
     sendLinkForm.setValue("method", "email");
     sendLinkForm.setValue("recipient", customerEmail);
     setIsSendDialogOpen(true);
+  };
+
+  const openQrCodeDialog = async (paymentLink: PaymentLink) => {
+    setSelectedPaymentLink(paymentLink);
+    
+    try {
+      // Create a direct link to our payment processing using the payment link ID
+      const paymentUrl = `${window.location.origin}/pay/${paymentLink.id}`;
+      
+      // Generate QR code
+      if (qrCodeCanvasRef.current) {
+        await QRCodeLib.toCanvas(qrCodeCanvasRef.current, paymentUrl, {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF',
+          },
+        });
+      }
+      
+      setQrCodeUrl(paymentUrl);
+      setIsQrCodeDialogOpen(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate QR code",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadQrCode = () => {
+    if (qrCodeCanvasRef.current) {
+      const link = document.createElement('a');
+      link.download = `payment-qr-${customerName.replace(/\s+/g, '-')}-${selectedPaymentLink?.id}.png`;
+      link.href = qrCodeCanvasRef.current.toDataURL();
+      link.click();
+    }
   };
 
   if (chargesLoading || linksLoading) {
@@ -408,6 +452,14 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                     >
                       <Send className="h-4 w-4 mr-2" />
                       Send
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openQrCodeDialog(link)}
+                    >
+                      <QrCode className="h-4 w-4 mr-2" />
+                      QR Code
                     </Button>
                     <Button
                       size="sm"
