@@ -78,11 +78,40 @@ export default function DashboardPage() {
     const statusStep = statusOrder.find(s => s.value === statusValue)?.step || 0;
     const currentStep = getCurrentStep(currentStatus);
     
-    // Don't strike through cancelled status
-    if (statusValue === "cancelled") return false;
+    return statusStep > 0 && statusStep < currentStep;
+  };
+
+  // Helper functions for booking details
+  const getDumpsterName = (dumpsterId: number) => {
+    const dumpster = dumpsters?.find(d => d.id === dumpsterId);
+    return dumpster ? dumpster.name : `Dumpster #${dumpsterId}`;
+  };
+
+  const getDurationDays = (pricingId: number) => {
+    const pricing = allPricing?.find(p => p.id === pricingId);
+    return pricing ? pricing.days : 7;
+  };
+
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getPickupDate = (deliveryDate: string | Date, pricingId: number) => {
+    const durationDays = getDurationDays(pricingId);
+    const delivery = typeof deliveryDate === 'string' ? new Date(deliveryDate) : deliveryDate;
+    const pickup = new Date(delivery);
+    pickup.setDate(delivery.getDate() + Number(durationDays));
     
-    // Strike through if current step is higher than this status step
-    return currentStep > statusStep && statusStep > 0;
+    return pickup.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   // Always call all query hooks - no early returns or conditions
@@ -1337,4 +1366,241 @@ export default function DashboardPage() {
       </Badge>
     );
   }
+
+  if (isLoadingBookings || isLoadingDumpsters || isLoadingPricing) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+        </div>
+
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="deliveries">Today's Deliveries</TabsTrigger>
+            <TabsTrigger value="pickups">Scheduled Pickups</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Overview content */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{bookings.length}</div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Booking Details Dialog */}
+        {selectedBooking && (
+          <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
+              <DialogHeader className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle className="text-lg">Booking Details</DialogTitle>
+                    <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
+                    disabled={checkPaymentStatusMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                    Check Payment Status
+                  </Button>
+                </div>
+                <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <Select 
+                      value={selectedBooking.status} 
+                      onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                    >
+                      <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="picked_up">Picked Up</SelectItem>
+                        <SelectItem value="complete">Complete</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={() => {
+                        const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-9 text-sm"
+                      size="sm"
+                    >
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Navigate
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setChargesBooking(selectedBooking);
+                      setIsChargesDialogOpen(true);
+                    }}
+                    className="text-sm"
+                  >
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    Additional Charges
+                  </Button>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <User className="mr-2 h-4 w-4 text-gray-500" />
+                      Customer Information
+                    </h3>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm font-medium">{selectedBooking.customerName}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Mail className="mr-2 h-4 w-4" />
+                        <a href={`mailto:${selectedBooking.customerEmail}`} className="hover:underline">
+                          {selectedBooking.customerEmail}
+                        </a>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Phone className="mr-2 h-4 w-4" />
+                        <a href={`tel:${selectedBooking.customerPhone}`} className="hover:underline">
+                          {selectedBooking.customerPhone}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <MapPin className="mr-2 h-4 w-4 text-gray-500" />
+                      Delivery Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="block text-gray-500">Address</span>
+                        <span>{selectedBooking.deliveryAddress}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-500">City & ZIP</span>
+                        <span>{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</span>
+                      </div>
+                      {selectedBooking.deliveryInstructions && (
+                        <div>
+                          <span className="block text-gray-500">Instructions</span>
+                          <span className="italic">{selectedBooking.deliveryInstructions}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="block text-gray-500">Placement</span>
+                        <span>{selectedBooking.placementLocation}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <ClipboardList className="mr-2 h-4 w-4 text-gray-500" />
+                      Booking Details
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Dumpster</span>
+                        <span>{getDumpsterName(selectedBooking.dumpsterId)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Rental Duration</span>
+                        <span>{getDurationDays(selectedBooking.pricingId)} days</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Delivery Date</span>
+                        <span>{formatDate(selectedBooking.deliveryDate)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Pickup Date (Est.)</span>
+                        <span>{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Time Preference</span>
+                        <span>{selectedBooking.deliveryTimePreference}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <DollarSign className="mr-2 h-4 w-4 text-gray-500" />
+                      Payment Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Payment Status</span>
+                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
+                          {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Total Amount</span>
+                        <span className="font-medium">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <Button variant="outline" onClick={() => setIsBookingDialogOpen(false)}>
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Additional Charges Dialog */}
+        {chargesBooking && (
+          <AdditionalCharges
+            booking={chargesBooking}
+            isOpen={isChargesDialogOpen}
+            onClose={() => {
+              setIsChargesDialogOpen(false);
+              setChargesBooking(null);
+            }}
+          />
+        )}
+      </div>
+    </AdminLayout>
+  );
 }
