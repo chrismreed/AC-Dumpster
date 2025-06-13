@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2, DollarSign, Share2, Send, QrCode, AlertTriangle, Download } from "lucide-react";
+import { Plus, Trash2, DollarSign, Share2, Send, QrCode, AlertTriangle, Download, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -178,6 +178,37 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
       toast({
         title: "Error",
         description: "Failed to send payment link",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Check payment status mutation
+  const checkPaymentStatusMutation = useMutation({
+    mutationFn: async (paymentLinkId: number) => {
+      const response = await apiRequest("POST", `/api/payment-links/${paymentLinkId}/check-status`);
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/${bookingId}/additional-charges`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/${bookingId}/payment-links`] });
+      
+      if (data.updated) {
+        toast({
+          title: "Payment Status Updated",
+          description: "Payment has been marked as paid",
+        });
+      } else {
+        toast({
+          title: "Status Checked",
+          description: data.message || "Payment status is current",
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to check payment status",
         variant: "destructive",
       });
     },
@@ -454,6 +485,17 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                       <QrCode className="h-4 w-4 mr-2" />
                       QR Code
                     </Button>
+                    {link.status !== "paid" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => checkPaymentStatusMutation.mutate(link.id)}
+                        disabled={checkPaymentStatusMutation.isPending}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                        Check Status
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"

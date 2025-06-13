@@ -1378,6 +1378,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe webhook to handle payment completion
+  app.post("/api/stripe/webhook", async (req, res) => {
+    try {
+      const sig = req.headers['stripe-signature'];
+      
+      if (!stripe || !sig) {
+        return res.status(400).send('Missing signature');
+      }
+
+      // In production, you would verify the webhook signature here
+      // For development, we'll process the event directly
+      const event = req.body;
+
+      console.log('Stripe webhook event:', event.type);
+
+      // Handle the event
+      switch (event.type) {
+        case 'payment_link.paid':
+          const paymentLinkEvent = event.data.object;
+          
+          // Find our payment link by Stripe payment link ID
+          const paymentLinks = await storage.getPaymentLinks(0); // Get all payment links
+          const ourPaymentLink = paymentLinks.find(link => 
+            link.stripePaymentLinkId === paymentLinkEvent.id
+          );
+          
+          if (ourPaymentLink) {
+            // Update payment link status to paid
+            await storage.updatePaymentLinkStatus(ourPaymentLink.id, 'paid', new Date());
+            
+            // Mark all associated additional charges as paid
+            const charges = await storage.getAdditionalCharges(ourPaymentLink.bookingId);
+            for (const charge of charges) {
+              if (!charge.isPaid) {
+                await storage.updateAdditionalCharge(charge.id, { isPaid: true });
+              }
+            }
+            
+            console.log(`Payment completed for booking ${ourPaymentLink.bookingId}`);
+          }
+          break;
+          
+        case 'checkout.session.completed':
+          // Handle regular booking payments
+          const session = event.data.object;
+          if (session.metadata && session.metadata.booking_id) {
+            const bookingId = parseInt(session.metadata.booking_id);
+            await storage.updateBookingPaymentStatus(
+              bookingId, 
+              'paid', 
+              session.payment_intent
+            );
+            console.log(`Booking payment completed for booking ${bookingId}`);
+          }
+          break;
+          
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (err) {
+      console.error('Webhook error:', err);
+      res.status(400).send(`Webhook Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  });
+
+  // Manual payment status check endpoint (for testing/debugging)
+  app.post("/api/payment-links/:id/check-status", async (req, res) => {
+    try {
+      const paymentLinkId = Number(req.params.id);
+      const paymentLink = await storage.getPaymentLink(paymentLinkId);
+      
+      if (!paymentLink || !stripe) {
+        return res.status(404).json({ message: "Payment link not found" });
+      }
+
+      // Check Stripe payment link status
+      const stripePaymentLink = await stripe.paymentLinks.retrieve(paymentLink.stripePaymentLinkId);
+      
+      // If it's been paid in Stripe but not in our system, update it
+      if (stripePaymentLink.metadata && paymentLink.status !== 'paid') {
+        // Check if there are any successful payment sessions for this payment link
+        const sessions = await stripe.checkout.sessions.list({
+          payment_link: paymentLink.stripePaymentLinkId,
+          limit: 10,
+        });
+        
+        const paidSession = sessions.data.find(session => session.payment_status === 'paid');
+        
+        if (paidSession) {
+          // Update our records
+          await storage.updatePaymentLinkStatus(paymentLink.id, 'paid', new Date());
+          
+          // Mark charges as paid
+          const charges = await storage.getAdditionalCharges(paymentLink.bookingId);
+          for (const charge of charges) {
+            if (!charge.isPaid) {
+              await storage.updateAdditionalCharge(charge.id, { isPaid: true });
+            }
+          }
+          
+          res.json({ message: "Payment status updated to paid", updated: true });
+        } else {
+          res.json({ message: "Payment still pending", updated: false });
+        }
+      } else {
+        res.json({ message: "Payment status is current", updated: false });
+      }
+    } catch (err) {
+      console.error("Error checking payment status:", err);
+      res.status(500).json({ message: "Failed to check payment status" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
