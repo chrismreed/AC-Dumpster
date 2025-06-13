@@ -131,11 +131,11 @@ export default function DashboardPage() {
       const response = await apiRequest("POST", `/api/bookings/${bookingId}/check-payment-status`);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
       toast({
-        title: "Payment Status Updated",
-        description: "Payment status has been checked and updated if needed.",
+        title: "Payment Status Check Complete",
+        description: data.message || "Payment status has been checked and updated if needed.",
       });
     },
     onError: (error: any) => {

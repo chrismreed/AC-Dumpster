@@ -860,7 +860,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateBookingPaymentStatus(id: number, paymentStatus: string, stripePaymentIntentId?: string): Promise<Booking | undefined> {
     const updates: Partial<InsertBooking> = { 
-      status: paymentStatus 
+      paymentStatus: paymentStatus 
     };
     
     if (stripePaymentIntentId) {
