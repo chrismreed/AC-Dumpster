@@ -485,7 +485,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                     <p className="text-sm text-muted-foreground">
                       Created {new Date(link.createdAt).toLocaleDateString()}
                     </p>
-                    <Badge variant={link.status === "paid" ? "default" : "secondary"}>
+                    <Badge className={link.status === "paid" ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}>
                       {link.status}
                     </Badge>
                   </div>
