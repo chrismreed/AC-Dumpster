@@ -729,7 +729,7 @@ export default function BookingsPage() {
                     <CardContent className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground text-sm">Payment Status:</span>
-                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
                           {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
                         </Badge>
                       </div>
@@ -1127,15 +1127,26 @@ export default function BookingsPage() {
                               <TableCell className="hidden md:table-cell text-xs">${(booking.totalPrice / 100).toFixed(2)}</TableCell>
                               <TableCell onClick={(e) => e.stopPropagation()}>
                                 <div className="flex gap-1">
-                                  {/* Desktop: Show both view and map buttons */}
+                                  {/* Desktop: Show view, payment check, and map buttons */}
                                   <div className="hidden md:flex gap-1">
                                     <Button 
                                       onClick={() => handleViewBooking(booking)}
                                       variant="outline"
                                       className="h-6 w-6 p-0"
                                       size="sm"
+                                      title="View Details"
                                     >
                                       <Eye className="h-3 w-3" />
+                                    </Button>
+                                    <Button 
+                                      onClick={() => checkPaymentStatusMutation.mutate(booking.id)}
+                                      variant="outline"
+                                      className="h-6 w-6 p-0"
+                                      size="sm"
+                                      disabled={checkPaymentStatusMutation.isPending}
+                                      title="Check Payment Status"
+                                    >
+                                      <RefreshCw className={`h-3 w-3 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
                                     </Button>
                                     <Button 
                                       onClick={() => {
@@ -1145,6 +1156,7 @@ export default function BookingsPage() {
                                       }}
                                       className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-6 w-6 p-0"
                                       size="sm"
+                                      title="Navigate"
                                     >
                                       <MapPin className="h-3 w-3" />
                                     </Button>

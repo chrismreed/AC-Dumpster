@@ -1096,7 +1096,7 @@ export default function DashboardPage() {
                       <p><span className="font-medium">Total Price:</span> ${(selectedBooking.totalPrice / 100).toFixed(2)}</p>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Payment Status:</span>
-                        <Badge variant={selectedBooking.paymentStatus === 'completed' ? 'default' : 'secondary'}>
+                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
                           {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
                         </Badge>
                       </div>

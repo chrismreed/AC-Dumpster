@@ -432,7 +432,7 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="font-semibold">${(charge.amount / 100).toFixed(2)}</p>
-                    <Badge variant={charge.isPaid ? "default" : "secondary"}>
+                    <Badge className={charge.isPaid ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}>
                       {charge.isPaid ? "Paid" : "Unpaid"}
                     </Badge>
                   </div>
