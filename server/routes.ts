@@ -1532,24 +1532,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check payment status for all payment links in a booking
+  // Check payment status for booking and all payment links
   app.post("/api/bookings/:bookingId/check-payment-status", isAdmin, async (req, res) => {
     try {
       const bookingId = Number(req.params.bookingId);
-      const paymentLinks = await storage.getPaymentLinks(bookingId);
+      const booking = await storage.getBooking(bookingId);
       
-      if (!paymentLinks || paymentLinks.length === 0) {
-        return res.json({ message: "No payment links found for this booking" });
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
       }
 
       let updatedCount = 0;
+      const updates = [];
+
+      // Check original booking payment status if it has a payment intent
+      if (booking.stripePaymentIntentId && booking.paymentStatus !== 'paid' && stripe) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(booking.stripePaymentIntentId);
+          
+          if (paymentIntent.status === 'succeeded' && booking.paymentStatus !== 'paid') {
+            await storage.updateBookingPaymentStatus(bookingId, 'paid', booking.stripePaymentIntentId);
+            updatedCount++;
+            updates.push("Updated booking payment to paid status");
+          }
+        } catch (stripeError) {
+          console.warn(`Error checking Stripe payment intent ${booking.stripePaymentIntentId}:`, stripeError);
+        }
+      }
+
+      // Check payment links for additional charges
+      const paymentLinks = await storage.getPaymentLinks(bookingId);
       
       for (const link of paymentLinks) {
         if (link.status !== 'paid' && stripe) {
           try {
-            // Retrieve the payment link from Stripe
-            const stripePaymentLink = await stripe.paymentLinks.retrieve(link.stripePaymentLinkId);
-            
             // Check if there are any successful checkout sessions
             const sessions = await stripe.checkout.sessions.list({
               payment_link: link.stripePaymentLinkId,
@@ -1560,6 +1576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Payment was completed, update status
               await storage.updatePaymentLinkStatus(link.id, 'paid', new Date());
               updatedCount++;
+              updates.push("Updated payment link to paid status");
             }
           } catch (stripeError) {
             console.warn(`Error checking Stripe payment link ${link.stripePaymentLinkId}:`, stripeError);
@@ -1568,10 +1585,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const message = updatedCount > 0 
-        ? `Updated ${updatedCount} payment link(s) to paid status`
-        : "No payment status updates needed";
+        ? `${updates.join(", ")}`
+        : "All payment statuses are current";
         
-      res.json({ message, updatedCount });
+      res.json({ message, updatedCount, updates });
     } catch (err) {
       console.error("Error checking payment status:", err);
       res.status(500).json({ message: "Failed to check payment status" });
