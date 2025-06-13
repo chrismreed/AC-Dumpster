@@ -981,10 +981,24 @@ export default function DashboardPage() {
           <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Booking Details</DialogTitle>
-                <DialogDescription>
-                  Booking #{selectedBooking.id}
-                </DialogDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle>Booking Details</DialogTitle>
+                    <DialogDescription>
+                      Booking #{selectedBooking.id}
+                    </DialogDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
+                    disabled={checkPaymentStatusMutation.isPending}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                    Check Payment Status
+                  </Button>
+                </div>
                 <div className="flex items-center gap-2 mt-3">
                   <span className="font-medium">Status:</span>
                   <Select

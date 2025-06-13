@@ -30,7 +30,8 @@ import {
   User,
   Phone,
   Mail,
-  DollarSign
+  DollarSign,
+  RefreshCw
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -120,6 +121,28 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
       updateBookingStatusMutation.mutate({ bookingId, status: newStatus });
     }
   };
+
+  // Check payment status mutation
+  const checkPaymentStatusMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const response = await apiRequest("POST", `/api/bookings/${bookingId}/check-payment-status`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      toast({
+        title: "Payment Status Updated",
+        description: "Payment status has been checked and updated if needed.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to check payment status: ${error?.message || "Unknown error"}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Complete booking mutation
   const completeBookingMutation = useMutation({
@@ -427,9 +450,23 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
             onPointerDownOutside={() => setIsDetailsOpen(false)}
           >
             <DialogHeader className="space-y-3">
-              <DialogTitle className="text-lg">Booking Details</DialogTitle>
+              <div className="flex justify-between items-start">
+                <div>
+                  <DialogTitle className="text-lg">Booking Details</DialogTitle>
+                  <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
+                  disabled={checkPaymentStatusMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                  Check Payment Status
+                </Button>
+              </div>
               <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <span className="text-sm font-medium">Booking #{selectedBooking.id}</span>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <Select 
                     value={selectedBooking.status} 
