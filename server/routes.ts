@@ -1532,6 +1532,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe webhook endpoint for automatic payment status updates
+  app.post("/api/stripe-webhook", async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      // Verify webhook signature for security
+      if (process.env.STRIPE_WEBHOOK_SECRET && sig && stripe) {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      } else {
+        // For development without webhook secret
+        event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      }
+    } catch (err) {
+      console.log('Webhook signature verification failed:', err);
+      return res.status(400).send(`Webhook Error: ${err}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'checkout.session.completed':
+        try {
+          const session = event.data.object;
+          console.log('Payment completed for session:', session.id);
+          
+          // Find the payment link by Stripe payment link ID
+          const allBookings = await storage.listBookings();
+          let paymentLink = null;
+          
+          for (const booking of allBookings) {
+            const links = await storage.getPaymentLinks(booking.id);
+            const foundLink = links.find(link => 
+              link.stripePaymentLinkId === session.payment_link
+            );
+            if (foundLink) {
+              paymentLink = foundLink;
+              break;
+            }
+          }
+
+          if (paymentLink && paymentLink.status !== 'paid') {
+            await storage.updatePaymentLinkStatus(
+              paymentLink.id, 
+              'paid', 
+              new Date()
+            );
+            console.log(`Updated payment link ${paymentLink.id} to paid status`);
+          }
+        } catch (error) {
+          console.error('Error processing webhook:', error);
+        }
+        break;
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({ received: true });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

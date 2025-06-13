@@ -145,6 +145,7 @@ export const paymentLinks = pgTable("payment_links", {
   id: serial("id").primaryKey(),
   bookingId: integer("booking_id").notNull().references(() => bookings.id),
   stripePaymentLinkId: text("stripe_payment_link_id").notNull(),
+  stripeSessionId: text("stripe_session_id"), // For webhook matching
   totalAmount: integer("total_amount").notNull(), // In cents
   status: text("status").notNull().default("pending"), // "pending", "paid", "expired"
   expiresAt: timestamp("expires_at"),
