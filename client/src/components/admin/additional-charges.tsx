@@ -548,6 +548,51 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
             </Form>
           </DialogContent>
         </Dialog>
+
+        {/* QR Code Dialog */}
+        <Dialog open={isQrCodeDialogOpen} onOpenChange={setIsQrCodeDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Payment QR Code</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex flex-col items-center space-y-4">
+                <canvas
+                  ref={qrCodeCanvasRef}
+                  className="border rounded-lg"
+                  style={{ display: qrCodeUrl ? 'block' : 'none' }}
+                />
+                {qrCodeUrl && (
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Customer can scan this QR code to pay ${selectedPaymentLink ? (selectedPaymentLink.totalAmount ? selectedPaymentLink.totalAmount / 100 : 0).toFixed(2) : '0.00'}
+                    </p>
+                    <p className="text-xs text-muted-foreground break-all">
+                      {qrCodeUrl}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsQrCodeDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  onClick={downloadQrCode}
+                  disabled={!qrCodeUrl}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download QR Code
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
