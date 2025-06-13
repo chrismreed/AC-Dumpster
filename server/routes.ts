@@ -1549,14 +1549,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (booking.stripePaymentIntentId && booking.paymentStatus !== 'paid' && stripe) {
         try {
           const paymentIntent = await stripe.paymentIntents.retrieve(booking.stripePaymentIntentId);
+          console.log(`Checking payment intent ${booking.stripePaymentIntentId}: status=${paymentIntent.status}, current booking status=${booking.paymentStatus}`);
           
           if (paymentIntent.status === 'succeeded' && booking.paymentStatus !== 'paid') {
-            await storage.updateBookingPaymentStatus(bookingId, 'paid', booking.stripePaymentIntentId);
+            const updatedBooking = await storage.updateBookingPaymentStatus(bookingId, 'paid', booking.stripePaymentIntentId);
+            console.log(`Updated booking ${bookingId} payment status:`, updatedBooking?.paymentStatus);
             updatedCount++;
             updates.push("Updated booking payment to paid status");
+          } else if (paymentIntent.status === 'succeeded') {
+            updates.push("Booking payment already marked as paid");
+          } else {
+            updates.push(`Payment intent status: ${paymentIntent.status}`);
           }
         } catch (stripeError) {
           console.warn(`Error checking Stripe payment intent ${booking.stripePaymentIntentId}:`, stripeError);
+          updates.push(`Error checking payment: ${stripeError.message}`);
         }
       }
 
