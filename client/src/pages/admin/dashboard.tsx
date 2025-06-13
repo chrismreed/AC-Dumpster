@@ -34,7 +34,11 @@ import {
   MapPin,
   Loader2,
   CreditCard,
-  RefreshCw
+  RefreshCw,
+  User,
+  Mail,
+  Phone,
+  ClipboardList
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -980,13 +984,11 @@ export default function DashboardPage() {
         {selectedBooking && (
           <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
+              <DialogHeader className="space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <DialogTitle>Booking Details</DialogTitle>
-                    <DialogDescription>
-                      Booking #{selectedBooking.id}
-                    </DialogDescription>
+                    <DialogTitle className="text-lg">Booking Details</DialogTitle>
+                    <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
                   </div>
                   <Button
                     variant="outline"
@@ -999,118 +1001,185 @@ export default function DashboardPage() {
                     Check Payment Status
                   </Button>
                 </div>
-                <div className="flex items-center gap-2 mt-3">
-                  <span className="font-medium">Status:</span>
-                  <Select
-                    value={selectedBooking.status}
-                    onValueChange={(newStatus) => handleStatusChange(selectedBooking.id, newStatus)}
-                    disabled={updateBookingStatusMutation.isPending}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOrder.map((status) => (
-                        <SelectItem 
-                          key={status.value} 
-                          value={status.value}
-                          className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through text-gray-400" : ""}
-                        >
-                          <span className="flex items-center gap-2">
-                            {status.step > 0 && (
-                              <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
-                                {status.step}
+                <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <Select 
+                      value={selectedBooking.status} 
+                      onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                    >
+                      <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOrder.map((status) => (
+                          <SelectItem 
+                            key={status.value} 
+                            value={status.value}
+                            className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through text-gray-400" : ""}
+                          >
+                            <span className="flex items-center gap-2">
+                              {status.step > 0 && (
+                                <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
+                                  {status.step}
+                                </span>
+                              )}
+                              <span className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through" : ""}>
+                                {status.label}
                               </span>
-                            )}
-                            <span className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through" : ""}>
-                              {status.label}
                             </span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={() => {
+                        const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-9 text-sm"
+                      size="sm"
+                    >
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Navigate
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setChargesBooking(selectedBooking);
+                      setIsChargesDialogOpen(true);
+                    }}
+                    className="text-sm"
+                  >
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    Additional Charges
+                  </Button>
+                </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-6">
-                {/* Customer Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <User className="mr-2 h-4 w-4 text-gray-500" />
+                      Customer Information
+                    </h3>
                     <div className="space-y-2">
-                      <p><span className="font-medium">Name:</span> {selectedBooking.customerName}</p>
-                      <p><span className="font-medium">Email:</span> {selectedBooking.customerEmail}</p>
-                      <p><span className="font-medium">Phone:</span> {selectedBooking.customerPhone}</p>
+                      <div>
+                        <span className="text-sm font-medium">{selectedBooking.customerName}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Mail className="mr-2 h-4 w-4" />
+                        <a href={`mailto:${selectedBooking.customerEmail}`} className="hover:underline">
+                          {selectedBooking.customerEmail}
+                        </a>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Phone className="mr-2 h-4 w-4" />
+                        <a href={`tel:${selectedBooking.customerPhone}`} className="hover:underline">
+                          {selectedBooking.customerPhone}
+                        </a>
+                      </div>
                     </div>
                   </div>
                   
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Delivery Information</h3>
-                    <div className="space-y-2">
-                      <p><span className="font-medium">Address:</span> {selectedBooking.deliveryAddress}</p>
-                      <p><span className="font-medium">City:</span> {selectedBooking.deliveryCity}</p>
-                      <p><span className="font-medium">Zip Code:</span> {selectedBooking.deliveryZipCode}</p>
-                      <p><span className="font-medium">Date:</span> {new Date(selectedBooking.deliveryDate).toLocaleDateString()}</p>
-                      <p><span className="font-medium">Time Preference:</span> {selectedBooking.deliveryTimePreference}</p>
-                      <div className="mt-3">
-                        <Button 
-                          onClick={() => {
-                            const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
-                            const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                            window.open(mapsUrl, '_blank');
-                          }}
-                          className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
-                          size="sm"
-                        >
-                          Navigate to Address
-                        </Button>
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <MapPin className="mr-2 h-4 w-4 text-gray-500" />
+                      Delivery Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="block text-gray-500">Address</span>
+                        <span>{selectedBooking.deliveryAddress}</span>
+                      </div>
+                      <div>
+                        <span className="block text-gray-500">City & ZIP</span>
+                        <span>{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</span>
+                      </div>
+                      {selectedBooking.deliveryInstructions && (
+                        <div>
+                          <span className="block text-gray-500">Instructions</span>
+                          <span className="italic">{selectedBooking.deliveryInstructions}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="block text-gray-500">Placement</span>
+                        <span>{selectedBooking.placementLocation}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Dumpster & Pricing Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Dumpster Details</h3>
-                    <div className="space-y-2">
-                      {(() => {
-                        const dumpster = dumpsters?.find(d => d.id === selectedBooking.dumpsterId);
-                        const pricing = allPricing.find(p => p.id === selectedBooking.pricingId);
-                        return (
-                          <>
-                            <p><span className="font-medium">Type:</span> {dumpster?.name || 'Unknown'}</p>
-                            <p><span className="font-medium">Dimensions:</span> {dumpster?.dimensions || 'N/A'}</p>
-                            <p><span className="font-medium">Rental Period:</span> {pricing?.days || 'N/A'} days</p>
-                            <p><span className="font-medium">Placement:</span> {selectedBooking.placementLocation}</p>
-                          </>
-                        );
-                      })()}
+                
+                <div className="space-y-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <ClipboardList className="mr-2 h-4 w-4 text-gray-500" />
+                      Booking Details
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Dumpster</span>
+                        <span>{getDumpsterName(selectedBooking.dumpsterId)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Rental Duration</span>
+                        <span>{getDurationDays(selectedBooking.pricingId)} days</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Delivery Date</span>
+                        <span>{formatDate(selectedBooking.deliveryDate)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Pickup Date (Est.)</span>
+                        <span>{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Time Preference</span>
+                        <span>{selectedBooking.deliveryTimePreference}</span>
+                      </div>
                     </div>
                   </div>
                   
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
-                    <div className="space-y-2">
-                      <p><span className="font-medium">Total Price:</span> ${(selectedBooking.totalPrice / 100).toFixed(2)}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Payment Status:</span>
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <DollarSign className="mr-2 h-4 w-4 text-gray-500" />
+                      Payment Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Payment Status</span>
                         <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
                           {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
                         </Badge>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Total Amount</span>
+                        <span className="font-medium">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Additional Information */}
-                {selectedBooking.deliveryInstructions && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Delivery Instructions</h3>
-                    <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{selectedBooking.deliveryInstructions}</p>
+                  
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setChargesBooking(selectedBooking);
+                        setIsChargesDialogOpen(true);
+                      }}
+                      className="text-sm"
+                    >
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      Additional Charges
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsBookingDialogOpen(false)}>
+                      Close
+                    </Button>
                   </div>
-                )}
+                </div>
               </div>
             </DialogContent>
           </Dialog>
