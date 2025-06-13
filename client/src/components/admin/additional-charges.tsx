@@ -20,7 +20,7 @@ import type { AdditionalCharge, PaymentLink } from "@shared/schema";
 
 const additionalChargeSchema = z.object({
   description: z.string().min(1, "Description is required"),
-  amount: z.number().min(1, "Amount must be greater than 0"),
+  amount: z.coerce.number().min(0.01, "Amount must be greater than 0"),
 });
 
 const sendPaymentLinkSchema = z.object({
