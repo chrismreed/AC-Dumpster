@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { DollarSign, CreditCard, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { PaymentLink } from "@shared/schema";
 
 export default function PaymentPage() {
   const { id } = useParams();
@@ -13,7 +14,7 @@ export default function PaymentPage() {
   const { toast } = useToast();
 
   // Fetch payment link details
-  const { data: paymentLink, isLoading, error } = useQuery({
+  const { data: paymentLink, isLoading, error } = useQuery<PaymentLink>({
     queryKey: [`/api/payment-links/${id}`],
     enabled: !!id,
   });
@@ -69,6 +70,11 @@ export default function PaymentPage() {
     );
   }
 
+  // Debug logging
+  console.log('Payment link data:', paymentLink);
+  console.log('Error:', error);
+  console.log('Is loading:', isLoading);
+
   if (error || !paymentLink) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -79,6 +85,9 @@ export default function PaymentPage() {
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
               This payment link is invalid or has expired.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Error: {error?.message || 'Unknown error'}
             </p>
             <Button onClick={() => setLocation("/")} variant="outline">
               Return Home
