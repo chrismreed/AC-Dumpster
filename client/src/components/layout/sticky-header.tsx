@@ -41,12 +41,11 @@ export function StickyHeader() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <div className="text-xl font-bold">
-              <span className="text-white">ALLEY CAT</span>
-              <span className="text-primary ml-1 hidden sm:inline font-semibold">
-                DUMPSTER RENTAL
-              </span>
-            </div>
+            <img 
+              src="/attached_assets/ACD Logo_1749926708871.png" 
+              alt="Alley Cat Dumpster Rental" 
+              className="h-12 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
