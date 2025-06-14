@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing, Hub } from "@shared/schema";
-import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users, RefreshCw } from "lucide-react";
+import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users, RefreshCw, User, ClipboardList } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -551,16 +551,6 @@ export default function BookingsPage() {
                     <DialogTitle className="text-lg">Booking Details</DialogTitle>
                     <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
-                    disabled={checkPaymentStatusMutation.isPending}
-                    className="flex items-center gap-2"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
-                    Check Payment Status
-                  </Button>
                 </div>
                 <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -600,7 +590,7 @@ export default function BookingsPage() {
                 <div className="space-y-4">
                   <div className="border rounded-md p-4">
                     <h3 className="text-sm font-medium flex items-center mb-2">
-                      <User className="mr-2 h-4 w-4 text-gray-500" />
+                      <Users className="mr-2 h-4 w-4 text-gray-500" />
                       Customer Information
                     </h3>
                     <div className="space-y-2">
@@ -653,7 +643,7 @@ export default function BookingsPage() {
                 <div className="space-y-4">
                   <div className="border rounded-md p-4">
                     <h3 className="text-sm font-medium flex items-center mb-2">
-                      <ClipboardList className="mr-2 h-4 w-4 text-gray-500" />
+                      <List className="mr-2 h-4 w-4 text-gray-500" />
                       Booking Details
                     </h3>
                     <div className="space-y-2 text-sm">
@@ -695,6 +685,18 @@ export default function BookingsPage() {
                       <div className="flex justify-between">
                         <span className="text-gray-500">Total Amount</span>
                         <span className="font-medium">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                      </div>
+                      <div className="pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
+                          disabled={checkPaymentStatusMutation.isPending}
+                          className="w-full flex items-center gap-2"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                          Check Payment Status
+                        </Button>
                       </div>
                     </div>
                   </div>
