@@ -545,13 +545,11 @@ export default function BookingsPage() {
               onEscapeKeyDown={() => setIsViewDialogOpen(false)}
               onPointerDownOutside={() => setIsViewDialogOpen(false)}
             >
-              <DialogHeader>
+              <DialogHeader className="space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <DialogTitle>Booking Details</DialogTitle>
-                    <DialogDescription>
-                      View and manage booking #{selectedBooking.id}
-                    </DialogDescription>
+                    <DialogTitle className="text-lg">Booking Details</DialogTitle>
+                    <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
                   </div>
                   <Button
                     variant="outline"
@@ -564,207 +562,150 @@ export default function BookingsPage() {
                     Check Payment Status
                   </Button>
                 </div>
+                <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <Select 
+                      value={selectedBooking.status} 
+                      onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
+                    >
+                      <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="picked_up">Picked Up</SelectItem>
+                        <SelectItem value="complete">Complete</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={() => {
+                        const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-9 text-sm"
+                      size="sm"
+                    >
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Navigate
+                    </Button>
+                  </div>
+                </DialogDescription>
               </DialogHeader>
               
-              {/* Consolidated booking information in a single comprehensive view */}
-              <div className="space-y-4">
-                {/* Customer & Contact and Service Order - Top Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center">
-                        <Phone className="mr-2 h-4 w-4" />
-                        Customer & Contact
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <User className="mr-2 h-4 w-4 text-gray-500" />
+                      Customer Information
+                    </h3>
+                    <div className="space-y-2">
                       <div>
-                        <h3 className="font-semibold">{selectedBooking.customerName}</h3>
+                        <span className="text-sm font-medium">{selectedBooking.customerName}</span>
                       </div>
-                      <div className="flex items-center text-sm">
-                        <Mail className="h-3 w-3 mr-2 text-muted-foreground" />
-                        <a href={`mailto:${selectedBooking.customerEmail}`} className="text-primary hover:underline text-xs">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Mail className="mr-2 h-4 w-4" />
+                        <a href={`mailto:${selectedBooking.customerEmail}`} className="hover:underline">
                           {selectedBooking.customerEmail}
                         </a>
                       </div>
-                      <div className="flex items-center text-sm">
-                        <Phone className="h-3 w-3 mr-2 text-muted-foreground" />
-                        <a href={`tel:${selectedBooking.customerPhone}`} className="text-primary hover:underline text-xs">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Phone className="mr-2 h-4 w-4" />
+                        <a href={`tel:${selectedBooking.customerPhone}`} className="hover:underline">
                           {selectedBooking.customerPhone}
                         </a>
                       </div>
-                      <div className="pt-1 border-t">
-                        <div className="text-xs text-muted-foreground">Booked: {formatDate(selectedBooking.createdAt)}</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center">
-                        <Package className="mr-2 h-4 w-4" />
-                        Service Order
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Dumpster:</span>
-                        <span className="font-medium">{getDumpsterName(selectedBooking.dumpsterId)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Duration:</span>
-                        <span className="font-medium">{getDurationDays(selectedBooking.pricingId)} days</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Service Zone:</span>
-                        <span className="font-medium">{getZoneName(selectedBooking.serviceZoneId)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Add-ons:</span>
-                        <span className="font-medium">{getAddonNames(selectedBooking.selectedAddOns)}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Logistics - Middle Row */}
-                <div className="grid grid-cols-1 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center">
-                        <MapPin className="mr-2 h-4 w-4" />
-                        Logistics & Delivery
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm space-y-3">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <span className="text-muted-foreground text-xs">Delivery Date:</span>
-                          <div className="font-medium text-sm">{formatDate(selectedBooking.deliveryDate)}</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground text-xs">Pickup Date:</span>
-                          <div className="font-medium text-sm">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground text-xs">Time Preference:</span>
-                          <div className="font-medium text-sm">{selectedBooking.deliveryTimePreference}</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground text-xs">Placement:</span>
-                          <div className="font-medium text-sm">{selectedBooking.placementLocation}</div>
-                        </div>
-                      </div>
-                      <div className="pt-2 border-t">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Delivery Address</div>
-                            <div className="font-medium text-sm">{selectedBooking.deliveryAddress}</div>
-                            <div className="text-muted-foreground text-xs">{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</div>
-                          </div>
-                          <div className="flex items-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full h-8 text-xs"
-                              onClick={() => {
-                                const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
-                                const encodedAddress = encodeURIComponent(address);
-                                window.open(`https://maps.google.com/maps?q=${encodedAddress}`, '_blank');
-                              }}
-                            >
-                              <MapPin className="h-3 w-3 mr-1" />
-                              Navigate to Address
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Operations and Financial - Bottom Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Operations & Status
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Current Status:</span>
-                        <span>{getStatusBadge(selectedBooking.status)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <MapPin className="mr-2 h-4 w-4 text-gray-500" />
+                      Delivery Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="block text-gray-500">Address</span>
+                        <span>{selectedBooking.deliveryAddress}</span>
                       </div>
                       <div>
-                        <div className="text-xs text-muted-foreground mb-2">Update Status</div>
-                        <Select
-                          value={selectedBooking.status}
-                          onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Change status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="delivered">Delivered</SelectItem>
-                            <SelectItem value="picked_up">Picked Up</SelectItem>
-                            <SelectItem value="complete">Complete</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <span className="block text-gray-500">City & ZIP</span>
+                        <span>{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm flex items-center">
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        Financial Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground text-sm">Payment Status:</span>
+                      {selectedBooking.deliveryInstructions && (
+                        <div>
+                          <span className="block text-gray-500">Instructions</span>
+                          <span className="italic">{selectedBooking.deliveryInstructions}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="block text-gray-500">Placement</span>
+                        <span>{selectedBooking.placementLocation}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <ClipboardList className="mr-2 h-4 w-4 text-gray-500" />
+                      Booking Details
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Dumpster</span>
+                        <span>{getDumpsterName(selectedBooking.dumpsterId)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Rental Duration</span>
+                        <span>{getDurationDays(selectedBooking.pricingId)} days</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Delivery Date</span>
+                        <span>{formatDate(selectedBooking.deliveryDate)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Pickup Date (Est.)</span>
+                        <span>{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Time Preference</span>
+                        <span>{selectedBooking.deliveryTimePreference}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-2">
+                      <DollarSign className="mr-2 h-4 w-4 text-gray-500" />
+                      Payment Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Payment Status</span>
                         <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
                           {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
                         </Badge>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground text-sm">Total Amount:</span>
-                        <span className="text-xl font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Total Amount</span>
+                        <span className="font-medium">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
                       </div>
-                      {selectedBooking.stripePaymentIntentId && (
-                        <div className="pt-2 border-t">
-                          <div className="text-xs text-muted-foreground mb-1">Payment ID</div>
-                          <div className="font-mono text-xs bg-gray-100 p-2 rounded break-all">
-                            {selectedBooking.stripePaymentIntentId}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                      Close
+                    </Button>
+                  </div>
                 </div>
-
-                {/* Delivery Instructions if present */}
-                {selectedBooking.deliveryInstructions && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Delivery Instructions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-sm italic bg-gray-50 p-2 rounded">{selectedBooking.deliveryInstructions}</div>
-                    </CardContent>
-                  </Card>
-                )}
               </div>
-              
-              <DialogFooter>
-                <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-              </DialogFooter>
             </DialogContent>
           </Dialog>
         )}
