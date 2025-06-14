@@ -45,7 +45,7 @@ export function StickyHeader() {
             <img 
               src={logoImage} 
               alt="Alley Cat Dumpster Rental" 
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
 
