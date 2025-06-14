@@ -13,18 +13,14 @@ export default function HomePage() {
   return (
     <div>
       <ImprovedHero />
-      
       <ServicesSection />
-      
       <ProcessSection />
-      
       <AboutSection />
-      
       <section id="booking-form" className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary mb-4">
-              <span className="text-sm font-semibold">Book Your Dumpster</span>
+              <span className="text-sm font-semibold text-[#deb545]">Book Your Dumpster</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Fast & Easy Online Booking
@@ -38,15 +34,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      
       <ImprovedTestimonials />
-      
       <ComparisonSection />
-      
       <ImprovedFAQ />
-      
       <ContactSection />
-      
       <FinalCTA />
     </div>
   );
