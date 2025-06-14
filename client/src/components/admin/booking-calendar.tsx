@@ -455,16 +455,6 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                   <DialogTitle className="text-lg">Booking Details</DialogTitle>
                   <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
-                  disabled={checkPaymentStatusMutation.isPending}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
-                  Check Payment Status
-                </Button>
               </div>
               <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -612,6 +602,18 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                     <div className="flex justify-between">
                       <span className="text-gray-500">Total Amount</span>
                       <span className="font-medium">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
+                        disabled={checkPaymentStatusMutation.isPending}
+                        className="w-full flex items-center gap-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                        Check Payment Status
+                      </Button>
                     </div>
                   </div>
                 </div>
