@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { scrollToSection } from '@/lib/scroll-utils';
+import logoImage from "@assets/ACD Logo_1749926708871.png";
 
 export function StickyHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,7 +43,7 @@ export function StickyHeader() {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <img 
-              src="/attached_assets/ACD Logo_1749926708871.png" 
+              src={logoImage} 
               alt="Alley Cat Dumpster Rental" 
               className="h-12 w-auto"
             />
