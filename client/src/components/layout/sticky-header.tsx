@@ -118,8 +118,8 @@ export function StickyHeader() {
             onClick={() => setIsMobileMenuOpen(false)}
           />
           {/* Menu Panel */}
-          <div className="md:hidden fixed top-0 right-0 h-full w-80 bg-[#0f172a] shadow-lg z-50 slide-in-right">
-            <div className="px-4 py-5">
+          <div className="md:hidden fixed top-0 right-0 h-full w-80 bg-[#0f172a] shadow-lg z-50 slide-in-right border-l border-gray-700" style={{ backgroundColor: '#0f172a' }}>
+            <div className="px-4 py-5 bg-[#0f172a] h-full">
               {/* Close button */}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white">Menu</h2>
