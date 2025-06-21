@@ -35,7 +35,7 @@ export function StickyHeader() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-dark backdrop-blur-sm shadow-lg py-4' : 'bg-dark py-6'
+        isScrolled ? 'bg-[#0f172a] shadow-lg py-4' : 'bg-[#0f172a] py-6'
       }`}
     >
       <div className="container mx-auto px-4">
@@ -109,17 +109,26 @@ export function StickyHeader() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu Portal - Completely isolated */}
       {isMobileMenuOpen && (
-        <>
+        <div className="md:hidden">
           {/* Backdrop */}
           <div 
-            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40" 
+            className="fixed inset-0 bg-black bg-opacity-50 z-[100]" 
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          {/* Menu Panel */}
-          <div className="md:hidden fixed top-0 right-0 h-full w-80 bg-[#0f172a] shadow-lg z-50 slide-in-right border-l border-gray-700" style={{ backgroundColor: '#0f172a' }}>
-            <div className="px-4 py-5 bg-[#0f172a] h-full">
+          {/* Menu Panel - Completely isolated with its own stacking context */}
+          <div 
+            className="fixed top-0 right-0 h-screen w-80 z-[101] slide-in-right"
+            style={{ 
+              backgroundColor: '#0f172a',
+              boxShadow: '-4px 0 8px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            <div 
+              className="w-full h-full px-4 py-5 overflow-y-auto"
+              style={{ backgroundColor: '#0f172a' }}
+            >
               {/* Close button */}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white">Menu</h2>
@@ -160,7 +169,7 @@ export function StickyHeader() {
               </nav>
             </div>
           </div>
-        </>
+        </div>
       )}
     </header>
   );
