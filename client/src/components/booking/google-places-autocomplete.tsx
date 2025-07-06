@@ -46,90 +46,106 @@ export function GooglePlacesAutocomplete({
       try {
         const loader = new Loader({
           apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-          version: 'weekly',
+          version: 'beta', // Use beta version for PlaceAutocompleteElement
           libraries: ['places']
         });
 
         await loader.load();
         
-        // Import the new PlaceAutocompleteElement
-        const { PlaceAutocompleteElement } = await google.maps.importLibrary('places') as any;
+        // Import the Places library
+        const { PlaceAutocompleteElement } = await google.maps.importLibrary("places") as any;
         
         setIsLoaded(true);
 
-        if (autocompleteRef.current) {
-          const autocomplete = new PlaceAutocompleteElement({
-            locationRestriction: { country: 'us' },
-            requestedRegionCode: 'us',
-            includedPrimaryTypes: ['street_address'],
-            includedRegionCodes: ['us'],
-          });
+        if (autocompleteRef.current && autocompleteRef.current.children.length === 0) {
+          try {
+            // Create the PlaceAutocompleteElement
+            const placeAutocomplete = new PlaceAutocompleteElement({
+              componentRestrictions: { country: ['us'] },
+              types: ['address']
+            });
 
-          autocomplete.style.width = '100%';
-          autocomplete.style.height = '40px';
-          autocomplete.style.borderRadius = '6px';
-          autocomplete.style.border = '1px solid #e2e8f0';
-          autocomplete.style.padding = '8px 12px';
-          autocomplete.style.fontSize = '14px';
-          autocomplete.style.fontFamily = 'inherit';
-          autocomplete.placeholder = placeholder;
-          autocomplete.value = inputValue;
-
-          autocomplete.addEventListener('gmp-placeselect', (event: any) => {
-            const place = event.place;
+            // Style the element
+            placeAutocomplete.style.width = '100%';
+            placeAutocomplete.style.height = '40px';
+            placeAutocomplete.style.borderRadius = '6px';
+            placeAutocomplete.style.border = '1px solid #e2e8f0';
+            placeAutocomplete.style.padding = '8px 12px';
+            placeAutocomplete.style.fontSize = '14px';
+            placeAutocomplete.style.fontFamily = 'inherit';
+            placeAutocomplete.style.outline = 'none';
+            placeAutocomplete.style.boxSizing = 'border-box';
             
-            if (place && place.addressComponents && place.location) {
-              const addressComponents = place.addressComponents;
-              
-              let streetNumber = '';
-              let route = '';
-              let city = '';
-              let state = '';
-              let zipCode = '';
+            // Set placeholder
+            placeAutocomplete.placeholder = placeholder;
+            
+            // Append the new element only if container is empty
+            autocompleteRef.current.appendChild(placeAutocomplete);
 
-              console.log('Address components:', addressComponents);
-
-              addressComponents.forEach((component: any) => {
-                const types = component.types;
+            // Add the gmp-placeselect event listener
+            placeAutocomplete.addEventListener('gmp-placeselect', async ({ placePrediction }: any) => {
+              try {
+                const place = placePrediction.toPlace();
+                await place.fetchFields({ 
+                  fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'] 
+                });
                 
-                if (types.includes('street_number')) {
-                  streetNumber = component.longText;
-                } else if (types.includes('route')) {
-                  route = component.longText;
-                } else if (types.includes('locality')) {
-                  city = component.longText;
-                } else if (types.includes('administrative_area_level_1')) {
-                  state = component.shortText;
-                } else if (types.includes('postal_code')) {
-                  zipCode = component.longText;
+                console.log('Place selected:', place.toJSON());
+                
+                if (place.addressComponents && place.location) {
+                  const addressComponents = place.addressComponents;
+                  
+                  let streetNumber = '';
+                  let route = '';
+                  let city = '';
+                  let state = '';
+                  let zipCode = '';
+
+                  console.log('Address components:', addressComponents);
+
+                  addressComponents.forEach((component: any) => {
+                    const types = component.types;
+                    
+                    if (types.includes('street_number')) {
+                      streetNumber = component.longText;
+                    } else if (types.includes('route')) {
+                      route = component.longText;
+                    } else if (types.includes('locality')) {
+                      city = component.longText;
+                    } else if (types.includes('administrative_area_level_1')) {
+                      state = component.shortText;
+                    } else if (types.includes('postal_code')) {
+                      zipCode = component.longText;
+                    }
+                  });
+
+                  const fullAddress = `${streetNumber} ${route}`.trim();
+                  
+                  const parsedData = {
+                    address: fullAddress,
+                    city,
+                    state,
+                    zipCode,
+                    coordinates: {
+                      lat: place.location.lat(),
+                      lng: place.location.lng()
+                    }
+                  };
+
+                  console.log('Parsed address data:', parsedData);
+                  
+                  // Update input value to show the selected address
+                  setInputValue(fullAddress);
+
+                  onPlaceSelect(parsedData);
                 }
-              });
-
-              const fullAddress = `${streetNumber} ${route}`.trim();
-              
-              const parsedData = {
-                address: fullAddress,
-                city,
-                state,
-                zipCode,
-                coordinates: {
-                  lat: place.location.lat(),
-                  lng: place.location.lng()
-                }
-              };
-
-              console.log('Parsed address data:', parsedData);
-              
-              // Update input value to show the selected address
-              setInputValue(fullAddress);
-
-              onPlaceSelect(parsedData);
-            }
-          });
-
-          // Clear existing content and append the new element
-          autocompleteRef.current.innerHTML = '';
-          autocompleteRef.current.appendChild(autocomplete);
+              } catch (err) {
+                console.error('Error processing place selection:', err);
+              }
+            });
+          } catch (err) {
+            console.error('Error creating PlaceAutocompleteElement:', err);
+          }
         }
       } catch (error) {
         console.error('Error loading Google Places API:', error);
@@ -141,11 +157,11 @@ export function GooglePlacesAutocomplete({
 
   useEffect(() => {
     setInputValue(value);
-    // Update the autocomplete element's value if it exists
+    // Update the PlaceAutocompleteElement's value if it exists
     if (autocompleteRef.current) {
-      const autocompleteElement = autocompleteRef.current.querySelector('gmp-place-autocomplete');
-      if (autocompleteElement) {
-        autocompleteElement.value = value;
+      const placeAutocompleteElement = autocompleteRef.current.querySelector('gmp-place-autocomplete');
+      if (placeAutocompleteElement) {
+        placeAutocompleteElement.value = value;
       }
     }
   }, [value]);
@@ -156,13 +172,14 @@ export function GooglePlacesAutocomplete({
     onChange?.(newValue);
   };
 
-  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+  if (!isLoaded) {
     return (
       <Input
         value={inputValue}
         onChange={handleInputChange}
-        placeholder={placeholder}
+        placeholder="Loading address suggestions..."
         className={className}
+        disabled={true}
       />
     );
   }
@@ -172,16 +189,6 @@ export function GooglePlacesAutocomplete({
       ref={autocompleteRef}
       className={`w-full ${className || ''}`}
       style={{ minHeight: '40px' }}
-    >
-      {!isLoaded && (
-        <Input
-          value={inputValue}
-          onChange={handleInputChange}
-          placeholder="Loading address suggestions..."
-          className={className}
-          disabled={true}
-        />
-      )}
-    </div>
+    />
   );
 }
