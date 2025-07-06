@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
 import { Input } from '@/components/ui/input';
 
 interface GooglePlacesAutocompleteProps {
@@ -16,15 +15,6 @@ interface GooglePlacesAutocompleteProps {
   className?: string;
 }
 
-// Extend the global interface for the new PlaceAutocompleteElement
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'gmp-place-autocomplete': any;
-    }
-  }
-}
-
 export function GooglePlacesAutocomplete({
   onPlaceSelect,
   placeholder = "Enter street address",
@@ -32,7 +22,7 @@ export function GooglePlacesAutocomplete({
   onChange,
   className
 }: GooglePlacesAutocompleteProps) {
-  const autocompleteRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
@@ -44,108 +34,106 @@ export function GooglePlacesAutocomplete({
       }
 
       try {
-        const loader = new Loader({
-          apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-          version: 'beta', // Use beta version for PlaceAutocompleteElement
-          libraries: ['places']
-        });
+        // Load the Google Maps JavaScript API with the new import library approach
+        if (!window.google) {
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
+          script.async = true;
+          script.defer = true;
+          document.head.appendChild(script);
+          
+          await new Promise((resolve) => {
+            script.onload = resolve;
+          });
+        }
 
-        await loader.load();
-        
-        // Import the Places library
+        // Import the Places library using the new approach
         const { PlaceAutocompleteElement } = await google.maps.importLibrary("places") as any;
         
         setIsLoaded(true);
 
-        if (autocompleteRef.current && autocompleteRef.current.children.length === 0) {
-          try {
-            // Create the PlaceAutocompleteElement
-            const placeAutocomplete = new PlaceAutocompleteElement({
-              componentRestrictions: { country: ['us'] },
-              types: ['address']
-            });
+        if (containerRef.current && !containerRef.current.querySelector('gmp-place-autocomplete')) {
+          // Create the new PlaceAutocompleteElement
+          const autocompleteElement = new PlaceAutocompleteElement();
+          
+          // Configure the element
+          autocompleteElement.setAttribute('for-map', '');
+          autocompleteElement.setAttribute('placeholder', placeholder);
+          
+          // Style the element to match our design
+          Object.assign(autocompleteElement.style, {
+            width: '100%',
+            height: '40px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            padding: '8px 12px',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            outline: 'none',
+            boxSizing: 'border-box',
+            backgroundColor: 'white'
+          });
 
-            // Style the element
-            placeAutocomplete.style.width = '100%';
-            placeAutocomplete.style.height = '40px';
-            placeAutocomplete.style.borderRadius = '6px';
-            placeAutocomplete.style.border = '1px solid #e2e8f0';
-            placeAutocomplete.style.padding = '8px 12px';
-            placeAutocomplete.style.fontSize = '14px';
-            placeAutocomplete.style.fontFamily = 'inherit';
-            placeAutocomplete.style.outline = 'none';
-            placeAutocomplete.style.boxSizing = 'border-box';
-            
-            // Set placeholder
-            placeAutocomplete.placeholder = placeholder;
-            
-            // Append the new element only if container is empty
-            autocompleteRef.current.appendChild(placeAutocomplete);
+          // Add the element to the container
+          containerRef.current.appendChild(autocompleteElement);
 
-            // Add the gmp-placeselect event listener
-            placeAutocomplete.addEventListener('gmp-placeselect', async ({ placePrediction }: any) => {
-              try {
-                const place = placePrediction.toPlace();
-                await place.fetchFields({ 
-                  fields: ['displayName', 'formattedAddress', 'location', 'addressComponents'] 
+          // Handle place selection
+          autocompleteElement.addEventListener('gmp-placeselect', async (event: any) => {
+            try {
+              const place = event.place;
+              
+              // Fetch the place details
+              await place.fetchFields({
+                fields: ['displayName', 'formattedAddress', 'location', 'addressComponents']
+              });
+
+              if (place.addressComponents && place.location) {
+                const addressComponents = place.addressComponents;
+                
+                let streetNumber = '';
+                let route = '';
+                let city = '';
+                let state = '';
+                let zipCode = '';
+
+                addressComponents.forEach((component: any) => {
+                  const types = component.types;
+                  
+                  if (types.includes('street_number')) {
+                    streetNumber = component.longText;
+                  } else if (types.includes('route')) {
+                    route = component.longText;
+                  } else if (types.includes('locality')) {
+                    city = component.longText;
+                  } else if (types.includes('administrative_area_level_1')) {
+                    state = component.shortText;
+                  } else if (types.includes('postal_code')) {
+                    zipCode = component.longText;
+                  }
                 });
+
+                const fullAddress = `${streetNumber} ${route}`.trim();
                 
-                console.log('Place selected:', place.toJSON());
+                const parsedData = {
+                  address: fullAddress,
+                  city,
+                  state,
+                  zipCode,
+                  coordinates: {
+                    lat: place.location.lat(),
+                    lng: place.location.lng()
+                  }
+                };
+
+                console.log('Parsed address data:', parsedData);
                 
-                if (place.addressComponents && place.location) {
-                  const addressComponents = place.addressComponents;
-                  
-                  let streetNumber = '';
-                  let route = '';
-                  let city = '';
-                  let state = '';
-                  let zipCode = '';
-
-                  console.log('Address components:', addressComponents);
-
-                  addressComponents.forEach((component: any) => {
-                    const types = component.types;
-                    
-                    if (types.includes('street_number')) {
-                      streetNumber = component.longText;
-                    } else if (types.includes('route')) {
-                      route = component.longText;
-                    } else if (types.includes('locality')) {
-                      city = component.longText;
-                    } else if (types.includes('administrative_area_level_1')) {
-                      state = component.shortText;
-                    } else if (types.includes('postal_code')) {
-                      zipCode = component.longText;
-                    }
-                  });
-
-                  const fullAddress = `${streetNumber} ${route}`.trim();
-                  
-                  const parsedData = {
-                    address: fullAddress,
-                    city,
-                    state,
-                    zipCode,
-                    coordinates: {
-                      lat: place.location.lat(),
-                      lng: place.location.lng()
-                    }
-                  };
-
-                  console.log('Parsed address data:', parsedData);
-                  
-                  // Update input value to show the selected address
-                  setInputValue(fullAddress);
-
-                  onPlaceSelect(parsedData);
-                }
-              } catch (err) {
-                console.error('Error processing place selection:', err);
+                setInputValue(fullAddress);
+                onPlaceSelect(parsedData);
               }
-            });
-          } catch (err) {
-            console.error('Error creating PlaceAutocompleteElement:', err);
-          }
+            } catch (error) {
+              console.error('Error handling place selection:', error);
+            }
+          });
         }
       } catch (error) {
         console.error('Error loading Google Places API:', error);
@@ -157,13 +145,6 @@ export function GooglePlacesAutocomplete({
 
   useEffect(() => {
     setInputValue(value);
-    // Update the PlaceAutocompleteElement's value if it exists
-    if (autocompleteRef.current) {
-      const placeAutocompleteElement = autocompleteRef.current.querySelector('gmp-place-autocomplete');
-      if (placeAutocompleteElement) {
-        placeAutocompleteElement.value = value;
-      }
-    }
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,6 +152,17 @@ export function GooglePlacesAutocomplete({
     setInputValue(newValue);
     onChange?.(newValue);
   };
+
+  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+    return (
+      <Input
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder={placeholder}
+        className={className}
+      />
+    );
+  }
 
   if (!isLoaded) {
     return (
@@ -186,9 +178,8 @@ export function GooglePlacesAutocomplete({
 
   return (
     <div 
-      ref={autocompleteRef}
+      ref={containerRef}
       className={`w-full ${className || ''}`}
-      style={{ minHeight: '40px' }}
     />
   );
 }
