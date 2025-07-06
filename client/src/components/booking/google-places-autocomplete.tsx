@@ -16,6 +16,15 @@ interface GooglePlacesAutocompleteProps {
   className?: string;
 }
 
+// Extend the global interface for the new PlaceAutocompleteElement
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'gmp-place-autocomplete': any;
+    }
+  }
+}
+
 export function GooglePlacesAutocomplete({
   onPlaceSelect,
   placeholder = "Enter street address",
@@ -23,8 +32,7 @@ export function GooglePlacesAutocomplete({
   onChange,
   className
 }: GooglePlacesAutocompleteProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
@@ -43,27 +51,35 @@ export function GooglePlacesAutocomplete({
         });
 
         await loader.load();
+        
+        // Import the new PlaceAutocompleteElement
+        const { PlaceAutocompleteElement } = await google.maps.importLibrary('places') as any;
+        
         setIsLoaded(true);
 
-        if (inputRef.current) {
-          autocompleteRef.current = new google.maps.places.Autocomplete(
-            inputRef.current,
-            {
-              types: ['address'],
-              componentRestrictions: { country: 'us' },
-              fields: [
-                'address_components',
-                'formatted_address',
-                'geometry.location'
-              ]
-            }
-          );
+        if (autocompleteRef.current) {
+          const autocomplete = new PlaceAutocompleteElement({
+            locationRestriction: { country: 'us' },
+            requestedRegionCode: 'us',
+            includedPrimaryTypes: ['street_address'],
+            includedRegionCodes: ['us'],
+          });
 
-          autocompleteRef.current.addListener('place_changed', () => {
-            const place = autocompleteRef.current?.getPlace();
+          autocomplete.style.width = '100%';
+          autocomplete.style.height = '40px';
+          autocomplete.style.borderRadius = '6px';
+          autocomplete.style.border = '1px solid #e2e8f0';
+          autocomplete.style.padding = '8px 12px';
+          autocomplete.style.fontSize = '14px';
+          autocomplete.style.fontFamily = 'inherit';
+          autocomplete.placeholder = placeholder;
+          autocomplete.value = inputValue;
+
+          autocomplete.addEventListener('gmp-placeselect', (event: any) => {
+            const place = event.place;
             
-            if (place && place.address_components && place.geometry?.location) {
-              const addressComponents = place.address_components;
+            if (place && place.addressComponents && place.location) {
+              const addressComponents = place.addressComponents;
               
               let streetNumber = '';
               let route = '';
@@ -73,19 +89,19 @@ export function GooglePlacesAutocomplete({
 
               console.log('Address components:', addressComponents);
 
-              addressComponents.forEach(component => {
+              addressComponents.forEach((component: any) => {
                 const types = component.types;
                 
                 if (types.includes('street_number')) {
-                  streetNumber = component.long_name;
+                  streetNumber = component.longText;
                 } else if (types.includes('route')) {
-                  route = component.long_name;
+                  route = component.longText;
                 } else if (types.includes('locality')) {
-                  city = component.long_name;
+                  city = component.longText;
                 } else if (types.includes('administrative_area_level_1')) {
-                  state = component.short_name;
+                  state = component.shortText;
                 } else if (types.includes('postal_code')) {
-                  zipCode = component.long_name;
+                  zipCode = component.longText;
                 }
               });
 
@@ -97,8 +113,8 @@ export function GooglePlacesAutocomplete({
                 state,
                 zipCode,
                 coordinates: {
-                  lat: place.geometry.location.lat(),
-                  lng: place.geometry.location.lng()
+                  lat: place.location.lat(),
+                  lng: place.location.lng()
                 }
               };
 
@@ -110,6 +126,10 @@ export function GooglePlacesAutocomplete({
               onPlaceSelect(parsedData);
             }
           });
+
+          // Clear existing content and append the new element
+          autocompleteRef.current.innerHTML = '';
+          autocompleteRef.current.appendChild(autocomplete);
         }
       } catch (error) {
         console.error('Error loading Google Places API:', error);
@@ -117,16 +137,17 @@ export function GooglePlacesAutocomplete({
     };
 
     initializeAutocomplete();
-
-    return () => {
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
-      }
-    };
-  }, [onPlaceSelect]);
+  }, [onPlaceSelect, placeholder]);
 
   useEffect(() => {
     setInputValue(value);
+    // Update the autocomplete element's value if it exists
+    if (autocompleteRef.current) {
+      const autocompleteElement = autocompleteRef.current.querySelector('gmp-place-autocomplete');
+      if (autocompleteElement) {
+        autocompleteElement.value = value;
+      }
+    }
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,13 +168,20 @@ export function GooglePlacesAutocomplete({
   }
 
   return (
-    <Input
-      ref={inputRef}
-      value={inputValue}
-      onChange={handleInputChange}
-      placeholder={isLoaded ? placeholder : "Loading address suggestions..."}
-      className={className}
-      disabled={!isLoaded}
-    />
+    <div 
+      ref={autocompleteRef}
+      className={`w-full ${className || ''}`}
+      style={{ minHeight: '40px' }}
+    >
+      {!isLoaded && (
+        <Input
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="Loading address suggestions..."
+          className={className}
+          disabled={true}
+        />
+      )}
+    </div>
   );
 }
