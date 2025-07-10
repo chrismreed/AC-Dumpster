@@ -81,9 +81,8 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
   useEffect(() => {
     if (!dumpsters) return;
     
-    // Calculate minimum delivery date (tomorrow)
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Calculate minimum delivery date (today)
+    const today = new Date();
     
     setIsLoadingAvailability(true);
     
@@ -118,10 +117,10 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
     
     // Generate next 30 days and filter by availability
     const dates: Date[] = [];
-    const endDate = new Date(tomorrow);
+    const endDate = new Date(today);
     endDate.setDate(endDate.getDate() + 30);
     
-    for (let d = new Date(tomorrow); d <= endDate; d.setDate(d.getDate() + 1)) {
+    for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
       const currentDate = new Date(d);
       const isAvailable = isDumpsterAvailable(currentDate);
       
