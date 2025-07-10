@@ -118,6 +118,19 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
     return addon.name;
   };
 
+  // Function to get delivery description for same-day delivery add-ons
+  const getDeliveryDescription = (addon: AddOn) => {
+    if (addon.name.toLowerCase().includes('same day') && addon.cutoffTime) {
+      const isAvailable = isSameDayDeliveryAvailable(addon);
+      if (isAvailable) {
+        return addon.description; // Use original description for same-day
+      } else {
+        return 'Get your dumpster delivered tomorrow (subject to availability).';
+      }
+    }
+    return addon.description;
+  };
+
   const handleAddonChange = (checked: boolean, addon: AddOn) => {
     if (checked) {
       setSelectedAddOns(prev => ({
@@ -209,7 +222,7 @@ export function ServiceAddons({ onBack, onNext, selectedAddOns: initialSelectedA
                   {getDeliveryLabel(addon)}
                 </Label>
                 <p className={`text-sm mt-1 ${selectedAddOns[addon.id] ? "text-neutral-300" : "text-neutral-600"}`}>
-                  {addon.description}
+                  {getDeliveryDescription(addon)}
                 </p>
                 <p className={`text-sm font-medium mt-2 ${selectedAddOns[addon.id] ? "text-[#ffdd33]" : "text-[#2c2c2c]"}`}>
                   +${(addon.price / 100).toFixed(2)}
