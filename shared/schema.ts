@@ -196,11 +196,26 @@ export const insertBookingSchema = createInsertSchema(bookings)
   })
   .extend({
     // Override the default date validation to handle string dates properly
+    // Keep dates in YYYY-MM-DD format and create them at noon to avoid timezone shifts
     deliveryDate: z.string().or(z.date()).transform(val => {
       if (typeof val === 'string') {
-        const date = new Date(val);
+        // Parse YYYY-MM-DD format and create date at noon local time to avoid timezone issues
+        const dateParts = val.split('-');
+        if (dateParts.length !== 3) {
+          throw new Error('Invalid date format - expected YYYY-MM-DD');
+        }
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+        const day = parseInt(dateParts[2]);
+        
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          throw new Error('Invalid date format - non-numeric components');
+        }
+        
+        // Create date at noon to avoid timezone shifting
+        const date = new Date(year, month, day, 12, 0, 0, 0);
         if (isNaN(date.getTime())) {
-          throw new Error('Invalid date format');
+          throw new Error('Invalid date');
         }
         return date;
       }
