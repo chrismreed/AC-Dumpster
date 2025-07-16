@@ -84,7 +84,7 @@ export default function AuthPage() {
       <div className="max-w-5xl w-full flex">
         {/* Left side - Auth forms */}
         <div className="flex-1 p-4">
-          <Card className="w-full shadow-xl rounded-xl overflow-hidden border border-[#d1d5db]">
+          <Card className="w-full shadow-xl rounded-xl overflow-hidden border border-[#d1d5db] pl-[16px] pr-[16px]">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-center">
                 {activeTab === "login" ? "Admin Login" : "Create an Account"}
