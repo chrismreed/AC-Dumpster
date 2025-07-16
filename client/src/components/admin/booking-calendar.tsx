@@ -439,22 +439,24 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
       
       {/* Booking Details Dialog */}
       {selectedBooking && (
-        <Dialog 
-          open={isDetailsOpen} 
-          onOpenChange={setIsDetailsOpen}
-          modal={true}
-        >
-          <DialogContent 
-            className="max-w-3xl max-h-[90vh] overflow-y-auto p-4 md:p-6"
-            onEscapeKeyDown={() => setIsDetailsOpen(false)}
-            onPointerDownOutside={() => setIsDetailsOpen(false)}
-          >
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader className="space-y-3">
               <div className="flex justify-between items-start">
                 <div>
                   <DialogTitle className="text-lg">Booking Details</DialogTitle>
                   <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
+                  disabled={checkPaymentStatusMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                  Check Payment Status
+                </Button>
               </div>
               <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -466,24 +468,12 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {statusOrder.map((status) => (
-                        <SelectItem 
-                          key={status.value} 
-                          value={status.value}
-                          className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through text-gray-400" : ""}
-                        >
-                          <span className="flex items-center gap-2">
-                            {status.step > 0 && (
-                              <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
-                                {status.step}
-                              </span>
-                            )}
-                            <span className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through" : ""}>
-                              {status.label}
-                            </span>
-                          </span>
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="picked_up">Picked Up</SelectItem>
+                      <SelectItem value="complete">Complete</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button 
@@ -492,17 +482,29 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                       const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
                       window.open(mapsUrl, '_blank');
                     }}
-                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-9 px-4"
+                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-9 text-sm"
                     size="sm"
                   >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Navigate</span>
-                    <span className="sm:hidden">Nav</span>
+                    <MapPin className="h-4 w-4 mr-1" />
+                    Navigate
                   </Button>
                 </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setChargesBooking(selectedBooking);
+                    setIsChargesDialogOpen(true);
+                  }}
+                  className="text-sm"
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  Additional Charges
+                </Button>
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-4">
                 <div className="border rounded-md p-4">
@@ -603,22 +605,10 @@ export function BookingCalendar({ bookings, dumpsters, durations, allPricing }: 
                       <span className="text-gray-500">Total Amount</span>
                       <span className="font-medium">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
                     </div>
-                    <div className="pt-2 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
-                        disabled={checkPaymentStatusMutation.isPending}
-                        className="w-full flex items-center gap-2"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
-                        Check Payment Status
-                      </Button>
-                    </div>
                   </div>
                 </div>
                 
-                <div className="flex justify-end">
+                <div className="flex flex-col gap-2">
                   <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
                     Close
                   </Button>
