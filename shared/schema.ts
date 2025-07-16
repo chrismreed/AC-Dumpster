@@ -152,6 +152,20 @@ export const paymentLinks = pgTable("payment_links", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Legal documents (terms of service, privacy policy)
+export const legalDocuments = pgTable("legal_documents", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // "terms_of_service", "privacy_policy"
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  version: text("version").notNull().default("1.0"),
+  isActive: boolean("is_active").default(true),
+  effectiveDate: timestamp("effective_date").defaultNow().notNull(),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Schemas for insert operations
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -248,6 +262,13 @@ export const insertPaymentLinkSchema = createInsertSchema(paymentLinks)
     createdAt: true,
   });
 
+export const insertLegalDocumentSchema = createInsertSchema(legalDocuments)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -281,3 +302,6 @@ export type InsertAdditionalCharge = z.infer<typeof insertAdditionalChargeSchema
 
 export type PaymentLink = typeof paymentLinks.$inferSelect;
 export type InsertPaymentLink = z.infer<typeof insertPaymentLinkSchema>;
+
+export type LegalDocument = typeof legalDocuments.$inferSelect;
+export type InsertLegalDocument = z.infer<typeof insertLegalDocumentSchema>;

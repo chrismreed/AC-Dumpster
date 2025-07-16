@@ -19,8 +19,8 @@ export default function HomePage() {
       <section id="booking-form" className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary mb-4">
-              <span className="text-sm font-semibold text-[#deb545]">Book Your Dumpster</span>
+            <div className="inline-flex items-center px-3 py-1 rounded-full text-primary mb-4 bg-[#f7c948]">
+              <span className="text-sm font-semibold text-[#111827]">Book Your Dumpster</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Fast & Easy Online Booking

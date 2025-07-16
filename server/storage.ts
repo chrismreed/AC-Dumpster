@@ -28,7 +28,10 @@ import {
   type InsertAdditionalCharge,
   paymentLinks,
   type PaymentLink,
-  type InsertPaymentLink
+  type InsertPaymentLink,
+  legalDocuments,
+  type LegalDocument,
+  type InsertLegalDocument
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -115,6 +118,14 @@ export interface IStorage {
   createPaymentLink(link: InsertPaymentLink): Promise<PaymentLink>;
   updatePaymentLinkStatus(id: number, status: string, paidAt?: Date): Promise<PaymentLink | undefined>;
   deletePaymentLink(id: number): Promise<boolean>;
+
+  // Legal documents methods
+  getLegalDocuments(): Promise<LegalDocument[]>;
+  getLegalDocument(id: number): Promise<LegalDocument | undefined>;
+  getLegalDocumentByType(type: string): Promise<LegalDocument | undefined>;
+  createLegalDocument(document: InsertLegalDocument): Promise<LegalDocument>;
+  updateLegalDocument(id: number, document: Partial<InsertLegalDocument>): Promise<LegalDocument | undefined>;
+  deleteLegalDocument(id: number): Promise<boolean>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -1064,6 +1075,42 @@ export class DatabaseStorage implements IStorage {
 
   async deletePaymentLink(id: number): Promise<boolean> {
     const result = await db.delete(paymentLinks).where(eq(paymentLinks.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Legal documents methods
+  async getLegalDocuments(): Promise<LegalDocument[]> {
+    return db.select().from(legalDocuments).where(eq(legalDocuments.isActive, true));
+  }
+
+  async getLegalDocument(id: number): Promise<LegalDocument | undefined> {
+    const [document] = await db.select().from(legalDocuments).where(eq(legalDocuments.id, id));
+    return document;
+  }
+
+  async getLegalDocumentByType(type: string): Promise<LegalDocument | undefined> {
+    const [document] = await db.select().from(legalDocuments)
+      .where(and(eq(legalDocuments.type, type), eq(legalDocuments.isActive, true)));
+    return document;
+  }
+
+  async createLegalDocument(document: InsertLegalDocument): Promise<LegalDocument> {
+    const [newDocument] = await db.insert(legalDocuments).values(document).returning();
+    return newDocument;
+  }
+
+  async updateLegalDocument(id: number, documentUpdate: Partial<InsertLegalDocument>): Promise<LegalDocument | undefined> {
+    const updateData = { ...documentUpdate, updatedAt: new Date() };
+    const [updatedDocument] = await db
+      .update(legalDocuments)
+      .set(updateData)
+      .where(eq(legalDocuments.id, id))
+      .returning();
+    return updatedDocument;
+  }
+
+  async deleteLegalDocument(id: number): Promise<boolean> {
+    const result = await db.delete(legalDocuments).where(eq(legalDocuments.id, id));
     return (result.rowCount || 0) > 0;
   }
 }

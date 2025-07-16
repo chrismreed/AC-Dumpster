@@ -12,7 +12,8 @@ import {
   insertBookingSchema,
   insertDumpsterPricingSchema,
   insertHubSchema,
-  insertAdditionalChargeSchema
+  insertAdditionalChargeSchema,
+  insertLegalDocumentSchema
 } from "@shared/schema";
 
 // Check for Stripe secret key
@@ -1659,6 +1660,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json({ received: true });
+  });
+
+  // Legal documents routes
+  app.get("/api/legal-documents", async (_req, res) => {
+    try {
+      const documents = await storage.getLegalDocuments();
+      res.json(documents);
+    } catch (err) {
+      console.error("Error fetching legal documents:", err);
+      res.status(500).json({ message: "Failed to fetch legal documents" });
+    }
+  });
+
+  app.get("/api/legal-documents/:id", async (req, res) => {
+    try {
+      const document = await storage.getLegalDocument(Number(req.params.id));
+      if (!document) {
+        return res.status(404).json({ message: "Legal document not found" });
+      }
+      res.json(document);
+    } catch (err) {
+      console.error("Error fetching legal document:", err);
+      res.status(500).json({ message: "Failed to fetch legal document" });
+    }
+  });
+
+  app.get("/api/legal-documents/type/:type", async (req, res) => {
+    try {
+      const document = await storage.getLegalDocumentByType(req.params.type);
+      if (!document) {
+        return res.status(404).json({ message: "Legal document not found" });
+      }
+      res.json(document);
+    } catch (err) {
+      console.error("Error fetching legal document by type:", err);
+      res.status(500).json({ message: "Failed to fetch legal document" });
+    }
+  });
+
+  app.post("/api/legal-documents", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertLegalDocumentSchema.parse(req.body);
+      const document = await storage.createLegalDocument(validatedData);
+      res.status(201).json(document);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid legal document data", errors: err.errors });
+      }
+      console.error("Error creating legal document:", err);
+      res.status(500).json({ message: "Failed to create legal document" });
+    }
+  });
+
+  app.put("/api/legal-documents/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const document = await storage.getLegalDocument(id);
+      if (!document) {
+        return res.status(404).json({ message: "Legal document not found" });
+      }
+      
+      const validatedData = insertLegalDocumentSchema.partial().parse(req.body);
+      const updatedDocument = await storage.updateLegalDocument(id, validatedData);
+      res.json(updatedDocument);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid legal document data", errors: err.errors });
+      }
+      console.error("Error updating legal document:", err);
+      res.status(500).json({ message: "Failed to update legal document" });
+    }
+  });
+
+  app.delete("/api/legal-documents/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const document = await storage.getLegalDocument(id);
+      if (!document) {
+        return res.status(404).json({ message: "Legal document not found" });
+      }
+      
+      const success = await storage.deleteLegalDocument(id);
+      if (success) {
+        res.json({ message: "Legal document deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete legal document" });
+      }
+    } catch (err) {
+      console.error("Error deleting legal document:", err);
+      res.status(500).json({ message: "Failed to delete legal document" });
+    }
   });
 
   const httpServer = createServer(app);
