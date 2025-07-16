@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { LegalDocument } from "@shared/schema";
+import { LegalDocument, insertLegalDocumentSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,8 @@ import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 
-const legalDocumentSchema = z.object({
+// Create form schema without the date transformation for form handling
+const formSchema = z.object({
   type: z.enum(["terms_of_service", "privacy_policy"]),
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Content is required"),
@@ -28,7 +29,7 @@ const legalDocumentSchema = z.object({
   createdBy: z.number().default(1), // Will be set to current user ID
 });
 
-type LegalDocumentFormData = z.infer<typeof legalDocumentSchema>;
+type LegalDocumentFormData = z.infer<typeof formSchema>;
 
 export default function LegalDocumentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,7 +41,7 @@ export default function LegalDocumentsPage() {
   });
 
   const form = useForm<LegalDocumentFormData>({
-    resolver: zodResolver(legalDocumentSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       type: "terms_of_service",
       title: "",
@@ -54,7 +55,9 @@ export default function LegalDocumentsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: LegalDocumentFormData) => {
-      const response = await apiRequest("POST", "/api/legal-documents", data);
+      // Validate with the proper schema before sending
+      const validatedData = insertLegalDocumentSchema.parse(data);
+      const response = await apiRequest("POST", "/api/legal-documents", validatedData);
       return response.json();
     },
     onSuccess: () => {
@@ -71,7 +74,9 @@ export default function LegalDocumentsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: LegalDocumentFormData) => {
-      const response = await apiRequest("PUT", `/api/legal-documents/${editingDocument?.id}`, data);
+      // Validate with the proper schema before sending
+      const validatedData = insertLegalDocumentSchema.parse(data);
+      const response = await apiRequest("PUT", `/api/legal-documents/${editingDocument?.id}`, validatedData);
       return response.json();
     },
     onSuccess: () => {

@@ -267,6 +267,33 @@ export const insertLegalDocumentSchema = createInsertSchema(legalDocuments)
     id: true,
     createdAt: true,
     updatedAt: true,
+  })
+  .extend({
+    // Handle date transformation for effective date
+    effectiveDate: z.string().or(z.date()).transform(val => {
+      if (typeof val === 'string') {
+        // Parse YYYY-MM-DD format and create date at noon local time to avoid timezone issues
+        const dateParts = val.split('-');
+        if (dateParts.length !== 3) {
+          throw new Error('Invalid date format - expected YYYY-MM-DD');
+        }
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+        const day = parseInt(dateParts[2]);
+        
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          throw new Error('Invalid date format - non-numeric components');
+        }
+        
+        // Create date at noon to avoid timezone shifting
+        const date = new Date(year, month, day, 12, 0, 0, 0);
+        if (isNaN(date.getTime())) {
+          throw new Error('Invalid date');
+        }
+        return date;
+      }
+      return val;
+    })
   });
 
 // Types
