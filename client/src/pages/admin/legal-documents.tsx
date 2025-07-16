@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { LegalDocument, insertLegalDocumentSchema } from "@shared/schema";
+import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -162,17 +163,18 @@ export default function LegalDocumentsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-neutral-800">Legal Documents</h2>
-          <p className="text-neutral-600">Manage terms of service and privacy policy</p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleNewDocument} className="bg-[#f7c948] text-[#2c2c2c] hover:bg-[#e6b93d]">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Document
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-neutral-800">Legal Documents</h2>
+            <p className="text-neutral-600">Manage terms of service and privacy policy</p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleNewDocument} className="bg-[#f7c948] text-[#2c2c2c] hover:bg-[#e6b93d]">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Document
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -397,6 +399,7 @@ export default function LegalDocumentsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
