@@ -59,6 +59,8 @@ export default function BookingsPage() {
   const [selectedBookings, setSelectedBookings] = useState<Set<number>>(new Set());
   const [sortBy, setSortBy] = useState<string>("deliveryDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [chargesBooking, setChargesBooking] = useState<Booking | null>(null);
+  const [isChargesDialogOpen, setIsChargesDialogOpen] = useState(false);
   // Define status progression order
   const statusOrder = [
     { value: "pending", label: "Pending", step: 1 },
@@ -1284,206 +1286,22 @@ export default function BookingsPage() {
           </Dialog>
         )}
 
-        {/* View Booking Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Booking Details</DialogTitle>
-              <DialogDescription>
-                Complete information for booking #{selectedBooking?.id}
-              </DialogDescription>
-            </DialogHeader>
-            
-            {selectedBooking && (
-              <div className="space-y-6">
-                {/* Customer Information */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <Users className="mr-2 h-5 w-5" />
-                    Customer Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm text-gray-500">Name</Label>
-                      <p className="font-medium">{selectedBooking.customerName}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Email</Label>
-                      <p className="font-medium">{selectedBooking.customerEmail}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Phone</Label>
-                      <p className="font-medium">{selectedBooking.customerPhone}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Status</Label>
-                      <div className="mt-1">
-                        <Select 
-                          value={selectedBooking.status} 
-                          onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
-                        >
-                          <SelectTrigger className="w-40">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOrder.map((status) => (
-                              <SelectItem 
-                                key={status.value} 
-                                value={status.value}
-                                className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through text-gray-400" : ""}
-                              >
-                                <span className="flex items-center gap-2">
-                                  {status.step > 0 && (
-                                    <span className="flex-shrink-0 w-4 h-4 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center justify-center font-medium">
-                                      {status.step}
-                                    </span>
-                                  )}
-                                  <span className={isStatusCompleted(status.value, selectedBooking.status) ? "line-through" : ""}>
-                                    {status.label}
-                                  </span>
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Delivery Information */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <MapPin className="mr-2 h-5 w-5" />
-                    Delivery Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm text-gray-500">Address</Label>
-                      <p className="font-medium">{selectedBooking.deliveryAddress}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">City</Label>
-                      <p className="font-medium">{selectedBooking.deliveryCity}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">ZIP Code</Label>
-                      <p className="font-medium">{selectedBooking.deliveryZipCode}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Delivery Date</Label>
-                      <p className="font-medium">{formatDate(selectedBooking.deliveryDate)}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Pickup Date</Label>
-                      <p className="font-medium">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</p>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Service Information */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <Package className="mr-2 h-5 w-5" />
-                    Service Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm text-gray-500">Dumpster</Label>
-                      <p className="font-medium">{getDumpsterName(selectedBooking.dumpsterId)}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Rental Duration</Label>
-                      <p className="font-medium">{getDurationDays(selectedBooking.pricingId)} days</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Add-ons</Label>
-                      <p className="font-medium">{getAddonNames(selectedBooking.selectedAddOns)}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Zone</Label>
-                      <p className="font-medium">{getZoneName(selectedBooking.serviceZoneId)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pricing Information */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <DollarSign className="mr-2 h-5 w-5" />
-                    Pricing Details
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-center text-lg font-semibold">
-                      <span>Total Amount</span>
-                      <span>${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Delivery Instructions */}
-                {selectedBooking.deliveryInstructions && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Delivery Instructions</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p>{selectedBooking.deliveryInstructions}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Booking Metadata */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    Booking Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm text-gray-500">Booking ID</Label>
-                      <p className="font-medium">#{selectedBooking.id}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-gray-500">Created</Label>
-                      <p className="font-medium">{formatDate(selectedBooking.createdAt)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Charges */}
-                <AdditionalCharges 
-                  bookingId={selectedBooking.id}
-                  customerName={selectedBooking.customerName}
-                  customerEmail={selectedBooking.customerEmail}
-                  customerPhone={selectedBooking.customerPhone}
-                />
-              </div>
-            )}
-            
-            <DialogFooter>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => {
-                    if (selectedBooking) {
-                      const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
-                      const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                      window.open(mapsUrl, '_blank');
-                    }
-                  }}
-                  className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
-                >
-                  <MapPin className="mr-2 h-4 w-4" />
-                  Navigate
-                </Button>
-                <Button 
-                  onClick={() => setIsViewDialogOpen(false)}
-                  variant="outline"
-                >
-                  Close
-                </Button>
-              </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Additional Charges Dialog */}
+        {chargesBooking && (
+          <AdditionalCharges
+            bookingId={chargesBooking.id}
+            customerName={chargesBooking.customerName}
+            customerEmail={chargesBooking.customerEmail}
+            customerPhone={chargesBooking.customerPhone}
+            isOpen={isChargesDialogOpen}
+            onClose={() => {
+              setIsChargesDialogOpen(false);
+              setChargesBooking(null);
+            }}
+          />
+        )}
       </div>
     </AdminLayout>
   );
