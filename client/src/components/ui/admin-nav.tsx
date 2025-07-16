@@ -15,7 +15,8 @@ import {
   CreditCard,
   Settings,
   Menu,
-  X
+  X,
+  FileText
 } from "lucide-react";
 import { Button } from "./button";
 
@@ -60,6 +61,11 @@ export function AdminNav() {
       title: "Payment Settings",
       href: "/admin/payment-settings",
       icon: <CreditCard className="mr-2 h-4 w-4" />
+    },
+    {
+      title: "Legal Documents",
+      href: "/admin/legal-documents",
+      icon: <FileText className="mr-2 h-4 w-4" />
     },
     {
       title: "Logout",

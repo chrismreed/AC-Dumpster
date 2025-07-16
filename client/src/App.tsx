@@ -18,6 +18,7 @@ import ServiceZonesPage from "@/pages/admin/zones-new-layout";
 import BookingsPage from "@/pages/admin/bookings";
 import HubsPage from "@/pages/admin/hubs";
 import PaymentSettingsPage from "@/pages/admin/payment-settings";
+import LegalDocumentsPage from "@/pages/admin/legal-documents";
 import BookingConfirmationPage from "@/pages/booking-confirmation";
 import PaymentSuccessPage from "@/pages/payment-success";
 import PaymentPage from "@/pages/payment-page";
@@ -40,6 +41,7 @@ function Router() {
       <ProtectedRoute path="/admin/hubs" component={HubsPage} adminOnly />
       <ProtectedRoute path="/admin/bookings" component={BookingsPage} adminOnly />
       <ProtectedRoute path="/admin/payment-settings" component={PaymentSettingsPage} adminOnly />
+      <ProtectedRoute path="/admin/legal-documents" component={LegalDocumentsPage} adminOnly />
       <Route component={NotFound} />
     </Switch>
   );
