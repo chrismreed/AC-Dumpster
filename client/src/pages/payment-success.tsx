@@ -12,7 +12,7 @@ export default function PaymentSuccess() {
   useEffect(() => {
     // Mark payment as successful for the booking if needed
     if (bookingId) {
-      console.log(`Payment successful for booking ${bookingId}`);
+      
     }
   }, [bookingId]);
 

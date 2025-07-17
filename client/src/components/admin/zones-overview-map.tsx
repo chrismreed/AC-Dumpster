@@ -50,7 +50,7 @@ export function ZonesOverviewMap({ zones, onEditZone, activeZoneId }: ZonesOverv
       const paths = JSON.parse(polygonPathString);
       return Array.isArray(paths) ? paths : [];
     } catch (error) {
-      console.error("Error parsing polygon paths:", error);
+      
       return [];
     }
   };

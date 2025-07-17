@@ -319,7 +319,7 @@ export default function DumpstersPage() {
             [dumpster.id]: pricing
           }));
         } catch (error) {
-          console.error(`Failed to fetch pricing for dumpster ${dumpster.id}:`, error);
+          
         }
       });
     }

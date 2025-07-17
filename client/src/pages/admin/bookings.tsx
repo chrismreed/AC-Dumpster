@@ -125,7 +125,7 @@ export default function BookingsPage() {
         const data = await response.json();
         return data;
       } catch (error) {
-        console.error("Error updating booking:", error);
+        
         throw error;
       }
     },
@@ -138,7 +138,7 @@ export default function BookingsPage() {
       });
     },
     onError: (error: any) => {
-      console.error("Mutation error:", error);
+      
       toast({
         title: "Error",
         description: `Failed to update booking: ${error?.message || "Unknown error"}`,
@@ -184,7 +184,7 @@ export default function BookingsPage() {
       });
     },
     onError: (error: any) => {
-      console.error("Delete error:", error);
+      
       toast({
         title: "Error",
         description: "Failed to delete booking. Please try again.",
@@ -209,7 +209,7 @@ export default function BookingsPage() {
       });
     },
     onError: (error: any) => {
-      console.error("Bulk delete error:", error);
+      
       toast({
         title: "Error",
         description: "Failed to delete some bookings. Please try again.",
@@ -233,7 +233,7 @@ export default function BookingsPage() {
       });
     },
     onError: (error: any) => {
-      console.error("Bulk status update error:", error);
+      
       toast({
         title: "Error",
         description: "Failed to update some bookings. Please try again.",
@@ -259,7 +259,7 @@ export default function BookingsPage() {
       
       updateBookingStatusMutation.mutate({ id, status });
     } catch (error) {
-      console.error("Error in handleStatusChange:", error);
+      
       toast({
         title: "Error",
         description: "Failed to update booking status. Please try again.",

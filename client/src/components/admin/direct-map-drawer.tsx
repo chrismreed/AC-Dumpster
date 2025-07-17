@@ -202,7 +202,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
             // @ts-ignore - We know fitBounds exists
             map.fitBounds(bounds);
           } catch (error) {
-            console.error("Error loading existing polygon:", error);
+            
             toast({
               title: "Error",
               description: "Could not load the existing geofence boundary.",
@@ -214,7 +214,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         setMapLoaded(true);
         setMapLoading(false);
       } catch (error: any) {
-        console.error("Error initializing map:", error);
+        
         setMapError(`Error initializing map: ${error.message}`);
         setMapLoading(false);
       }
@@ -257,7 +257,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         polygonRef.current.setMap(null);
         polygonRef.current = null;
       } catch (e) {
-        console.error("Error clearing polygon:", e);
+        
       }
     }
     
@@ -300,7 +300,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         centerLng,
       });
     } catch (error) {
-      console.error("Error saving geofence:", error);
+      
       toast({
         title: "Error",
         description: "Failed to save geofence. Please try again.",

@@ -15,6 +15,8 @@ import {
   insertAdditionalChargeSchema,
   insertLegalDocumentSchema
 } from "@shared/schema";
+import { apiLimiter, authLimiter } from "./middleware/security";
+import { getHealthStatus } from "./middleware/validation";
 
 // Check for Stripe secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -38,8 +40,65 @@ const isAdmin = (req: Request, res: Response, next: Function) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply rate limiting to all API routes
+  app.use("/api", apiLimiter);
+  
+  // Apply stricter rate limiting to auth routes
+  app.use("/api/login", authLimiter);
+  app.use("/api/logout", authLimiter);
+  
+  // Health check endpoint
+  app.get("/health", async (req, res) => {
+    const health = await getHealthStatus();
+    res.status(health.status === 'healthy' ? 200 : 503).json(health);
+  });
+  
   // Setup authentication routes
   setupAuth(app);
+
+  // Admin password change endpoint
+  app.post("/api/admin/change-password", isAdmin, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+      
+      // Validate password strength
+      const { validatePasswordStrength } = await import("./setup-admin");
+      const validation = validatePasswordStrength(newPassword);
+      
+      if (!validation.valid) {
+        return res.status(400).json({ message: "Password does not meet requirements", errors: validation.errors });
+      }
+      
+      // Get current user
+      const user = req.user as any;
+      const currentUser = await storage.getUserByUsername(user.username);
+      
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify current password
+      const bcrypt = await import("bcryptjs");
+      const isValidPassword = await bcrypt.compare(currentPassword, currentUser.password);
+      
+      if (!isValidPassword) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+      
+      // Hash new password and update
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await storage.updateUserPassword(currentUser.id, hashedPassword);
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (err) {
+      console.error("Error changing password:", err);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
 
   // Dumpster routes
   app.get("/api/dumpsters", async (_req, res) => {

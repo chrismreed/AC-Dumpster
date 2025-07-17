@@ -84,7 +84,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
           setPolygonPath(JSON.stringify(paths));
         });
       } catch (error) {
-        console.error("Error parsing polygon path:", error);
+        
         toast({
           title: "Error",
           description: "Could not load the existing geofence boundary.",
@@ -185,7 +185,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         centerLng: center.lng(),
       });
     } catch (error) {
-      console.error("Error calculating polygon center:", error);
+      
       toast({
         title: "Error",
         description: "Failed to save geofence. Please try again.",

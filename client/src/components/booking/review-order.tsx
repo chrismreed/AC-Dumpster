@@ -78,7 +78,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
 
   // Calculate price based on selections
   useEffect(() => {
-    console.log("BookingData received:", bookingData);
+    
     console.log("Missing fields check:", {
       dumpsterId: bookingData.dumpsterId,
       pricingId: bookingData.pricingId,
@@ -107,11 +107,11 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
           });
           
           const data = await response.json();
-          console.log("Price calculation response:", data);
+          
           // Server returns price in cents, store as-is for consistent handling
           setCalculatedPrice(data.totalPrice);
         } catch (error) {
-          console.error("Error calculating price:", error);
+          
           toast({
             title: "Error",
             description: "Failed to calculate price. Please try again.",
@@ -146,7 +146,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   // Create payment intent mutation
   const createPaymentIntentMutation = useMutation({
     mutationFn: async ({ bookingId, amount }: { bookingId: number; amount: number }) => {
-      console.log(`Creating payment intent for booking ${bookingId} with amount ${amount} cents`);
+      
       const response = await apiRequest("POST", "/api/create-payment-intent", {
         bookingId,
         amount: Math.round(amount), // Ensure integer amount
@@ -154,11 +154,11 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("Payment intent created successfully, clientSecret received");
+      
       setClientSecret(data.clientSecret);
     },
     onError: (error) => {
-      console.error("Payment intent creation failed:", error);
+      
       toast({
         title: "Error",
         description: `Failed to initialize payment: ${error.message}`,
@@ -169,7 +169,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
 
   const createPaymentIntent = (bookingId: number, amount: number) => {
     // The amount is already in cents - no need to multiply by 100 again
-    console.log(`Creating payment intent for booking ${bookingId} with amount ${amount} cents`);
+    
     createPaymentIntentMutation.mutate({ bookingId, amount });
   };
 
@@ -257,7 +257,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
         apiRequest("PATCH", `/api/bookings/${bookingId}/payment-status`, {
           status: "failed"
         }).catch(err => {
-          console.error("Failed to update booking payment status:", err);
+          
         });
       }
       
@@ -299,7 +299,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
           const data = await response.json();
           setSelectedZone(data);
         } catch (error) {
-          console.error("Error looking up zone:", error);
+          
           setSelectedZone(null);
         } finally {
           setIsLoadingZone(false);

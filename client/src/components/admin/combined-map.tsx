@@ -92,7 +92,7 @@ export function CombinedMap({ zones, onZoneUpdate }: CombinedMapProps) {
           drawZones();
         }
       } catch (error: any) {
-        console.error("Error initializing map:", error);
+        
         setMapError(`Map initialization error: ${error.message}`);
         setMapLoading(false);
       }
@@ -171,7 +171,7 @@ export function CombinedMap({ zones, onZoneUpdate }: CombinedMapProps) {
           hasValidBounds = true;
         });
       } catch (error) {
-        console.error(`Error drawing zone ${zone.id}:`, error);
+        
       }
     });
     

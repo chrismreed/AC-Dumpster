@@ -15,13 +15,10 @@ let stripePromise: ReturnType<typeof loadStripe> | null = null;
 
 try {
   if (import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-    console.log("Initializing Stripe with public key");
     stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-  } else {
-    console.error("Missing Stripe public key");
   }
 } catch (error) {
-  console.error("Error initializing Stripe:", error);
+  // Stripe initialization failed - payment form will show error state
 }
 
 interface PaymentFormContentProps {
@@ -110,7 +107,7 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
     setIsLoading(true);
 
     try {
-      console.log("Confirming payment with Stripe...");
+
       
       // Extract booking ID from URL if present (e.g., /booking?id=123)
       const urlParams = new URLSearchParams(window.location.search);
@@ -130,12 +127,12 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
         redirect: 'if_required',
       });
       
-      console.log("Stripe confirmPayment result:", JSON.stringify(result));
+
       const { error, paymentIntent } = result;
       
       // If we get a successful payment without redirect
       if (paymentIntent && paymentIntent.status === 'succeeded') {
-        console.log("Payment succeeded!");
+
         setPaymentStatus("success");
         toast({
           title: "Payment successful!",
@@ -173,7 +170,7 @@ function PaymentFormContent({ clientSecret, onSuccess }: PaymentFormContentProps
         // Don't call onSuccess for failed payments
       }
     } catch (error) {
-      console.error("Payment submission error:", error);
+
       toast({
         title: "Payment Error",
         description: "There was a problem processing your payment. Please try again or use a different card.",
@@ -257,7 +254,7 @@ export function PaymentForm({ clientSecret, onSuccess }: PaymentFormProps) {
   useEffect(() => {
     // Check if Stripe is properly configured
     if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-      console.error("Missing Stripe public key");
+
       toast({
         title: "Configuration Error",
         description: "Payment system is not properly configured. Please contact support.",
@@ -266,8 +263,7 @@ export function PaymentForm({ clientSecret, onSuccess }: PaymentFormProps) {
       return;
     }
 
-    // Log Stripe public key prefix (first few characters)
-    console.log(`Using Stripe public key: ${import.meta.env.VITE_STRIPE_PUBLIC_KEY.substring(0, 7)}...`);
+
 
     // Make sure we set the component to ready state
     setIsReady(true);

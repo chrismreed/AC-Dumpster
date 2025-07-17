@@ -387,14 +387,14 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
                           selected={field.value ? (() => {
                             // Create a date object for display in the calendar
                             // Log the current value for debugging
-                            console.log("Current field value:", field.value);
+                            
                             const dateParts = field.value.split('-');
                             const year = parseInt(dateParts[0]);
                             const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
                             const day = parseInt(dateParts[2]);
                             // Create date at noon to avoid timezone issues
                             const selectedDate = new Date(year, month, day, 12, 0, 0, 0);
-                            console.log("Display date in calendar:", selectedDate);
+                            
                             return selectedDate;
                           })() : undefined}
                           onSelect={(date) => {
@@ -408,8 +408,8 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
                               const selectedYear = date.getFullYear();
                               
                               // Log the raw selected date for debugging
-                              console.log('User clicked on date:', date);
-                              console.log(`Raw selection - Year: ${selectedYear}, Month: ${selectedMonth}, Day: ${selectedDay}`);
+                              
+                              
                               
                               // Format the date parts with leading zeros as needed
                               const formattedDay = String(selectedDay).padStart(2, '0');
@@ -419,7 +419,7 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
                               const formattedDate = `${selectedYear}-${formattedMonth}-${formattedDay}`;
                               
                               // Log the final formatted date
-                              console.log(`Final formatted date: ${formattedDate}`);
+                              
                               
                               // Update the form field with this exact string value
                               field.onChange(formattedDate);

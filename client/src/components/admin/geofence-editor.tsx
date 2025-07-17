@@ -233,7 +233,7 @@ export function GeofenceEditor({
           });
         }
       } catch (error) {
-        console.error("Error parsing polygon path:", error);
+        
         toast({
           title: "Error",
           description: "Could not load the existing geofence boundary.",
@@ -334,7 +334,7 @@ export function GeofenceEditor({
         centerLng: center.lng(),
       });
     } catch (error) {
-      console.error("Error calculating polygon center:", error);
+      
       toast({
         title: "Error",
         description: "Failed to save geofence. Please try again.",
@@ -410,7 +410,7 @@ export function GeofenceEditor({
                       );
                     }
                   } catch (e) {
-                    console.error("Error parsing zone path:", e);
+                    
                   }
                 }
                 return null;

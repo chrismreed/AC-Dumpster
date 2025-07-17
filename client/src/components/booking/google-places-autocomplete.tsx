@@ -29,13 +29,13 @@ export function GooglePlacesAutocomplete({
   useEffect(() => {
     const initializeAutocomplete = async () => {
       if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-        console.warn('Google Maps API key not found');
+        
         return;
       }
 
       try {
         // Temporarily suppress deprecation warnings
-        const originalWarn = console.warn;
+        const originalWarn = 
         console.warn = (...args) => {
           const message = args.join(' ');
           if (!message.includes('google.maps.places.Autocomplete')) {
@@ -55,7 +55,7 @@ export function GooglePlacesAutocomplete({
         await loader.load();
         
         // Restore console.warn
-        console.warn = originalWarn;
+        
         setIsLoaded(true);
 
         if (containerRef.current && !containerRef.current.querySelector('input')) {
@@ -135,7 +135,7 @@ export function GooglePlacesAutocomplete({
                 }
               };
 
-              console.log('Parsed address data:', parsedData);
+              
               
               setInputValue(fullAddress);
               onPlaceSelect(parsedData);
@@ -150,7 +150,7 @@ export function GooglePlacesAutocomplete({
           });
         }
       } catch (error) {
-        console.error('Error loading Google Places API:', error);
+        
         setIsLoaded(true); // Allow fallback to regular input
       }
     };

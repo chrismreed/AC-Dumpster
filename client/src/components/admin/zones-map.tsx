@@ -97,7 +97,7 @@ export function ZonesMap({ zones, onSaveZone }: ZonesMapProps) {
           });
         }
       } catch (error) {
-        console.error(`Error drawing zone ${zone.id}:`, error);
+        
       }
     });
     

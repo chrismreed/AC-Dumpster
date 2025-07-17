@@ -44,7 +44,7 @@ export default function PaymentPage() {
         throw new Error('Failed to get payment URL');
       }
     } catch (error) {
-      console.error('Payment error:', error);
+      
       toast({
         title: "Payment Error",
         description: "Unable to process payment. Please contact support.",

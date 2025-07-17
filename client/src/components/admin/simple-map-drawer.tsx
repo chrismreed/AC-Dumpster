@@ -32,7 +32,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
   
   // Load the Google Maps API and initialize the map
   useEffect(() => {
-    console.log("Initializing map...");
+    
     
     // Function to update polygon path when edited
     function updatePolygonPath() {
@@ -51,7 +51,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
     const initializeMap = () => {
       try {
         if (!mapContainerRef.current) return;
-        console.log("Creating map instance...");
+        
         
         // Create map instance
         const mapInstance = new window.google.maps.Map(mapContainerRef.current, {
@@ -67,7 +67,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         mapInstanceRef.current = mapInstance;
         
         // Create drawing manager
-        console.log("Setting up drawing manager...");
+        
         const drawingManager = new window.google.maps.drawing.DrawingManager({
           drawingMode: null,
           drawingControl: true,
@@ -89,7 +89,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         
         // Set up listener for polygon complete
         window.google.maps.event.addListener(drawingManager, 'polygoncomplete', (polygon: any) => {
-          console.log("Polygon complete!");
+          
           
           // Clear any existing polygon
           if (polygonRef.current) {
@@ -123,7 +123,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         // Draw existing polygon if available
         if (polygonPath) {
           try {
-            console.log("Drawing existing polygon...");
+            
             const path = JSON.parse(polygonPath);
             
             const polygon = new window.google.maps.Polygon({
@@ -151,7 +151,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
             
             mapInstance.fitBounds(bounds);
           } catch (error) {
-            console.error("Error drawing existing polygon:", error);
+            
             toast({
               title: "Error",
               description: "Could not load the existing geofence boundary.",
@@ -163,7 +163,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         setMapLoaded(true);
         setMapLoading(false);
       } catch (error: any) {
-        console.error("Error initializing map:", error);
+        
         setMapError(`Map initialization error: ${error.message}`);
         setMapLoading(false);
       }
@@ -171,10 +171,10 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
     
     // Check if Google Maps API is already loaded
     if (window.google && window.google.maps) {
-      console.log("Google Maps already loaded");
+      
       initializeMap();
     } else {
-      console.log("Loading Google Maps API...");
+      
       // Load Google Maps API
       const script = document.createElement('script');
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -184,12 +184,12 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
       script.defer = true;
       
       script.onload = () => {
-        console.log("Google Maps API loaded successfully");
+        
         initializeMap();
       };
       
       script.onerror = (error) => {
-        console.error("Error loading Google Maps API:", error);
+        
         setMapError("Failed to load Google Maps API. Please check your API key.");
         setMapLoading(false);
       };
@@ -255,7 +255,7 @@ export function GeofenceEditor({ zone, onSave, onCancel }: GeofenceEditorProps) 
         centerLng
       });
     } catch (error: any) {
-      console.error("Error saving geofence:", error);
+      
       toast({
         title: "Error",
         description: "Failed to save geofence. Please try again.",

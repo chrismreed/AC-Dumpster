@@ -80,14 +80,14 @@ export default function PaymentSettingsPage() {
       // await apiRequest("POST", "/api/admin/payment-settings/stripe", values);
       
       // For demonstration purposes
-      console.log("Stripe settings saved:", values);
+      
       
       toast({
         title: "Settings saved",
         description: "Your Stripe payment settings have been updated successfully.",
       });
     } catch (error) {
-      console.error(error);
+      
       toast({
         title: "Error",
         description: "Failed to save Stripe settings. Please try again.",
@@ -106,14 +106,14 @@ export default function PaymentSettingsPage() {
       // await apiRequest("POST", "/api/admin/payment-settings/general", values);
       
       // For demonstration purposes
-      console.log("General payment settings saved:", values);
+      
       
       toast({
         title: "Settings saved",
         description: "Your general payment settings have been updated successfully.",
       });
     } catch (error) {
-      console.error(error);
+      
       toast({
         title: "Error",
         description: "Failed to save general payment settings. Please try again.",
@@ -137,7 +137,7 @@ export default function PaymentSettingsPage() {
         description: "Stripe connection tested successfully.",
       });
     } catch (error) {
-      console.error(error);
+      
       toast({
         title: "Connection failed",
         description: "Failed to connect to Stripe. Please check your API keys.",

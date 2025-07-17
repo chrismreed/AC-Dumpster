@@ -190,7 +190,7 @@ export default function HubsPage() {
   };
 
   const handlePlaceSelect = (place: PlaceData) => {
-    console.log("Place selected:", place);
+    
     setSelectedPlace(place);
     
     // Use setTimeout to ensure form updates are processed

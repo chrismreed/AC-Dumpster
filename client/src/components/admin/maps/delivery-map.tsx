@@ -78,7 +78,7 @@ async function geocodeAddress(address: string): Promise<google.maps.LatLngLitera
           lng: location.lng()
         });
       } else {
-        console.warn(`Geocoding failed for address: ${address}`, status);
+        
         resolve(null);
       }
     });
@@ -240,7 +240,7 @@ export function DeliveryMap({ bookings, dumpsters }: DeliveryMapProps) {
           }
         }
       } catch (error) {
-        console.error('Error geocoding bookings:', error);
+        
       }
     };
 

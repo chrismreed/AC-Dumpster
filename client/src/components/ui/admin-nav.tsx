@@ -16,7 +16,8 @@ import {
   Settings,
   Menu,
   X,
-  FileText
+  FileText,
+  Shield
 } from "lucide-react";
 import { Button } from "./button";
 
@@ -66,6 +67,11 @@ export function AdminNav() {
       title: "Legal Documents",
       href: "/admin/legal-documents",
       icon: <FileText className="mr-2 h-4 w-4" />
+    },
+    {
+      title: "Security",
+      href: "/admin/security",
+      icon: <Shield className="mr-2 h-4 w-4" />
     },
     {
       title: "Logout",

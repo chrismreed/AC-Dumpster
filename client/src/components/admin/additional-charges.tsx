@@ -288,9 +288,9 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
                 light: '#FFFFFF',
               },
             });
-            console.log('QR code generated successfully');
+            
           } catch (qrError) {
-            console.error('QR code generation error:', qrError);
+            
             toast({
               title: "Error",
               description: "Failed to generate QR code",
@@ -298,11 +298,11 @@ export function AdditionalCharges({ bookingId, customerName, customerEmail, cust
             });
           }
         } else {
-          console.error('Canvas ref not available');
+          
         }
       }, 100);
     } catch (error) {
-      console.error('Error in openQrCodeDialog:', error);
+      
       toast({
         title: "Error",
         description: "Failed to open QR code dialog",
