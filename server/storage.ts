@@ -129,6 +129,13 @@ export interface IStorage {
   updateLegalDocument(id: number, document: Partial<InsertLegalDocument>): Promise<LegalDocument | undefined>;
   deleteLegalDocument(id: number): Promise<boolean>;
 
+  // Service methods
+  listServices(): Promise<Service[]>;
+  getService(id: number): Promise<Service | undefined>;
+  createService(service: InsertService): Promise<Service>;
+  updateService(id: number, service: Partial<InsertService>): Promise<Service | undefined>;
+  deleteService(id: number): Promise<boolean>;
+
   // Session store
   sessionStore: session.SessionStore;
 }
@@ -1132,6 +1139,31 @@ export class DatabaseStorage implements IStorage {
 
   async deleteLegalDocument(id: number): Promise<boolean> {
     const result = await db.delete(legalDocuments).where(eq(legalDocuments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Service methods
+  async listServices(): Promise<Service[]> {
+    return await db.select().from(services).orderBy(services.sortOrder, services.name);
+  }
+
+  async getService(id: number): Promise<Service | undefined> {
+    const [service] = await db.select().from(services).where(eq(services.id, id));
+    return service;
+  }
+
+  async createService(serviceData: InsertService): Promise<Service> {
+    const [service] = await db.insert(services).values(serviceData).returning();
+    return service;
+  }
+
+  async updateService(id: number, serviceData: Partial<InsertService>): Promise<Service | undefined> {
+    const [service] = await db.update(services).set(serviceData).where(eq(services.id, id)).returning();
+    return service;
+  }
+
+  async deleteService(id: number): Promise<boolean> {
+    const result = await db.delete(services).where(eq(services.id, id));
     return (result.rowCount || 0) > 0;
   }
 }

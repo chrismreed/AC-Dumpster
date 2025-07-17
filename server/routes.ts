@@ -13,7 +13,8 @@ import {
   insertDumpsterPricingSchema,
   insertHubSchema,
   insertAdditionalChargeSchema,
-  insertLegalDocumentSchema
+  insertLegalDocumentSchema,
+  insertServiceSchema
 } from "@shared/schema";
 import { apiLimiter, authLimiter } from "./middleware/security";
 import { getHealthStatus } from "./middleware/validation";
@@ -1844,6 +1845,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error deleting legal document:", err);
       res.status(500).json({ message: "Failed to delete legal document" });
+    }
+  });
+
+  // Services endpoints
+  app.get("/api/admin/services", isAdmin, async (req, res) => {
+    try {
+      const services = await storage.listServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ message: "Failed to fetch services" });
+    }
+  });
+
+  app.get("/api/admin/services/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const service = await storage.getService(id);
+      if (!service) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      res.json(service);
+    } catch (error) {
+      console.error("Error fetching service:", error);
+      res.status(500).json({ message: "Failed to fetch service" });
+    }
+  });
+
+  app.post("/api/admin/services", isAdmin, async (req, res) => {
+    try {
+      const serviceData = insertServiceSchema.parse(req.body);
+      const service = await storage.createService(serviceData);
+      res.status(201).json(service);
+    } catch (error) {
+      console.error("Error creating service:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid service data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create service" });
+    }
+  });
+
+  app.put("/api/admin/services/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const serviceData = insertServiceSchema.partial().parse(req.body);
+      const service = await storage.updateService(id, serviceData);
+      if (!service) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      res.json(service);
+    } catch (error) {
+      console.error("Error updating service:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid service data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update service" });
+    }
+  });
+
+  app.delete("/api/admin/services/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteService(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      res.json({ message: "Service deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ message: "Failed to delete service" });
     }
   });
 

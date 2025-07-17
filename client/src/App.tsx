@@ -17,6 +17,7 @@ import AddOnsPage from "@/pages/admin/add-ons";
 import ServiceZonesPage from "@/pages/admin/zones-new-layout";
 import BookingsPage from "@/pages/admin/bookings";
 import HubsPage from "@/pages/admin/hubs";
+import ServicesPage from "@/pages/admin/services";
 import PaymentSettingsPage from "@/pages/admin/payment-settings";
 import LegalDocumentsPage from "@/pages/admin/legal-documents";
 import SecurityPage from "@/pages/admin/security";
@@ -40,6 +41,7 @@ function Router() {
       <ProtectedRoute path="/admin/add-ons" component={AddOnsPage} adminOnly />
       <ProtectedRoute path="/admin/zones" component={ServiceZonesPage} adminOnly />
       <ProtectedRoute path="/admin/hubs" component={HubsPage} adminOnly />
+      <ProtectedRoute path="/admin/services" component={ServicesPage} adminOnly />
       <ProtectedRoute path="/admin/bookings" component={BookingsPage} adminOnly />
       <ProtectedRoute path="/admin/payment-settings" component={PaymentSettingsPage} adminOnly />
       <ProtectedRoute path="/admin/legal-documents" component={LegalDocumentsPage} adminOnly />

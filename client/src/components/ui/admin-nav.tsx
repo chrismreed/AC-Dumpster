@@ -53,6 +53,11 @@ export function AdminNav() {
       icon: <Map className="mr-2 h-4 w-4" />
     },
     {
+      title: "Services",
+      href: "/admin/services",
+      icon: <Settings className="mr-2 h-4 w-4" />
+    },
+    {
       title: "Bookings",
       href: "/admin/bookings",
       icon: <Calendar className="mr-2 h-4 w-4" />

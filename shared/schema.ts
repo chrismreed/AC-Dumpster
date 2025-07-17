@@ -36,6 +36,20 @@ export const addOns = pgTable("add_ons", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Additional Services with flexible pricing
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  pricingType: text("pricing_type").notNull(), // "flat" or "variable"
+  flatPrice: integer("flat_price"), // In cents for flat pricing
+  variableConfig: jsonb("variable_config"), // JSON config for variable pricing
+  isActive: boolean("is_active").notNull().default(true),
+  category: text("category"),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Hub Locations (dumpster storage locations)
 export const hubs = pgTable("hubs", {
   id: serial("id").primaryKey(),
@@ -296,6 +310,12 @@ export const insertLegalDocumentSchema = createInsertSchema(legalDocuments)
     })
   });
 
+export const insertServiceSchema = createInsertSchema(services)
+  .omit({
+    id: true,
+    createdAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -332,3 +352,6 @@ export type InsertPaymentLink = z.infer<typeof insertPaymentLinkSchema>;
 
 export type LegalDocument = typeof legalDocuments.$inferSelect;
 export type InsertLegalDocument = z.infer<typeof insertLegalDocumentSchema>;
+
+export type Service = typeof services.$inferSelect;
+export type InsertService = z.infer<typeof insertServiceSchema>;
