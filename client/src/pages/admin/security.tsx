@@ -28,12 +28,22 @@ const passwordSchema = z.object({
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
-export default function SecurityPage() {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [passwordChanged, setPasswordChanged] = useState(false);
+const profileSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters").max(50),
+  email: z.string().email("Invalid email address"),
+});
 
-  const form = useForm<PasswordFormData>({
+type ProfileFormData = z.infer<typeof profileSchema>;
+
+export default function AccountSettingsPage() {
+  const { toast } = useToast();
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  const [profileUpdated, setProfileUpdated] = useState(false);
+  const { user } = useAuth();
+
+  const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: "",
@@ -42,8 +52,16 @@ export default function SecurityPage() {
     },
   });
 
-  const onSubmit = async (data: PasswordFormData) => {
-    setIsLoading(true);
+  const profileForm = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: user?.username || "",
+      email: user?.email || "",
+    },
+  });
+
+  const onPasswordSubmit = async (data: PasswordFormData) => {
+    setIsPasswordLoading(true);
     try {
       await apiRequest("POST", "/api/admin/change-password", {
         currentPassword: data.currentPassword,
@@ -56,7 +74,7 @@ export default function SecurityPage() {
       });
 
       setPasswordChanged(true);
-      form.reset();
+      passwordForm.reset();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -64,7 +82,34 @@ export default function SecurityPage() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsPasswordLoading(false);
+    }
+  };
+
+  const onProfileSubmit = async (data: ProfileFormData) => {
+    setIsProfileLoading(true);
+    try {
+      await apiRequest("POST", "/api/admin/update-profile", {
+        username: data.username,
+        email: data.email,
+      });
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully.",
+      });
+
+      setProfileUpdated(true);
+      // Reset the flag after a delay
+      setTimeout(() => setProfileUpdated(false), 3000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProfileLoading(false);
     }
   };
 
@@ -72,9 +117,9 @@ export default function SecurityPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Security Settings</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
           <p className="text-muted-foreground">
-            Manage your account security and authentication settings.
+            Manage your account information, security settings, and preferences.
           </p>
         </div>
 
@@ -87,7 +132,7 @@ export default function SecurityPage() {
           </AlertDescription>
         </Alert>
 
-        {/* Password Change Success */}
+        {/* Success Messages */}
         {passwordChanged && (
           <Alert className="border-green-200 bg-green-50">
             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -97,7 +142,79 @@ export default function SecurityPage() {
           </Alert>
         )}
 
+        {profileUpdated && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              Profile updated successfully!
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid gap-6">
+          {/* Profile Information Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Profile Information
+              </CardTitle>
+              <CardDescription>
+                Update your basic account information and contact details.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...profileForm}>
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                  <FormField
+                    control={profileForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter your username"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          This is your admin username for logging in.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={profileForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Enter your email address"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Used for notifications and account recovery.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button type="submit" disabled={isProfileLoading}>
+                    {isProfileLoading ? "Updating Profile..." : "Update Profile"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
           {/* Change Password Card */}
           <Card>
             <CardHeader>
@@ -111,10 +228,10 @@ export default function SecurityPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
                   <FormField
-                    control={form.control}
+                    control={passwordForm.control}
                     name="currentPassword"
                     render={({ field }) => (
                       <FormItem>
@@ -132,7 +249,7 @@ export default function SecurityPage() {
                   />
 
                   <FormField
-                    control={form.control}
+                    control={passwordForm.control}
                     name="newPassword"
                     render={({ field }) => (
                       <FormItem>
@@ -153,7 +270,7 @@ export default function SecurityPage() {
                   />
 
                   <FormField
-                    control={form.control}
+                    control={passwordForm.control}
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
@@ -170,31 +287,51 @@ export default function SecurityPage() {
                     )}
                   />
 
-                  <Button type="submit" disabled={isLoading} className="w-full">
-                    {isLoading ? "Changing Password..." : "Change Password"}
+                  <Button type="submit" disabled={isPasswordLoading} className="w-full">
+                    {isPasswordLoading ? "Changing Password..." : "Change Password"}
                   </Button>
                 </form>
               </Form>
             </CardContent>
           </Card>
 
-          {/* Security Best Practices */}
+          {/* Account Security Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
-                Security Best Practices
+                Account Security
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• Use a unique password that you don't use for other accounts</li>
-                <li>• Include a mix of uppercase, lowercase, numbers, and symbols</li>
-                <li>• Avoid using personal information like names or birthdays</li>
-                <li>• Consider using a password manager to generate and store secure passwords</li>
-                <li>• Log out of the admin panel when finished working</li>
-                <li>• Regularly update your password for maximum security</li>
-              </ul>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-sm mb-2">Account Created</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-sm mb-2">Account Status</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {user?.isAdmin ? 'Administrator' : 'User'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t">
+                  <h4 className="font-medium text-sm mb-3">Security Best Practices</h4>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>• Use a unique password that you don't use for other accounts</li>
+                    <li>• Include a mix of uppercase, lowercase, numbers, and symbols</li>
+                    <li>• Avoid using personal information like names or birthdays</li>
+                    <li>• Consider using a password manager to generate and store secure passwords</li>
+                    <li>• Log out of the admin panel when finished working</li>
+                    <li>• Regularly update your password for maximum security</li>
+                  </ul>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -100,6 +100,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin profile update endpoint
+  app.post("/api/admin/update-profile", isAdmin, async (req, res) => {
+    try {
+      const { username, email } = req.body;
+      
+      if (!username || !email) {
+        return res.status(400).json({ message: "Username and email are required" });
+      }
+      
+      // Get current user
+      const user = req.user as any;
+      const currentUser = await storage.getUserByUsername(user.username);
+      
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if username is taken by another user
+      if (username !== currentUser.username) {
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser && existingUser.id !== currentUser.id) {
+          return res.status(400).json({ message: "Username is already taken" });
+        }
+      }
+      
+      // Update user profile
+      await storage.updateUserProfile(currentUser.id, { username, email });
+      
+      res.json({ message: "Profile updated successfully" });
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Dumpster routes
   app.get("/api/dumpsters", async (_req, res) => {
     try {

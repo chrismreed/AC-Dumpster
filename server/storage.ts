@@ -47,6 +47,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(id: number, hashedPassword: string): Promise<boolean>;
+  updateUserProfile(id: number, profile: { username: string; email: string }): Promise<boolean>;
   listUsers(): Promise<User[]>;
 
   // Dumpster methods
@@ -718,6 +719,17 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .update(users)
       .set({ password: hashedPassword })
+      .where(eq(users.id, id));
+    return result.rowCount > 0;
+  }
+
+  async updateUserProfile(id: number, profile: { username: string; email: string }): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ 
+        username: profile.username,
+        email: profile.email
+      })
       .where(eq(users.id, id));
     return result.rowCount > 0;
   }

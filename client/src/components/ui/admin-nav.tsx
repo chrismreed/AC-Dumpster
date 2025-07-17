@@ -69,7 +69,7 @@ export function AdminNav() {
       icon: <FileText className="mr-2 h-4 w-4" />
     },
     {
-      title: "Security",
+      title: "Account Settings",
       href: "/admin/security",
       icon: <Shield className="mr-2 h-4 w-4" />
     },
