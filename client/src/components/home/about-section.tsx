@@ -14,10 +14,10 @@ export function AboutSection() {
               Your Local Dumpster Rental Specialists
             </h2>
             <p className="text-gray-700 text-lg leading-relaxed mb-4">
-              Alley Cat Dumpster Rental is a locally owned and operated waste management company serving Effingham and surrounding communities. We pride ourselves on providing reliable, affordable, and convenient dumpster rental services.
+              Alley Cat Dumpsters is a family-owned small business based in Effingham, Illinois, specializing in driveway-friendly dumpster rentals and professional junk removal services. We're committed to providing reliable, affordable solutions for your waste management needs.
             </p>
             <p className="text-gray-700 text-lg leading-relaxed mb-6">
-              With years of experience in the industry, we understand the unique waste management needs of homeowners, contractors, and businesses in our area. Our mission is to make your project easier by delivering the right dumpster, on time, every time.
+              Our small, driveway-friendly roll-off containers are designed to protect your property while providing the convenience you need. We serve Effingham and the surrounding area within a 10-mile radius, with extended service available for projects further out.
             </p>
             
             <div className="flex flex-wrap gap-4 mt-8">

@@ -23,19 +23,19 @@ export function ImprovedFAQ() {
             <Accordion type="single" collapsible className="space-y-4">
               <AccordionItem value="item-1" className="border-b-0 bg-white rounded-lg shadow-sm">
                 <AccordionTrigger className="p-4 text-left hover:no-underline">
-                  <span className="font-semibold text-gray-900">What sizes of dumpsters do you offer?</span>
+                  <span className="font-semibold text-gray-900">What makes your dumpsters "driveway-friendly"?</span>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 pt-0 text-gray-600">
-                  We offer several dumpster sizes to fit your specific needs: 10-yard, 20-yard, 30-yard, and 40-yard options. Our 10-yard is perfect for small projects, while our 40-yard is ideal for major construction or renovation work. We can help you choose the right size based on your project requirements.
+                  Our small roll-off containers are specifically designed to fit on residential driveways without causing damage. They're compact enough to navigate tight spaces while still providing ample capacity for your waste disposal needs, making them perfect for home projects and renovations.
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="item-2" className="border-b-0 bg-white rounded-lg shadow-sm">
                 <AccordionTrigger className="p-4 text-left hover:no-underline">
-                  <span className="font-semibold text-gray-900">How long can I keep the dumpster?</span>
+                  <span className="font-semibold text-gray-900">What's included in your base pricing?</span>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 pt-0 text-gray-600">
-                  Our standard rental period is 7 days, but we're flexible. If you need the dumpster for a shorter or longer period, just let us know. Extensions are available at a reasonable daily rate. We want to make sure you have the time you need to complete your project without feeling rushed.
+                  Our base price includes the dumpster rental, delivery, pickup, and disposal of up to 2,000 lbs of waste. Service within 10 miles of Effingham is included. If you exceed the 2,000 lb limit, there's an $80 charge for each additional ton.
                 </AccordionContent>
               </AccordionItem>
 
@@ -44,7 +44,7 @@ export function ImprovedFAQ() {
                   <span className="font-semibold text-gray-900">What can I put in the dumpster?</span>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 pt-0 text-gray-600">
-                  You can dispose of most non-hazardous waste including household junk, construction debris, yard waste, furniture, and appliances. Items NOT allowed include: hazardous waste (paint, chemicals, oil), tires, batteries, refrigerators with freon, and electronics. If you're unsure about any items, please ask us before disposal.
+                  You can dispose of general household waste, construction debris, yard waste, and furniture. Items NOT allowed: tires, batteries, electronics, appliances, wet paint, dirt, rock, and concrete. However, we offer free recycling for batteries, electronics, and appliances if you place them next to the dumpster!
                 </AccordionContent>
               </AccordionItem>
 
@@ -84,7 +84,7 @@ export function ImprovedFAQ() {
                   <span className="font-semibold text-gray-900">What areas do you service?</span>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 pt-0 text-gray-600">
-                  We proudly serve Effingham and surrounding areas including Altamont, Teutopolis, Dieterich, and more. If you're unsure if we service your area, please contact us, and we'll be happy to check our service boundaries for you.
+                  We serve Effingham, Illinois and the surrounding area within a 10-mile radius at no additional charge. For locations beyond 10 miles from Effingham, we apply a fuel surcharge but are happy to provide service to most of central Illinois.
                 </AccordionContent>
               </AccordionItem>
 
@@ -108,10 +108,10 @@ export function ImprovedFAQ() {
 
               <AccordionItem value="item-10" className="border-b-0 bg-white rounded-lg shadow-sm">
                 <AccordionTrigger className="p-4 text-left hover:no-underline">
-                  <span className="font-semibold text-gray-900">What forms of payment do you accept?</span>
+                  <span className="font-semibold text-gray-900">How do I pay for my rental?</span>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 pt-0 text-gray-600">
-                  We accept all major credit cards, debit cards, and electronic payments through our secure online payment system. For commercial customers, we also offer invoicing options with approved credit. Payment is typically required at the time of booking to secure your reservation.
+                  We handle payment through email invoicing with secure payment options. After booking, you'll receive an invoice via email with easy-to-use payment links. We accept major credit cards and electronic payments for your convenience.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
