@@ -75,9 +75,9 @@ export function ConversionHero() {
             <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-gray-400">
               <div className="flex items-center">
                 <span className="text-[#f7c948] font-bold text-lg mr-1">★★★★★</span>
-                <span>4.9/5 Rating</span>
+                <span>5.0/5 Rating</span>
               </div>
-              <div>1000+ Happy Customers</div>
+              <div>200+ Happy Customers</div>
               <div>Family-Owned Since 2019</div>
             </div>
           </div>
