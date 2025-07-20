@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Phone, Calendar, Truck, CheckCircle } from "lucide-react";
+import { Phone, Calendar, Truck, CheckCircle, ArrowRight } from "lucide-react";
 
 export function ConversionProcess() {
   const steps = [
@@ -42,55 +42,46 @@ export function ConversionProcess() {
         </div>
 
         <div className="relative">
-          {/* Progress line */}
-          <div className="hidden md:block absolute top-24 left-1/2 transform -translate-x-1/2 w-full max-w-4xl">
-            <div className="flex justify-between">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 h-0.5 bg-primary mt-4 mx-4"></div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 h-0.5 bg-primary mt-4 mx-4"></div>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-white" />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {steps.map((step, index) => (
-              <div 
-                key={index}
-                className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative"
-              >
-                {/* Number positioned at top left */}
-                <div className="absolute top-4 left-4">
-                  <div className="inline-flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-sm font-bold">
-                    {step.number}
-                  </div>
-                </div>
-                
-                {/* Centered icon */}
-                <div className="mb-6 flex justify-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
-                    <div className="text-primary">
-                      {step.icon}
+              <div key={index} className="relative">
+                {/* Arrow between cards (only show on desktop and not for last card) */}
+                {index < steps.length - 1 && (
+                  <div className="hidden md:block absolute -right-4 top-1/2 transform -translate-y-1/2 z-10">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                      <ArrowRight className="h-4 w-4 text-black" />
                     </div>
                   </div>
-                </div>
+                )}
                 
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  {step.title}
-                </h3>
-                
-                <p className="text-gray-600 mb-4 leading-relaxed">
-                  {step.description}
-                </p>
+                <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative">
+                  {/* Number positioned at top left */}
+                  <div className="absolute top-4 left-4">
+                    <div className="inline-flex items-center justify-center w-8 h-8 bg-primary text-black rounded-full text-sm font-bold">
+                      {step.number}
+                    </div>
+                  </div>
+                  
+                  {/* Centered icon */}
+                  <div className="mb-6 flex justify-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
+                      <div className="text-primary">
+                        {step.icon}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    {step.title}
+                  </h3>
+                  
+                  <p className="text-gray-600 mb-4 leading-relaxed">
+                    {step.description}
+                  </p>
 
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium">
-                  {step.time}
+                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium">
+                    {step.time}
+                  </div>
                 </div>
               </div>
             ))}
