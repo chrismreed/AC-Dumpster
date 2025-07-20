@@ -3,7 +3,7 @@ import { ConversionServices } from "@/components/home/conversion-services";
 import { ConversionProcess } from "@/components/home/conversion-process";
 import { AboutSection } from "@/components/home/about-section";
 import { WhyChooseUs } from "@/components/home/why-choose-us";
-import { ImprovedTestimonials } from "@/components/home/improved-testimonials";
+import { GoogleReviewsTestimonials } from "@/components/home/google-reviews-testimonials";
 import { ComparisonSection } from "@/components/home/comparison-section";
 import { ImprovedFAQ } from "@/components/home/improved-faq";
 import { ContactSection } from "@/components/home/contact-section";
@@ -36,7 +36,7 @@ export default function HomePage() {
         </div>
       </section>
       <WhyChooseUs />
-      <ImprovedTestimonials />
+      <GoogleReviewsTestimonials />
       <ComparisonSection />
       <ImprovedFAQ />
       <ContactSection />

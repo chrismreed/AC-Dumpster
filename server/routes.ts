@@ -902,6 +902,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete booking" });
     }
   });
+
+  // Google Reviews endpoint
+  app.get("/api/google-reviews", async (req, res) => {
+    try {
+      if (!process.env.VITE_GOOGLE_MAPS_API_KEY) {
+        return res.status(500).json({ error: "Google Maps API key not configured" });
+      }
+
+      // Search for Alley Cat Dumpsters in Effingham, IL
+      const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=Alley+Cat+Dumpsters+Effingham+IL&key=${process.env.VITE_GOOGLE_MAPS_API_KEY}`;
+      const searchResponse = await fetch(searchUrl);
+      
+      if (!searchResponse.ok) {
+        return res.status(500).json({ error: "Failed to search for business" });
+      }
+      
+      const searchData = await searchResponse.json();
+      
+      if (searchData.results && searchData.results.length > 0) {
+        const placeId = searchData.results[0].place_id;
+        
+        // Get detailed information including reviews
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,reviews,formatted_address,formatted_phone_number,website&key=${process.env.VITE_GOOGLE_MAPS_API_KEY}`;
+        const detailsResponse = await fetch(detailsUrl);
+        
+        if (!detailsResponse.ok) {
+          return res.status(500).json({ error: "Failed to get place details" });
+        }
+        
+        const detailsData = await detailsResponse.json();
+        res.json(detailsData);
+      } else {
+        res.json({ result: null });
+      }
+    } catch (error) {
+      console.error("Error fetching Google reviews:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
   
   // Endpoint to update booking payment status for customer checkout
   app.patch("/api/bookings/:id/payment-status", async (req, res) => {
