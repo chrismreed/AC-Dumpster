@@ -63,16 +63,21 @@ export function ConversionProcess() {
             {steps.map((step, index) => (
               <div 
                 key={index}
-                className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow"
+                className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative"
               >
-                <div className="mb-6">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                {/* Number positioned at top left */}
+                <div className="absolute top-4 left-4">
+                  <div className="inline-flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-sm font-bold">
+                    {step.number}
+                  </div>
+                </div>
+                
+                {/* Centered icon */}
+                <div className="mb-6 flex justify-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
                     <div className="text-primary">
                       {step.icon}
                     </div>
-                  </div>
-                  <div className="inline-flex items-center justify-center w-8 h-8 bg-primary text-white rounded-full text-sm font-bold">
-                    {step.number}
                   </div>
                 </div>
                 
