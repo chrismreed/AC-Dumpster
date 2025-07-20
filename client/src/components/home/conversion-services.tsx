@@ -128,7 +128,7 @@ export function ConversionServices() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="border-gray-400 text-white hover:border-[#f7c948] hover:text-[#f7c948] hover:bg-white/10 font-semibold text-lg px-8 py-4 h-auto bg-transparent transition-colors duration-200"
+              className="border-gray-400 text-white hover:border-[#f7c948] hover:text-[#f7c948] hover:bg-white/10 font-semibold bg-transparent transition-colors duration-200"
               asChild
             >
               <a href="tel:(217) 242-5222">Call Us Now</a>
