@@ -47,10 +47,8 @@ export function ConversionProcess() {
               <div key={index} className="relative">
                 {/* Arrow between cards (only show on desktop and not for last card) */}
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute -right-4 top-1/2 transform -translate-y-1/2 z-10">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                      <ArrowRight className="h-4 w-4 text-black" />
-                    </div>
+                  <div className="hidden md:block absolute -right-8 top-1/2 transform -translate-y-1/2 z-10">
+                    <ArrowRight className="h-6 w-6 text-black" />
                   </div>
                 )}
                 
