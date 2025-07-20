@@ -48,8 +48,8 @@ export function ConversionProcess() {
                 {/* Arrow between cards (only show on desktop and not for last card) */}
                 {index < steps.length - 1 && (
                   <div className="hidden md:block absolute -right-4 top-1/2 transform -translate-y-1/2 z-10">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                      <ArrowRight className="h-4 w-4 text-black" />
+                    <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                      <ArrowRight className="h-4 w-4 text-[#f7c948]" />
                     </div>
                   </div>
                 )}
@@ -57,7 +57,7 @@ export function ConversionProcess() {
                 <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative">
                   {/* Number positioned at top left */}
                   <div className="absolute top-4 left-4">
-                    <div className="inline-flex items-center justify-center w-8 h-8 bg-primary text-black rounded-full text-sm font-bold">
+                    <div className="inline-flex items-center justify-center w-8 h-8 bg-black text-[#f7c948] rounded-full text-sm font-bold">
                       {step.number}
                     </div>
                   </div>
