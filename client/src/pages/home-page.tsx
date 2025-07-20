@@ -1,7 +1,8 @@
-import { ImprovedHero } from "@/components/home/improved-hero";
-import { ServicesSection } from "@/components/home/services-section";
-import { ProcessSection } from "@/components/home/process-section";
+import { ConversionHero } from "@/components/home/conversion-hero";
+import { ConversionServices } from "@/components/home/conversion-services";
+import { ConversionProcess } from "@/components/home/conversion-process";
 import { AboutSection } from "@/components/home/about-section";
+import { WhyChooseUs } from "@/components/home/why-choose-us";
 import { ImprovedTestimonials } from "@/components/home/improved-testimonials";
 import { ComparisonSection } from "@/components/home/comparison-section";
 import { ImprovedFAQ } from "@/components/home/improved-faq";
@@ -12,9 +13,9 @@ import { BookingForm } from "@/components/booking/booking-form";
 export default function HomePage() {
   return (
     <div>
-      <ImprovedHero />
-      <ServicesSection />
-      <ProcessSection />
+      <ConversionHero />
+      <ConversionServices />
+      <ConversionProcess />
       <AboutSection />
       <section id="booking-form" className="py-16 bg-white">
         <div className="container mx-auto px-4">
@@ -34,6 +35,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <WhyChooseUs />
       <ImprovedTestimonials />
       <ComparisonSection />
       <ImprovedFAQ />
