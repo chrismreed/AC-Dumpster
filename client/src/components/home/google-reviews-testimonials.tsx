@@ -80,11 +80,11 @@ export function GoogleReviewsTestimonials() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {fallbackTestimonials.map((testimonial, index) => (
               <div key={index} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                <div className="flex items-center mb-4">
-                  <div className="flex">
+                <div className="mb-4">
+                  <div className="flex mb-2">
                     {renderStars(testimonial.rating)}
                   </div>
-                  <span className="ml-2 text-sm text-gray-500">{testimonial.date}</span>
+                  <span className="text-sm text-gray-500">{testimonial.date}</span>
                 </div>
                 <p className="text-gray-700 mb-4 leading-relaxed">"{testimonial.text}"</p>
                 <div className="border-t pt-4">
@@ -160,8 +160,8 @@ export function GoogleReviewsTestimonials() {
                     }}
                   />
                   <div className="flex-1">
-                    <div className="flex items-center mb-1">
-                      <div className="flex mr-2">
+                    <div className="mb-1">
+                      <div className="flex mb-1">
                         {renderStars(review.rating)}
                       </div>
                       <span className="text-sm text-gray-500">{review.relative_time_description}</span>
