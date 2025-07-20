@@ -44,15 +44,7 @@ export function ConversionProcess() {
         <div className="relative">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {steps.map((step, index) => (
-              <div key={index} className="relative">
-                {/* Arrow between cards (only show on desktop and not for last card) */}
-                {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute -right-8 top-1/2 transform -translate-y-1/2 z-10">
-                    <ArrowRight className="h-6 w-6 text-black" />
-                  </div>
-                )}
-                
-                <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative">
+              <div key={index} className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative">
                   {/* Number positioned at top left */}
                   <div className="absolute top-4 left-4">
                     <div className="inline-flex items-center justify-center w-8 h-8 bg-primary text-black rounded-full text-sm font-bold">
@@ -81,7 +73,6 @@ export function ConversionProcess() {
                     {step.time}
                   </div>
                 </div>
-              </div>
             ))}
           </div>
         </div>
