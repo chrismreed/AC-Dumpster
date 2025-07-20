@@ -64,7 +64,7 @@ export function ConversionHero() {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="border-white/30 text-white hover:bg-white/10 font-semibold text-lg px-8 py-4 h-auto"
+                className="border-white/30 text-white hover:bg-white/10 font-semibold text-lg px-8 py-4 h-auto bg-[#1b2638]"
                 asChild
               >
                 <a href="tel:(217) 242-5222">Call (217) 242-5222</a>
