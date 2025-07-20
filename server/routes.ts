@@ -903,18 +903,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Google Reviews endpoint
+  // Google Reviews endpoint with caching
+  let cachedReviews: any = null;
+  let cacheTimestamp: number = 0;
+  const CACHE_DURATION = 1000 * 60 * 60 * 24 * 7; // 1 week
+
   app.get("/api/google-reviews", async (req, res) => {
     try {
+      // Check if we have fresh cached data
+      const now = Date.now();
+      if (cachedReviews && (now - cacheTimestamp) < CACHE_DURATION) {
+        console.log("Serving cached Google reviews");
+        return res.json(cachedReviews);
+      }
+
       if (!process.env.VITE_GOOGLE_MAPS_API_KEY) {
         return res.status(500).json({ error: "Google Maps API key not configured" });
       }
 
+      console.log("Fetching fresh Google reviews");
+      
       // Search for Alley Cat Dumpsters in Effingham, IL
       const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=Alley+Cat+Dumpsters+Effingham+IL&key=${process.env.VITE_GOOGLE_MAPS_API_KEY}`;
       const searchResponse = await fetch(searchUrl);
       
       if (!searchResponse.ok) {
+        console.error("Google search API error:", searchResponse.status, searchResponse.statusText);
+        // Return cached data if available, even if stale
+        if (cachedReviews) {
+          return res.json(cachedReviews);
+        }
         return res.status(500).json({ error: "Failed to search for business" });
       }
       
@@ -928,16 +946,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const detailsResponse = await fetch(detailsUrl);
         
         if (!detailsResponse.ok) {
+          console.error("Google details API error:", detailsResponse.status, detailsResponse.statusText);
+          // Return cached data if available, even if stale
+          if (cachedReviews) {
+            return res.json(cachedReviews);
+          }
           return res.status(500).json({ error: "Failed to get place details" });
         }
         
         const detailsData = await detailsResponse.json();
+        
+        // Cache the fresh data
+        cachedReviews = detailsData;
+        cacheTimestamp = now;
+        
+        console.log(`Cached ${detailsData.result?.reviews?.length || 0} reviews`);
         res.json(detailsData);
       } else {
-        res.json({ result: null });
+        const emptyResult = { result: null };
+        cachedReviews = emptyResult;
+        cacheTimestamp = now;
+        res.json(emptyResult);
       }
     } catch (error) {
       console.error("Error fetching Google reviews:", error);
+      // Return cached data if available, even if stale
+      if (cachedReviews) {
+        console.log("Returning cached data due to API error");
+        return res.json(cachedReviews);
+      }
       res.status(500).json({ error: "Internal server error" });
     }
   });

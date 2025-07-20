@@ -42,8 +42,10 @@ export function useGoogleReviews() {
   return useQuery({
     queryKey: ['google-reviews'],
     queryFn: fetchGoogleReviews,
-    staleTime: 1000 * 60 * 60, // 1 hour
-    cacheTime: 1000 * 60 * 60 * 24, // 24 hours
-    retry: false,
+    staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week - data is considered fresh for 1 week
+    cacheTime: 1000 * 60 * 60 * 24 * 14, // 2 weeks - keep in cache for 2 weeks
+    retry: 2, // Retry failed requests
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Don't always refetch on mount if data is fresh
   });
 }

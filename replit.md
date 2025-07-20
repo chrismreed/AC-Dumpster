@@ -120,3 +120,5 @@ SESSION_SECRET=...
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Privacy protection: Use only first names in customer testimonials and reviews.
+Google Reviews: Refresh automatically every week for fresh customer feedback.

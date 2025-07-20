@@ -40,21 +40,21 @@ export function GoogleReviewsTestimonials() {
     // Fallback to local testimonials if Google Reviews fail
     const fallbackTestimonials = [
       {
-        name: "Mike Johnson",
+        name: "Mike",
         location: "Effingham, IL",
         rating: 5,
         text: "Great service! The dumpster was delivered right on time and picked up as scheduled. Very professional team and fair pricing.",
         date: "2 weeks ago"
       },
       {
-        name: "Sarah Miller", 
+        name: "Sarah", 
         location: "Teutopolis, IL",
         rating: 5,
         text: "Alley Cat Dumpsters made our home renovation so much easier. The container fit perfectly in our driveway and didn't damage anything.",
         date: "1 month ago"
       },
       {
-        name: "David Thompson",
+        name: "David",
         location: "Altamont, IL", 
         rating: 5,
         text: "Family-owned business that really cares about their customers. Quick delivery and the price was exactly what they quoted - no surprises.",
@@ -99,7 +99,11 @@ export function GoogleReviewsTestimonials() {
     );
   }
 
-  const displayReviews = placeData.reviews?.slice(0, 3) || [];
+  // Process reviews to use only first names for privacy
+  const displayReviews = (placeData.reviews?.slice(0, 3) || []).map(review => ({
+    ...review,
+    author_name: review.author_name.split(' ')[0] // Use only first name
+  }));
 
   return (
     <section className="py-20 bg-white">
