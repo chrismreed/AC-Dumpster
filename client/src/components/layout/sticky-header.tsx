@@ -35,7 +35,7 @@ export function StickyHeader() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-[#0f172a] shadow-lg py-4' : 'bg-[#0f172a] py-6'
+        isScrolled ? 'bg-[#0f172a] shadow-lg py-4' : 'bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] py-6'
       }`}
     >
       <div className="container mx-auto px-4">
