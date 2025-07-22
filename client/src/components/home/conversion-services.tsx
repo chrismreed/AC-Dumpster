@@ -57,7 +57,7 @@ export function ConversionServices() {
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary mb-4">
+          <div className="inline-flex items-center px-3 py-1 rounded-full mb-4 text-[#111827] bg-[#f7c948]">
             <span className="text-sm font-semibold">Our Services</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
