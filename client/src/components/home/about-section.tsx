@@ -7,7 +7,7 @@ export function AboutSection() {
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#0f172a]/10 text-[#0f172a] mb-4">
+            <div className="inline-flex items-center px-3 py-1 rounded-full text-[#0f172a] mb-4 bg-[#f7c948]">
               <span className="text-sm font-semibold">About Alley Cat</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-[#0f172a] mb-6">
