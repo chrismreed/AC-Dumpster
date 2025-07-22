@@ -46,8 +46,8 @@ export function ConversionProcess() {
             {steps.map((step, index) => (
               <div key={index} className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative">
                   {/* Number positioned at top left corner */}
-                  <div className="absolute -top-2 -left-2">
-                    <div className="inline-flex items-center justify-center px-3 py-1 bg-primary text-black rounded text-sm font-bold">
+                  <div className="absolute top-0 left-0">
+                    <div className="inline-flex items-center justify-center px-4 py-2 bg-primary text-black rounded-br-lg text-sm font-bold">
                       {step.number}
                     </div>
                   </div>
