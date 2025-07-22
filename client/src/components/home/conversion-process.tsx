@@ -45,9 +45,9 @@ export function ConversionProcess() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {steps.map((step, index) => (
               <div key={index} className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative">
-                  {/* Number positioned at top left */}
-                  <div className="absolute top-4 left-4">
-                    <div className="inline-flex items-center justify-center w-8 h-8 bg-primary text-black rounded-full text-sm font-bold">
+                  {/* Number positioned at top left corner */}
+                  <div className="absolute -top-2 -left-2">
+                    <div className="inline-flex items-center justify-center px-3 py-1 bg-primary text-black rounded text-sm font-bold">
                       {step.number}
                     </div>
                   </div>
