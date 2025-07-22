@@ -54,7 +54,7 @@ export function ConversionProcess() {
                   
                   {/* Centered icon */}
                   <div className="mb-6 flex justify-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/20 rounded-full">
                       <div className="text-primary">
                         {step.icon}
                       </div>
