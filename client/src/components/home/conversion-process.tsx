@@ -30,7 +30,7 @@ export function ConversionProcess() {
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary mb-4">
+          <div className="inline-flex items-center px-3 py-1 rounded-full mb-4 bg-[#f7c948] text-[#111827]">
             <span className="text-sm font-semibold">How It Works</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
