@@ -10,7 +10,6 @@ export function ConversionHero() {
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f7c948' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
         }}></div>
       </div>
-      
       <div className="container mx-auto px-4 py-20 md:py-28 relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left side - Main content */}
@@ -67,7 +66,7 @@ export function ConversionHero() {
                 className="border-gray-400 text-white hover:border-[#f7c948] hover:text-[#f7c948] hover:bg-white/10 font-semibold text-lg px-8 py-4 h-auto bg-transparent transition-colors duration-200"
                 asChild
               >
-                <a href="tel:(217) 242-5222">Call (217) 242-5222</a>
+                <a href="tel:(217) 242-5222">Call (217) 994-2582</a>
               </Button>
             </div>
 
