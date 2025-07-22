@@ -21,7 +21,7 @@ export function ConversionHero() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
               <span className="text-white">Driveway-Friendly</span>{" "}
               <span className="text-[#f7c948]">Dumpster Rentals</span>{" "}
-              <span className="text-white">Made Simple</span>
+              <span className="text-white">When You Need Them</span>
             </h1>
             
             <p className="text-xl text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
@@ -77,7 +77,7 @@ export function ConversionHero() {
                 <span>5/5 Star Rating</span>
               </div>
               <div>200+ Happy Customers</div>
-              <div>Family-Owned Since 2019</div>
+              <div>Family-Owned Since 2021</div>
             </div>
           </div>
 
