@@ -24,9 +24,7 @@ export function ConversionHero() {
               <span className="text-white">When You Need Them</span>
             </h1>
             
-            <p className="text-xl text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
-              Family-owned business serving Effingham, IL with small roll-off containers designed to protect your property. Get started in just 3 clicks.
-            </p>
+            <p className="text-xl text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">Family-owned business serving the Effingham area with roll-off dumpsters. Book in just a few minutes.</p>
 
             {/* Key benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
