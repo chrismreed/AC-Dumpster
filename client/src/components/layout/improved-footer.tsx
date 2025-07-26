@@ -84,10 +84,7 @@ export function ImprovedFooter() {
           <div>
             <h4 className="font-semibold text-lg mb-4">Contact Us</h4>
             <ul className="space-y-3">
-              <li className="flex items-start">
-                <MapPin className="h-5 w-5 text-[#facc15] mr-2 mt-0.5" />
-                <span className="text-gray-400">123 Main St, Effingham, IL 62401</span>
-              </li>
+              
               <li className="flex items-center">
                 <Phone className="h-5 w-5 text-[#facc15] mr-2" />
                 <a href="tel:5551234567" className="text-gray-400 hover:text-[#facc15] transition-colors">(555) 123-4567</a>
