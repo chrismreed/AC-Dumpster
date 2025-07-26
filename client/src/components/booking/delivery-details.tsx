@@ -65,6 +65,12 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
     queryKey: ["/api/availability"],
   });
 
+  // Fetch pricing details to calculate pickup date
+  const { data: pricingOption } = useQuery({
+    queryKey: ["/api/dumpster-pricing", selectedPricingId],
+    enabled: !!selectedPricingId,
+  });
+
   // Initialize form with saved data if available
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -398,62 +404,87 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                           <span>Loading available dates...</span>
                         </div>
                       ) : availableDates.length > 0 ? (
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value ? (() => {
-                            // Create a date object for display in the calendar
-                            // Log the current value for debugging
-                            
-                            const dateParts = field.value.split('-');
-                            const year = parseInt(dateParts[0]);
-                            const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
-                            const day = parseInt(dateParts[2]);
-                            // Create date at noon to avoid timezone issues
-                            const selectedDate = new Date(year, month, day, 12, 0, 0, 0);
-                            
-                            return selectedDate;
-                          })() : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              // The fundamental issue is that new Date() in JS uses the timezone offset
-                              // We need to create a date that doesn't shift when converted to ISO string
-                              
-                              // Create a date string in YYYY-MM-DD format from the selected date's components
-                              const selectedDay = date.getDate();
-                              const selectedMonth = date.getMonth() + 1;
-                              const selectedYear = date.getFullYear();
-                              
-                              // Log the raw selected date for debugging
-                              
-                              
-                              
-                              // Format the date parts with leading zeros as needed
-                              const formattedDay = String(selectedDay).padStart(2, '0');
-                              const formattedMonth = String(selectedMonth).padStart(2, '0');
-                              
-                              // Create the final date string in YYYY-MM-DD format
-                              const formattedDate = `${selectedYear}-${formattedMonth}-${formattedDay}`;
-                              
-                              // Log the final formatted date
-                              
-                              
-                              // Update the form field with this exact string value
-                              field.onChange(formattedDate);
-                              
-                              // Close the date picker after selection
-                              setIsDatePickerOpen(false);
-                            }
-                          }}
-                          disabled={(date) => {
-                            return !availableDates.some(
-                              availableDate => 
-                                availableDate.getDate() === date.getDate() && 
-                                availableDate.getMonth() === date.getMonth() && 
-                                availableDate.getFullYear() === date.getFullYear()
-                            );
-                          }}
-                          initialFocus
-                        />
+                        <div>
+                          <CalendarComponent
+                            mode="single"
+                            selected={field.value ? (() => {
+                              // Create a date object for display in the calendar
+                              const dateParts = field.value.split('-');
+                              const year = parseInt(dateParts[0]);
+                              const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+                              const day = parseInt(dateParts[2]);
+                              // Create date at noon to avoid timezone issues
+                              const selectedDate = new Date(year, month, day, 12, 0, 0, 0);
+                              return selectedDate;
+                            })() : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                // Create a date string in YYYY-MM-DD format from the selected date's components
+                                const selectedDay = date.getDate();
+                                const selectedMonth = date.getMonth() + 1;
+                                const selectedYear = date.getFullYear();
+                                
+                                // Format the date parts with leading zeros as needed
+                                const formattedDay = String(selectedDay).padStart(2, '0');
+                                const formattedMonth = String(selectedMonth).padStart(2, '0');
+                                
+                                // Create the final date string in YYYY-MM-DD format
+                                const formattedDate = `${selectedYear}-${formattedMonth}-${formattedDay}`;
+                                
+                                // Update the form field with this exact string value
+                                field.onChange(formattedDate);
+                                
+                                // Close the date picker after selection
+                                setIsDatePickerOpen(false);
+                              }
+                            }}
+                            disabled={(date) => {
+                              return !availableDates.some(
+                                availableDate => 
+                                  availableDate.getDate() === date.getDate() && 
+                                  availableDate.getMonth() === date.getMonth() && 
+                                  availableDate.getFullYear() === date.getFullYear()
+                              );
+                            }}
+                            modifiers={{
+                              rentalPeriod: field.value && pricingOption ? (() => {
+                                // Calculate the rental period dates to highlight
+                                const dateParts = field.value.split('-');
+                                const year = parseInt(dateParts[0]);
+                                const month = parseInt(dateParts[1]) - 1;
+                                const day = parseInt(dateParts[2]);
+                                const deliveryDate = new Date(year, month, day, 12, 0, 0, 0);
+                                
+                                const rentalDates = [];
+                                for (let i = 0; i < pricingOption.days; i++) {
+                                  const date = new Date(deliveryDate);
+                                  date.setDate(date.getDate() + i);
+                                  rentalDates.push(date);
+                                }
+                                return rentalDates;
+                              })() : []
+                            }}
+                            modifiersStyles={{
+                              rentalPeriod: {
+                                backgroundColor: '#dbeafe',
+                                color: '#1e40af',
+                                fontWeight: '600',
+                                border: '1px solid #3b82f6'
+                              }
+                            }}
+                            initialFocus
+                          />
+                          {field.value && pricingOption && (
+                            <div className="p-3 border-t">
+                              <div className="flex items-center gap-2 text-xs text-neutral-600">
+                                <div className="flex items-center gap-1">
+                                  <div className="w-3 h-3 bg-blue-100 border border-blue-400 rounded"></div>
+                                  <span>Rental period ({pricingOption.days} day{pricingOption.days === 1 ? '' : 's'})</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div className="p-6 text-center">
                           <p className="text-sm text-muted-foreground">No available dates found.</p>
@@ -464,6 +495,32 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                   </Popover>
                   {availableDates.length === 0 && !isLoadingAvailability && !isLoadingDumpsters && !isLoadingBookings && (
                     <p className="text-xs text-red-500 mt-1">No dumpsters available for the next 30 days.</p>
+                  )}
+                  {/* Show pickup date when delivery date is selected */}
+                  {field.value && pricingOption && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm font-medium text-blue-800">Rental Period</p>
+                      <div className="text-xs text-blue-600 mt-1">
+                        <p><strong>Delivery:</strong> {(() => {
+                          const dateParts = field.value.split('-');
+                          const year = parseInt(dateParts[0]);
+                          const month = parseInt(dateParts[1]) - 1;
+                          const day = parseInt(dateParts[2]);
+                          const deliveryDate = new Date(year, month, day, 12, 0, 0, 0);
+                          return format(deliveryDate, "MMM d, yyyy");
+                        })()}</p>
+                        <p><strong>Pickup:</strong> {(() => {
+                          const dateParts = field.value.split('-');
+                          const year = parseInt(dateParts[0]);
+                          const month = parseInt(dateParts[1]) - 1;
+                          const day = parseInt(dateParts[2]);
+                          const deliveryDate = new Date(year, month, day, 12, 0, 0, 0);
+                          const pickupDate = new Date(deliveryDate);
+                          pickupDate.setDate(pickupDate.getDate() + pricingOption.days);
+                          return format(pickupDate, "MMM d, yyyy");
+                        })()} ({pricingOption.days} day{pricingOption.days === 1 ? '' : 's'} rental)</p>
+                      </div>
+                    </div>
                   )}
                   {/* Same-day delivery notice */}
                   {field.value && (() => {
