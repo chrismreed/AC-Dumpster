@@ -40,7 +40,7 @@ export function ContactSection() {
                   <MailIcon className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h4 className="font-semibold text-gray-900">Email</h4>
-                    <p className="text-gray-600">info@alleycatdumpster.com</p>
+                    <p className="text-gray-600">alleycatdumpsters@gmail.com</p>
                     <p className="text-sm text-gray-500">We'll respond within 24 hours</p>
                   </div>
                 </div>
