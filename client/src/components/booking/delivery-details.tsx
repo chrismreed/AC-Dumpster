@@ -465,19 +465,19 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                                 const day = parseInt(dateParts[2]);
                                 return [new Date(year, month, day, 12, 0, 0, 0)];
                               })() : [],
-                              pickupDate: field.value && pricingOption && pricingOption.days > 1 ? (() => {
-                                // Last day (pickup) - outlined (only if rental is more than 1 day)
+                              pickupDate: field.value && pricingOption ? (() => {
+                                // Pickup day (after rental period ends) - outlined
                                 const dateParts = field.value.split('-');
                                 const year = parseInt(dateParts[0]);
                                 const month = parseInt(dateParts[1]) - 1;
                                 const day = parseInt(dateParts[2]);
                                 const deliveryDate = new Date(year, month, day, 12, 0, 0, 0);
                                 const pickupDate = new Date(deliveryDate);
-                                pickupDate.setDate(pickupDate.getDate() + pricingOption.days - 1);
+                                pickupDate.setDate(pickupDate.getDate() + pricingOption.days);
                                 return [pickupDate];
                               })() : [],
-                              rentalMiddle: field.value && pricingOption && pricingOption.days > 2 ? (() => {
-                                // Middle days - filled (only if rental is more than 2 days)
+                              rentalMiddle: field.value && pricingOption && pricingOption.days > 1 ? (() => {
+                                // Middle days - filled (all days except delivery day)
                                 const dateParts = field.value.split('-');
                                 const year = parseInt(dateParts[0]);
                                 const month = parseInt(dateParts[1]) - 1;
@@ -485,7 +485,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                                 const deliveryDate = new Date(year, month, day, 12, 0, 0, 0);
                                 
                                 const middleDates = [];
-                                for (let i = 1; i < pricingOption.days - 1; i++) {
+                                for (let i = 1; i < pricingOption.days; i++) {
                                   const date = new Date(deliveryDate);
                                   date.setDate(date.getDate() + i);
                                   middleDates.push(date);
@@ -523,7 +523,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                                   <div className="w-3 h-3 border-2 border-[#f7c948] rounded"></div>
                                   <span>Delivery/Pickup</span>
                                 </div>
-                                {pricingOption.days > 2 && (
+                                {pricingOption.days > 1 && (
                                   <div className="flex items-center gap-1">
                                     <div className="w-3 h-3 bg-yellow-100 rounded"></div>
                                     <span>Rental period</span>
@@ -565,7 +565,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                           const day = parseInt(dateParts[2]);
                           const deliveryDate = new Date(year, month, day, 12, 0, 0, 0);
                           const pickupDate = new Date(deliveryDate);
-                          pickupDate.setDate(pickupDate.getDate() + pricingOption.days - 1);
+                          pickupDate.setDate(pickupDate.getDate() + pricingOption.days);
                           return format(pickupDate, "MMM d, yyyy");
                         })()} ({pricingOption.days} day{pricingOption.days === 1 ? '' : 's'} rental)</p>
                       </div>
