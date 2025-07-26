@@ -42,9 +42,11 @@ interface DeliveryDetailsProps {
   onBack: () => void;
   onNext: (data: FormValues) => void;
   initialData?: any;
+  selectedDumpsterId?: number;
+  selectedPricingId?: number;
 }
 
-export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetailsProps) {
+export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterId, selectedPricingId }: DeliveryDetailsProps) {
   const { toast } = useToast();
   const [isValidatingZip, setIsValidatingZip] = useState(false);
   const [validatedZone, setValidatedZone] = useState<any>(null);
@@ -77,60 +79,74 @@ export function DeliveryDetails({ onBack, onNext, initialData }: DeliveryDetails
     },
   });
 
-  // Calculate available dates based on dumpster inventory and existing bookings
+  // Calculate available dates based on specific dumpster availability
   useEffect(() => {
-    if (!dumpsters) return;
-    
-    // Calculate minimum delivery date (today)
-    const today = new Date();
+    if (!selectedDumpsterId || !selectedPricingId) {
+      // If no dumpster is selected, allow all dates initially
+      const today = new Date();
+      const dates: Date[] = [];
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + 30);
+      
+      for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
+        dates.push(new Date(d));
+      }
+      setAvailableDates(dates);
+      return;
+    }
     
     setIsLoadingAvailability(true);
     
-    // Helper function to check if a date has available dumpsters
-    const isDumpsterAvailable = (date: Date) => {
-      const dateStr = date.toISOString().split('T')[0];
+    // Calculate available dates for the next 30 days using batch API
+    const checkAvailabilityForDates = async () => {
+      const today = new Date();
+      const availableDatesArray: Date[] = [];
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + 30);
       
-      // If we don't have dumpsters data yet, don't show as available
-      if (!Array.isArray(dumpsters) || dumpsters.length === 0) {
-        return false;
+      // Generate array of date strings
+      const dateStrings: string[] = [];
+      for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        dateStrings.push(dateStr);
       }
       
-      // Count total dumpsters across all types
-      const totalDumpsters = dumpsters.reduce((total: number, dumpster: Dumpster) => {
-        const availability = dumpster.availability || 1;
-        return total + availability;
-      }, 0);
-      
-      // Count booked dumpsters for this date (only active deployments)
-      const bookedOnDate = Array.isArray(bookings) 
-        ? bookings.filter((booking: any) => {
-            if (!booking.deliveryDate) return false;
-            const bookingDate = new Date(booking.deliveryDate).toISOString().split('T')[0];
-            // Only count bookings that actually consume dumpster availability
-            return bookingDate === dateStr && ['pending', 'confirmed', 'delivered', 'picked_up'].includes(booking.status);
-          }).length
-        : 0;
-      
-      // Return true if there are available dumpsters
-      return totalDumpsters > bookedOnDate;
+      try {
+        const response = await apiRequest("POST", "/api/check-availability-batch", {
+          dumpsterId: selectedDumpsterId,
+          dates: dateStrings,
+          pricingId: selectedPricingId
+        });
+        
+        const data = await response.json();
+        
+        data.results.forEach((result: { date: string; available: boolean }) => {
+          if (result.available) {
+            // Parse date string back to Date object
+            const dateParts = result.date.split('-');
+            const year = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+            const day = parseInt(dateParts[2]);
+            const dateObj = new Date(year, month, day, 12, 0, 0, 0);
+            availableDatesArray.push(dateObj);
+          }
+        });
+        
+        setAvailableDates(availableDatesArray);
+      } catch (error) {
+        console.error("Error checking availability:", error);
+        toast({
+          title: "Availability Check Failed",
+          description: "Unable to load available dates. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingAvailability(false);
+      }
     };
     
-    // Generate next 30 days and filter by availability
-    const dates: Date[] = [];
-    const endDate = new Date(today);
-    endDate.setDate(endDate.getDate() + 30);
-    
-    for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
-      const currentDate = new Date(d);
-      const isAvailable = isDumpsterAvailable(currentDate);
-      
-      if (isAvailable) {
-        dates.push(new Date(d));
-      }
-    }
-    setAvailableDates(dates);
-    setIsLoadingAvailability(false);
-  }, [dumpsters, bookings]);
+    checkAvailabilityForDates();
+  }, [selectedDumpsterId, selectedPricingId, toast]);
 
   const validateServiceArea = async (coordinates?: { lat: number; lng: number }) => {
     const zipCode = form.getValues("deliveryZipCode");

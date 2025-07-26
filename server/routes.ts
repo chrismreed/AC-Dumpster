@@ -839,6 +839,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch availability check endpoint for better performance
+  app.post("/api/check-availability-batch", async (req, res) => {
+    try {
+      const { dumpsterId, dates, pricingId } = req.body;
+      
+      if (!dumpsterId || !Array.isArray(dates) || !pricingId) {
+        return res.status(400).json({ 
+          message: "Missing required fields: dumpsterId, dates (array), pricingId" 
+        });
+      }
+
+      const results = await Promise.all(
+        dates.map(async (date: string) => {
+          const availability = await storage.checkDumpsterAvailability(
+            Number(dumpsterId), 
+            date, 
+            Number(pricingId)
+          );
+          return { date, available: availability };
+        })
+      );
+      
+      res.json({ results });
+    } catch (error) {
+      console.error("Error checking batch availability:", error);
+      res.status(500).json({ message: "Failed to check batch availability" });
+    }
+  });
+
   app.get("/api/bookings/:id", async (req, res) => {
     try {
       const bookingId = Number(req.params.id);

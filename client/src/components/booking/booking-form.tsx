@@ -173,6 +173,8 @@ export function BookingForm() {
                 onBack={() => handleBack(1)} 
                 onNext={handleDeliveryDetails}
                 initialData={bookingData}
+                selectedDumpsterId={bookingData.dumpsterId}
+                selectedPricingId={bookingData.pricingId}
               />
             </div>
             <div className="w-full flex-shrink-0 p-6 md:p-8">
