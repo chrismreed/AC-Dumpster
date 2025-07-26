@@ -91,7 +91,7 @@ export function ImprovedFooter() {
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 text-[#facc15] mr-2" />
-                <a href="mailto:info@alleycatrental.com" className="text-gray-400 hover:text-[#facc15] transition-colors">info@alleycatrental.com</a>
+                <a href="mailto:alleycatdumpsters@gmail.com" className="text-gray-400 hover:text-[#facc15] transition-colors">alleycatdumpsters@gmail.com</a>
               </li>
             </ul>
             <div className="mt-4">
