@@ -50,10 +50,10 @@ export function ConversionHero() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button 
                 size="lg" 
-                className="bg-[#f7c948] text-black hover:bg-[#f7c948]/90 font-bold text-lg px-8 py-4 h-auto"
+                className="w-48 bg-[#f7c948] text-black hover:bg-[#f7c948]/90 font-bold text-lg px-8 py-4 h-auto"
                 asChild
               >
-                <a href="#booking-form" className="flex items-center">
+                <a href="#booking-form" className="flex items-center justify-center">
                   Book Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </a>
@@ -61,10 +61,10 @@ export function ConversionHero() {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="border-gray-400 text-white hover:border-[#f7c948] hover:text-[#f7c948] hover:bg-white/10 font-semibold text-lg px-8 py-4 h-auto bg-transparent transition-colors duration-200"
+                className="w-48 border-gray-400 text-white hover:border-[#f7c948] hover:text-[#f7c948] hover:bg-white/10 font-semibold text-lg px-8 py-4 h-auto bg-transparent transition-colors duration-200"
                 asChild
               >
-                <a href="tel:(217) 242-5222">Call (217) 994-2582</a>
+                <a href="tel:(217) 242-5222" className="flex items-center justify-center">Call (217) 994-2582</a>
               </Button>
             </div>
 
