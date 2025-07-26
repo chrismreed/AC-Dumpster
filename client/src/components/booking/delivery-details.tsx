@@ -67,7 +67,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
 
   // Fetch pricing details to calculate pickup date
   const { data: pricingOption } = useQuery({
-    queryKey: ["/api/dumpster-pricing/item", selectedPricingId],
+    queryKey: [`/api/dumpster-pricing/item/${selectedPricingId}`],
     enabled: !!selectedPricingId,
   });
 
