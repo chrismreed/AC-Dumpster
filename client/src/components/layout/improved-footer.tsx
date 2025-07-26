@@ -87,7 +87,7 @@ export function ImprovedFooter() {
               
               <li className="flex items-center">
                 <Phone className="h-5 w-5 text-[#facc15] mr-2" />
-                <a href="tel:5551234567" className="text-gray-400 hover:text-[#facc15] transition-colors">(555) 123-4567</a>
+                <a href="tel:5551234567" className="text-gray-400 hover:text-[#facc15] transition-colors">(217) 994-2582</a>
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 text-[#facc15] mr-2" />
