@@ -50,12 +50,12 @@ export function ConversionHero() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button 
                 size="lg" 
-                className="w-48 bg-[#f7c948] text-black hover:bg-[#f7c948]/90 font-bold text-lg px-8 py-4 h-auto"
+                className="w-48 bg-[#f7c948] text-black hover:bg-[#f7c948]/90 font-bold text-lg px-8 py-4 h-auto group"
                 asChild
               >
                 <a href="#booking-form" className="flex items-center justify-center">
                   Book Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
                 </a>
               </Button>
               <Button 
