@@ -47,7 +47,7 @@ export function ConversionProcess() {
               <div key={index} className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center hover:shadow-lg transition-shadow relative">
                   {/* Number positioned at top left corner */}
                   <div className="absolute top-0 left-0">
-                    <div className="inline-flex items-center justify-center px-4 py-2 rounded text-sm font-bold text-[#f7c94a] bg-[#111827]">
+                    <div className="inline-flex items-center justify-center px-4 py-2 rounded font-bold bg-[#f7c948] text-[#0f172a] text-[18px]">
                       {step.number}
                     </div>
                   </div>
