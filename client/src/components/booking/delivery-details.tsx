@@ -419,6 +419,14 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                               const selectedDate = new Date(year, month, day, 12, 0, 0, 0);
                               return selectedDate;
                             })() : undefined}
+                            defaultMonth={field.value ? (() => {
+                              // Show the month of the selected date when calendar opens
+                              const dateParts = field.value.split('-');
+                              const year = parseInt(dateParts[0]);
+                              const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+                              const day = parseInt(dateParts[2]);
+                              return new Date(year, month, day, 12, 0, 0, 0);
+                            })() : new Date()}
                             onSelect={(date) => {
                               if (date) {
                                 // Create a date string in YYYY-MM-DD format from the selected date's components
