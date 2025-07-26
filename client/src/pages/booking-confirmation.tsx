@@ -168,8 +168,21 @@ export default function BookingConfirmationPage() {
               
               <div className="flex items-start gap-3">
                 <Badge className="capitalize py-0.5">{booking.status}</Badge>
-                <Badge variant="outline" className="py-0.5">
-                  {booking.paymentStatus === 'paid' ? 'Paid' : 'Payment Pending'}
+                <Badge 
+                  variant={booking.paymentStatus === 'paid' ? 'default' : 'outline'} 
+                  className={`py-0.5 ${
+                    booking.paymentStatus === 'paid' 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : booking.paymentStatus === 'failed'
+                      ? 'border-red-500 text-red-600'
+                      : 'border-yellow-500 text-yellow-600'
+                  }`}
+                >
+                  {booking.paymentStatus === 'paid' 
+                    ? 'Paid' 
+                    : booking.paymentStatus === 'failed'
+                    ? 'Payment Failed'
+                    : 'Payment Pending'}
                 </Badge>
               </div>
             </div>
