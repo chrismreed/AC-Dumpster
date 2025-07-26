@@ -31,7 +31,7 @@ export function ContactSection() {
                   <PhoneIcon className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h4 className="font-semibold text-gray-900">Phone</h4>
-                    <p className="text-gray-600">(217) 555-DUMP</p>
+                    <p className="text-gray-600">(217) 994-2582</p>
                     <p className="text-sm text-gray-500">Call us for immediate assistance</p>
                   </div>
                 </div>
