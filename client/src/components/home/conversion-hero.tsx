@@ -54,7 +54,7 @@ export function ConversionHero() {
                 asChild
               >
                 <a href="#booking-form" className="flex items-center">
-                  Get Your Quote Now
+                  Book Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </a>
               </Button>
