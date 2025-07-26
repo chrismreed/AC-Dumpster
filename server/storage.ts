@@ -946,17 +946,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Inventory management methods
-  async checkDumpsterAvailability(dumpsterId: number, deliveryDate: string, rentalDays: number): Promise<boolean> {
+  async checkDumpsterAvailability(dumpsterId: number, deliveryDate: string, pricingId: number): Promise<boolean> {
     // Get the dumpster's total availability
     const dumpster = await this.getDumpster(dumpsterId);
     if (!dumpster) return false;
 
+    // Get rental duration from pricing option
+    const [pricing] = await db
+      .select()
+      .from(dumpsterPricing)
+      .where(eq(dumpsterPricing.id, pricingId));
+    
+    if (!pricing) return false;
+
     // Calculate rental period
     const startDate = new Date(deliveryDate);
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + rentalDays);
+    endDate.setDate(endDate.getDate() + pricing.days);
 
-    // Get all confirmed bookings for this dumpster that overlap with the requested period
+    // Get all active bookings for this dumpster that overlap with the requested period
     const overlappingBookings = await db
       .select()
       .from(bookings)
@@ -964,9 +972,10 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(bookings.dumpsterId, dumpsterId),
           or(
+            eq(bookings.status, 'pending'),
             eq(bookings.status, 'confirmed'),
             eq(bookings.status, 'delivered'),
-            eq(bookings.status, 'in_progress')
+            eq(bookings.status, 'scheduled')
           )
         )
       );
@@ -977,14 +986,14 @@ export class DatabaseStorage implements IStorage {
       const bookingStart = new Date(booking.deliveryDate);
       const bookingEnd = new Date(bookingStart);
       
-      // Get the rental duration from the pricing option
-      const pricing = await db
+      // Get the rental duration from the booking's pricing option
+      const [bookingPricing] = await db
         .select()
         .from(dumpsterPricing)
         .where(eq(dumpsterPricing.id, booking.pricingId));
       
-      if (pricing.length > 0) {
-        bookingEnd.setDate(bookingEnd.getDate() + pricing[0].days);
+      if (bookingPricing) {
+        bookingEnd.setDate(bookingEnd.getDate() + bookingPricing.days);
         
         // Check if periods overlap
         if (startDate < bookingEnd && endDate > bookingStart) {
@@ -996,12 +1005,102 @@ export class DatabaseStorage implements IStorage {
     return unitsInUse < dumpster.availability;
   }
 
-  async getAvailableDumpsters(deliveryDate: string, rentalDays: number): Promise<Dumpster[]> {
+  async getAvailabilityDetails(dumpsterId: number, deliveryDate: string, pricingId: number): Promise<{
+    totalInventory: number;
+    unitsInUse: number;
+    availableUnits: number;
+    conflictingBookings: Array<{ id: number; deliveryDate: Date; status: string }>;
+  }> {
+    // Get the dumpster's total availability
+    const dumpster = await this.getDumpster(dumpsterId);
+    if (!dumpster) {
+      return {
+        totalInventory: 0,
+        unitsInUse: 0,
+        availableUnits: 0,
+        conflictingBookings: []
+      };
+    }
+
+    // Get rental duration from pricing option
+    const [pricing] = await db
+      .select()
+      .from(dumpsterPricing)
+      .where(eq(dumpsterPricing.id, pricingId));
+    
+    if (!pricing) {
+      return {
+        totalInventory: dumpster.availability,
+        unitsInUse: 0,
+        availableUnits: dumpster.availability,
+        conflictingBookings: []
+      };
+    }
+
+    // Calculate rental period
+    const startDate = new Date(deliveryDate);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + pricing.days);
+
+    // Get all active bookings for this dumpster that overlap with the requested period
+    const overlappingBookings = await db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.dumpsterId, dumpsterId),
+          or(
+            eq(bookings.status, 'pending'),
+            eq(bookings.status, 'confirmed'),
+            eq(bookings.status, 'delivered'),
+            eq(bookings.status, 'scheduled')
+          )
+        )
+      );
+
+    // Count conflicting bookings and collect details
+    const conflictingBookings: Array<{ id: number; deliveryDate: Date; status: string }> = [];
+    let unitsInUse = 0;
+
+    for (const booking of overlappingBookings) {
+      const bookingStart = new Date(booking.deliveryDate);
+      const bookingEnd = new Date(bookingStart);
+      
+      // Get the rental duration from the booking's pricing option
+      const [bookingPricing] = await db
+        .select()
+        .from(dumpsterPricing)
+        .where(eq(dumpsterPricing.id, booking.pricingId));
+      
+      if (bookingPricing) {
+        bookingEnd.setDate(bookingEnd.getDate() + bookingPricing.days);
+        
+        // Check if periods overlap
+        if (startDate < bookingEnd && endDate > bookingStart) {
+          unitsInUse++;
+          conflictingBookings.push({
+            id: booking.id,
+            deliveryDate: booking.deliveryDate,
+            status: booking.status
+          });
+        }
+      }
+    }
+
+    return {
+      totalInventory: dumpster.availability,
+      unitsInUse,
+      availableUnits: dumpster.availability - unitsInUse,
+      conflictingBookings
+    };
+  }
+
+  async getAvailableDumpsters(deliveryDate: string, pricingId: number): Promise<Dumpster[]> {
     const allDumpsters = await this.listDumpsters();
     const availableDumpsters: Dumpster[] = [];
 
     for (const dumpster of allDumpsters) {
-      const isAvailable = await this.checkDumpsterAvailability(dumpster.id, deliveryDate, rentalDays);
+      const isAvailable = await this.checkDumpsterAvailability(dumpster.id, deliveryDate, pricingId);
       if (isAvailable) {
         availableDumpsters.push(dumpster);
       }

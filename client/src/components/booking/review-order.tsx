@@ -173,6 +173,61 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
     createPaymentIntentMutation.mutate({ bookingId, amount });
   };
 
+  // Check inventory availability before submission
+  const checkAvailabilityMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/check-availability", {
+        dumpsterId: bookingData.dumpsterId,
+        deliveryDate: bookingData.deliveryDate,
+        pricingId: bookingData.pricingId
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.available) {
+        // Proceed with booking creation
+        proceedWithBooking();
+      } else {
+        toast({
+          title: "Inventory Unavailable",
+          description: `Sorry, this dumpster size is not available for your selected date. ${data.details.availableUnits} of ${data.details.totalInventory} units are available. Please choose a different date or dumpster size.`,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Availability Check Failed",
+        description: "Unable to verify inventory availability. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const proceedWithBooking = () => {
+    const formData = form.getValues();
+    
+    // Create a valid date string (YYYY-MM-DD) that will be converted to a timestamp by the server
+    const deliveryDate = bookingData.deliveryDate;
+
+    // Create complete booking data
+    const completeBookingData = {
+      ...bookingData,
+      customerName: formData.fullName,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      totalPrice: calculatedPrice,
+      paymentStatus: "pending",
+      status: "scheduled",
+      serviceZoneId: selectedZone?.id,
+      // Pass the date string directly to the server
+      deliveryDate: deliveryDate
+    };
+
+    // Create booking
+    createBookingMutation.mutate(completeBookingData);
+  };
+
   const handleFormSubmit = (formData: ContactFormValues) => {
     if (!calculatedPrice) {
       toast({
@@ -211,26 +266,9 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       });
       return;
     }
-    
-    // Create a valid date string (YYYY-MM-DD) that will be converted to a timestamp by the server
-    const deliveryDate = bookingData.deliveryDate;
 
-    // Create complete booking data
-    const completeBookingData = {
-      ...bookingData,
-      customerName: formData.fullName,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
-      totalPrice: calculatedPrice,
-      paymentStatus: "pending",
-      status: "scheduled",
-      serviceZoneId: selectedZone.id,
-      // Pass the date string directly to the server
-      deliveryDate: deliveryDate
-    };
-
-    // Create booking
-    createBookingMutation.mutate(completeBookingData);
+    // Check inventory availability before proceeding
+    checkAvailabilityMutation.mutate();
   };
 
   const handlePaymentResult = (success = true) => {
@@ -544,12 +582,17 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                   <Button 
                     type="submit" 
                     className="px-8 py-3"
-                    disabled={createBookingMutation.isPending}
+                    disabled={checkAvailabilityMutation.isPending || createBookingMutation.isPending}
                   >
-                    {createBookingMutation.isPending && (
+                    {(checkAvailabilityMutation.isPending || createBookingMutation.isPending) && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Proceed to Payment
+                    {checkAvailabilityMutation.isPending 
+                      ? "Checking Availability..." 
+                      : createBookingMutation.isPending 
+                        ? "Creating Booking..." 
+                        : "Proceed to Payment"
+                    }
                   </Button>
                 </div>
               </form>

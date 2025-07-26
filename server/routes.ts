@@ -808,6 +808,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inventory check endpoint for real-time availability validation
+  app.post("/api/check-availability", async (req, res) => {
+    try {
+      const { dumpsterId, deliveryDate, pricingId } = req.body;
+      
+      if (!dumpsterId || !deliveryDate || !pricingId) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+      
+      const isAvailable = await storage.checkDumpsterAvailability(
+        Number(dumpsterId),
+        deliveryDate,
+        Number(pricingId)
+      );
+      
+      const availabilityDetails = await storage.getAvailabilityDetails(
+        Number(dumpsterId),
+        deliveryDate,
+        Number(pricingId)
+      );
+      
+      res.json({
+        available: isAvailable,
+        details: availabilityDetails
+      });
+    } catch (err) {
+      console.error("Error checking availability:", err);
+      res.status(500).json({ message: "Failed to check availability" });
+    }
+  });
+
   app.get("/api/bookings/:id", async (req, res) => {
     try {
       const bookingId = Number(req.params.id);
@@ -827,6 +858,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bookings", async (req, res) => {
     try {
       const validatedData = insertBookingSchema.parse(req.body);
+      
+      // Check inventory availability before creating booking
+      const isAvailable = await storage.checkDumpsterAvailability(
+        validatedData.dumpsterId,
+        validatedData.deliveryDate.toISOString().split('T')[0],
+        validatedData.pricingId
+      );
+      
+      if (!isAvailable) {
+        return res.status(409).json({ 
+          message: "Sorry, this dumpster size is not available for your selected date. Please choose a different date or dumpster size.",
+          code: "INVENTORY_UNAVAILABLE"
+        });
+      }
+      
       const booking = await storage.createBooking(validatedData);
       res.status(201).json(booking);
     } catch (err) {
