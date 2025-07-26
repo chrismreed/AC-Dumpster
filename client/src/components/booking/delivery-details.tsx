@@ -495,7 +495,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                             }}
                             modifiersStyles={{
                               deliveryDate: {
-                                backgroundColor: 'transparent',
+                                backgroundColor: '#fef3c7',
                                 color: '#92400e',
                                 fontWeight: '700',
                                 border: '2px solid #f7c948',
