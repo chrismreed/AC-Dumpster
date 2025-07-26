@@ -295,7 +295,7 @@ export default function BookingConfirmationPage() {
       </Card>
       <div className="mt-8 text-center text-sm text-gray-500">
         <p>If you have any questions about your booking, please contact us at</p>
-        <p className="font-medium">alleycatdumpsters@gmail.com or (217) 690-2582</p>
+        <p className="font-medium">alleycatdumpsters@gmail.com or (217) 994-2582</p>
       </div>
     </div>
   );
