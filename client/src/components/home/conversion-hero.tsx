@@ -27,20 +27,20 @@ export function ConversionHero() {
             <p className="text-xl text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">Family-owned business serving the Effingham area with roll-off dumpsters. Book in just a few minutes.</p>
 
             {/* Key benefits */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              <div className="flex items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-lg mx-auto">
+              <div className="flex items-center justify-center sm:justify-start">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">2,000 lbs included</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center justify-center sm:justify-start">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">Same-day delivery available</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center justify-center sm:justify-start">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">Free electronics recycling</span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center justify-center sm:justify-start">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">Transparent pricing</span>
               </div>
