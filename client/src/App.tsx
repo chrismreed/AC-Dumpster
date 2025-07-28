@@ -27,6 +27,18 @@ import PaymentPage from "@/pages/payment-page";
 import { StickyHeader } from "@/components/layout/sticky-header";
 import { ImprovedFooter } from "@/components/layout/improved-footer";
 
+// Public pages
+import PublicServicesPage from "@/pages/services";
+import AboutPage from "@/pages/about";
+import ContactPage from "@/pages/contact";
+import FAQPage from "@/pages/faq";
+
+// Individual service pages
+import ResidentialServicePage from "@/pages/services/residential";
+import ConstructionServicePage from "@/pages/services/construction";
+import LandscapingServicePage from "@/pages/services/landscaping";
+import RenovationServicePage from "@/pages/services/renovation";
+
 function Router() {
   return (
     <Switch>
@@ -35,6 +47,20 @@ function Router() {
       <Route path="/booking-confirmation" component={BookingConfirmationPage} />
       <Route path="/payment-success" component={PaymentSuccessPage} />
       <Route path="/pay/:id" component={PaymentPage} />
+      
+      {/* Public pages */}
+      <Route path="/services" component={PublicServicesPage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/contact" component={ContactPage} />
+      <Route path="/faq" component={FAQPage} />
+      
+      {/* Individual service pages */}
+      <Route path="/services/residential" component={ResidentialServicePage} />
+      <Route path="/services/construction" component={ConstructionServicePage} />
+      <Route path="/services/landscaping" component={LandscapingServicePage} />
+      <Route path="/services/renovation" component={RenovationServicePage} />
+      
+      {/* Admin routes */}
       <ProtectedRoute path="/admin" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dashboard" component={DashboardPage} adminOnly />
       <ProtectedRoute path="/admin/dumpsters" component={DumpstersPage} adminOnly />
