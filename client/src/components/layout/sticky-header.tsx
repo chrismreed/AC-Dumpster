@@ -12,7 +12,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { scrollToSection } from '@/lib/scroll-utils';
-import logoImage from "@assets/ACD Logo_1749926708871.png";
+import logoImage from "@assets/ACD Logo_1755982929252.png";
 
 export function StickyHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
