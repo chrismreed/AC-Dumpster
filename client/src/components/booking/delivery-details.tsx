@@ -17,7 +17,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { GooglePlacesAutocomplete } from "./google-places-autocomplete";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -204,23 +203,6 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
     }
   };
 
-  const handlePlaceSelect = (place: {
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    coordinates: { lat: number; lng: number };
-  }) => {
-    // Update form fields with the selected place data
-    form.setValue("deliveryAddress", place.address);
-    form.setValue("deliveryCity", place.city);
-    form.setValue("deliveryZipCode", place.zipCode);
-
-    // Validate the service area with coordinates for more accurate geofencing
-    if (place.zipCode && place.zipCode.length === 5) {
-      setTimeout(() => validateServiceArea(place.coordinates), 500);
-    }
-  };
 
   const onSubmit = (data: FormValues) => {
     onNext(data);
@@ -240,11 +222,9 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
               <FormItem>
                 <FormLabel>Delivery Address</FormLabel>
                 <FormControl>
-                  <GooglePlacesAutocomplete
-                    value={field.value}
-                    onChange={field.onChange}
-                    onPlaceSelect={handlePlaceSelect}
-                    placeholder="Start typing your address..."
+                  <Input 
+                    {...field} 
+                    placeholder="Enter your street address"
                   />
                 </FormControl>
                 <FormMessage />
