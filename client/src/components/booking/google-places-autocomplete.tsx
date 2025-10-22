@@ -22,7 +22,8 @@ export function GooglePlacesAutocomplete({
   onChange,
   className
 }: GooglePlacesAutocompleteProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
@@ -37,111 +38,79 @@ export function GooglePlacesAutocomplete({
         
         const loader = new Loader({
           apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-          version: 'beta',
+          version: 'weekly',
           libraries: ['places']
         });
 
         await loader.load();
         setIsLoaded(true);
 
-        if (containerRef.current && !containerRef.current.querySelector('gmp-place-autocomplete')) {
-          // Use the new PlaceAutocompleteElement
-          const autocompleteElement = document.createElement('gmp-place-autocomplete') as any;
-          
-          // Configure the element
-          autocompleteElement.setAttribute('placeholder', placeholder);
-          autocompleteElement.setAttribute('type', 'address');
-          
-          // Style the element to match our design
-          Object.assign(autocompleteElement.style, {
-            width: '100%',
-            '--gmp-autocomplete-font-size': '14px',
-            '--gmp-autocomplete-input-height': '40px',
-            '--gmp-autocomplete-input-padding': '8px 12px',
-            '--gmp-autocomplete-border-radius': '6px',
-            '--gmp-autocomplete-border-color': '#e2e8f0',
-            '--gmp-autocomplete-background-color': 'white'
+        if (inputRef.current && !autocompleteRef.current) {
+          // Use the legacy Autocomplete (works reliably, supported for 12+ months)
+          const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+            types: ['address'],
+            componentRestrictions: { country: 'us' }
           });
 
-          // Add the element to the container
-          containerRef.current.appendChild(autocompleteElement);
+          autocomplete.setFields(['address_components', 'geometry', 'formatted_address']);
 
-          // Listen for place selection - support both old and new event names
-          const handlePlaceSelect = async (event: any) => {
-            // Try new API first (event.placePrediction), then fall back to old (event.detail.place)
-            let place = event.placePrediction?.toPlace?.() || event.detail?.place;
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
             
-            if (!place) {
-              console.error('No place data in event.detail');
+            if (!place.address_components || !place.geometry?.location) {
+              console.error('Missing address components or location');
               return;
             }
 
-            try {
-              // Fetch the required fields from the place object
-              await place.fetchFields({
-                fields: ['addressComponents', 'formattedAddress', 'location']
-              });
+            let streetNumber = '';
+            let route = '';
+            let city = '';
+            let state = '';
+            let zipCode = '';
 
-              if (!place.addressComponents || !place.location) {
-                console.error('Missing address components or location data');
-                return;
-              }
-
-              let streetNumber = '';
-              let route = '';
-              let city = '';
-              let state = '';
-              let zipCode = '';
-
-              // Parse address components using the new API
-              place.addressComponents.forEach((component: any) => {
-                const types = component.types;
-                
-                if (types.includes('street_number')) {
-                  streetNumber = component.longText;
-                } else if (types.includes('route')) {
-                  route = component.longText;
-                } else if (types.includes('locality')) {
-                  city = component.longText;
-                } else if (types.includes('administrative_area_level_1')) {
-                  state = component.shortText;
-                } else if (types.includes('postal_code')) {
-                  zipCode = component.longText;
-                }
-              });
-
-              const fullAddress = `${streetNumber} ${route}`.trim();
+            place.address_components.forEach((component) => {
+              const types = component.types;
               
-              const parsedData = {
-                address: fullAddress,
-                city,
-                state,
-                zipCode,
-                coordinates: {
-                  lat: place.location.lat(),
-                  lng: place.location.lng()
-                }
-              };
+              if (types.includes('street_number')) {
+                streetNumber = component.long_name;
+              } else if (types.includes('route')) {
+                route = component.long_name;
+              } else if (types.includes('locality')) {
+                city = component.long_name;
+              } else if (types.includes('administrative_area_level_1')) {
+                state = component.short_name;
+              } else if (types.includes('postal_code')) {
+                zipCode = component.long_name;
+              }
+            });
 
-              setInputValue(fullAddress);
-              onPlaceSelect(parsedData);
-            } catch (error) {
-              console.error('Error fetching place details:', error);
-            }
-          };
+            const fullAddress = `${streetNumber} ${route}`.trim();
+            
+            const parsedData = {
+              address: fullAddress,
+              city,
+              state,
+              zipCode,
+              coordinates: {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+              }
+            };
 
-          // Listen to both event types for compatibility
-          autocompleteElement.addEventListener('gmp-select', handlePlaceSelect);
-          autocompleteElement.addEventListener('gmp-placeselect', handlePlaceSelect);
+            setInputValue(fullAddress);
+            onPlaceSelect(parsedData);
+          });
+
+          autocompleteRef.current = autocomplete;
         }
       } catch (error) {
         console.error('Error loading Google Maps:', error);
-        setIsLoaded(true); // Allow fallback to regular input
+        setIsLoaded(true);
       }
     };
 
     initializeAutocomplete();
-  }, [onPlaceSelect, placeholder]);
+  }, [onPlaceSelect]);
 
   useEffect(() => {
     setInputValue(value);
@@ -164,22 +133,14 @@ export function GooglePlacesAutocomplete({
     );
   }
 
-  if (!isLoaded) {
-    return (
-      <Input
-        value={inputValue}
-        onChange={handleInputChange}
-        placeholder="Loading address suggestions..."
-        className={className}
-        disabled={true}
-      />
-    );
-  }
-
   return (
-    <div 
-      ref={containerRef}
-      className={`w-full ${className || ''}`}
+    <Input
+      ref={inputRef}
+      value={inputValue}
+      onChange={handleInputChange}
+      placeholder={isLoaded ? placeholder : "Loading address suggestions..."}
+      className={className}
+      disabled={!isLoaded && !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
     />
   );
 }
