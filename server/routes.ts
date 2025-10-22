@@ -505,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { zipCode, address, city } = req.body;
       
-      // First try ZIP code lookup
+      // First try ZIP code lookup (for zones that have ZIP codes configured)
       if (zipCode) {
         const zipZone = await storage.getServiceZoneByZipCode(zipCode);
         if (zipZone) {
@@ -513,15 +513,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // If ZIP code lookup fails and we have address info, try geocoding + polygon check
+      // If ZIP code lookup fails, try geocoding + polygon check
+      // This works with either full address or just ZIP code
+      const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return res.status(404).json({ message: "No service zone found and geocoding unavailable" });
+      }
+
+      let geocodeAddress = '';
       if (address && city) {
-        // Use Google Maps Geocoding API to get coordinates
-        const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
-        if (!apiKey) {
-          return res.status(404).json({ message: "No service zone found and geocoding unavailable" });
-        }
-        
-        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address + ', ' + city)}&key=${apiKey}`;
+        geocodeAddress = `${address}, ${city}`;
+      } else if (zipCode) {
+        // If we only have ZIP code, geocode that to get coordinates
+        geocodeAddress = zipCode;
+      }
+
+      if (geocodeAddress) {
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(geocodeAddress)}&key=${apiKey}`;
         
         try {
           const geocodeResponse = await fetch(geocodeUrl);
@@ -532,15 +540,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const lat = location.lat;
             const lng = location.lng;
             
-            // Check geofenced zones - only for zones without ZIP codes defined
+            // Check geofenced zones - for zones using custom boundaries
             const zones = await storage.listServiceZones();
             for (const zone of zones) {
-              // Only check custom boundaries for zones that don't have ZIP codes defined
-              if (zone.useGeofencing && zone.polygonPath && (!zone.zipCodes || zone.zipCodes.trim() === '')) {
+              // Check custom boundaries for zones that use geofencing
+              if (zone.useGeofencing && zone.polygonPath) {
                 try {
                   const polygon = JSON.parse(zone.polygonPath);
                   if (Array.isArray(polygon) && isPointInPolygon(lat, lng, polygon)) {
-                    console.log(`Address lookup: coordinates (${lat}, ${lng}) found within custom boundary zone: ${zone.name}`);
+                    console.log(`Location lookup: coordinates (${lat}, ${lng}) found within boundary zone: ${zone.name}`);
                     return res.json(zone);
                   }
                 } catch (error) {
