@@ -37,7 +37,7 @@ export function GooglePlacesAutocomplete({
         
         const loader = new Loader({
           apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-          version: 'weekly',
+          version: 'beta',
           libraries: ['places']
         });
 
@@ -66,9 +66,10 @@ export function GooglePlacesAutocomplete({
           // Add the element to the container
           containerRef.current.appendChild(autocompleteElement);
 
-          // Listen for place selection using the new web component API
-          autocompleteElement.addEventListener('gmp-placeselect', async (event: any) => {
-            const place = event.detail?.place;
+          // Listen for place selection - support both old and new event names
+          const handlePlaceSelect = async (event: any) => {
+            // Try new API first (event.placePrediction), then fall back to old (event.detail.place)
+            let place = event.placePrediction?.toPlace?.() || event.detail?.place;
             
             if (!place) {
               console.error('No place data in event.detail');
@@ -127,7 +128,11 @@ export function GooglePlacesAutocomplete({
             } catch (error) {
               console.error('Error fetching place details:', error);
             }
-          });
+          };
+
+          // Listen to both event types for compatibility
+          autocompleteElement.addEventListener('gmp-select', handlePlaceSelect);
+          autocompleteElement.addEventListener('gmp-placeselect', handlePlaceSelect);
         }
       } catch (error) {
         console.error('Error loading Google Maps:', error);
