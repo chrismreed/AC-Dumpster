@@ -29,21 +29,10 @@ export function GooglePlacesAutocomplete({
   useEffect(() => {
     const initializeAutocomplete = async () => {
       if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-        
         return;
       }
 
       try {
-        // Temporarily suppress deprecation warnings
-        const originalWarn = 
-        console.warn = (...args) => {
-          const message = args.join(' ');
-          if (!message.includes('google.maps.places.Autocomplete')) {
-            originalWarn(...args);
-          }
-        };
-
-        // Use a simpler approach that works reliably
         const { Loader } = await import('@googlemaps/js-api-loader');
         
         const loader = new Loader({
@@ -53,72 +42,70 @@ export function GooglePlacesAutocomplete({
         });
 
         await loader.load();
-        
-        // Restore console.warn
-        
         setIsLoaded(true);
 
-        if (containerRef.current && !containerRef.current.querySelector('input')) {
-          // Create a regular input element
-          const inputElement = document.createElement('input');
-          inputElement.type = 'text';
-          inputElement.placeholder = placeholder;
-          inputElement.value = inputValue;
+        if (containerRef.current && !containerRef.current.querySelector('gmp-place-autocomplete')) {
+          // Use the new PlaceAutocompleteElement
+          const autocompleteElement = document.createElement('gmp-place-autocomplete') as any;
           
-          // Style the input to match our design
-          Object.assign(inputElement.style, {
+          // Configure the element
+          autocompleteElement.setAttribute('placeholder', placeholder);
+          autocompleteElement.setAttribute('type', 'address');
+          
+          // Style the element to match our design
+          Object.assign(autocompleteElement.style, {
             width: '100%',
-            height: '40px',
-            borderRadius: '6px',
-            border: '1px solid #e2e8f0',
-            padding: '8px 12px',
-            fontSize: '14px',
-            fontFamily: 'inherit',
-            outline: 'none',
-            boxSizing: 'border-box',
-            backgroundColor: 'white'
+            '--gmp-autocomplete-font-size': '14px',
+            '--gmp-autocomplete-input-height': '40px',
+            '--gmp-autocomplete-input-padding': '8px 12px',
+            '--gmp-autocomplete-border-radius': '6px',
+            '--gmp-autocomplete-border-color': '#e2e8f0',
+            '--gmp-autocomplete-background-color': 'white'
           });
 
-          // Add the input to the container
-          containerRef.current.appendChild(inputElement);
+          // Add the element to the container
+          containerRef.current.appendChild(autocompleteElement);
 
-          // Create the Autocomplete service
-          const autocomplete = new google.maps.places.Autocomplete(inputElement, {
-            types: ['address'],
-            componentRestrictions: { country: 'us' },
-            fields: [
-              'address_components',
-              'formatted_address',
-              'geometry.location'
-            ]
-          });
-
-          // Handle place selection
-          autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
+          // Listen for place selection using the new web component API
+          autocompleteElement.addEventListener('gmp-placeselect', async (event: any) => {
+            const place = event.detail?.place;
             
-            if (place && place.address_components && place.geometry?.location) {
-              const addressComponents = place.address_components;
-              
+            if (!place) {
+              console.error('No place data in event.detail');
+              return;
+            }
+
+            try {
+              // Fetch the required fields from the place object
+              await place.fetchFields({
+                fields: ['addressComponents', 'formattedAddress', 'location']
+              });
+
+              if (!place.addressComponents || !place.location) {
+                console.error('Missing address components or location data');
+                return;
+              }
+
               let streetNumber = '';
               let route = '';
               let city = '';
               let state = '';
               let zipCode = '';
 
-              addressComponents.forEach(component => {
+              // Parse address components using the new API
+              place.addressComponents.forEach((component: any) => {
                 const types = component.types;
                 
                 if (types.includes('street_number')) {
-                  streetNumber = component.long_name;
+                  streetNumber = component.longText;
                 } else if (types.includes('route')) {
-                  route = component.long_name;
+                  route = component.longText;
                 } else if (types.includes('locality')) {
-                  city = component.long_name;
+                  city = component.longText;
                 } else if (types.includes('administrative_area_level_1')) {
-                  state = component.short_name;
+                  state = component.shortText;
                 } else if (types.includes('postal_code')) {
-                  zipCode = component.long_name;
+                  zipCode = component.longText;
                 }
               });
 
@@ -130,27 +117,20 @@ export function GooglePlacesAutocomplete({
                 state,
                 zipCode,
                 coordinates: {
-                  lat: place.geometry.location.lat(),
-                  lng: place.geometry.location.lng()
+                  lat: place.location.lat(),
+                  lng: place.location.lng()
                 }
               };
 
-              
-              
               setInputValue(fullAddress);
               onPlaceSelect(parsedData);
+            } catch (error) {
+              console.error('Error fetching place details:', error);
             }
-          });
-
-          // Handle input changes
-          inputElement.addEventListener('input', (e) => {
-            const newValue = (e.target as HTMLInputElement).value;
-            setInputValue(newValue);
-            onChange?.(newValue);
           });
         }
       } catch (error) {
-        
+        console.error('Error loading Google Maps:', error);
         setIsLoaded(true); // Allow fallback to regular input
       }
     };

@@ -1808,7 +1808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             updates.push(`Payment intent status: ${paymentIntent.status}`);
           }
-        } catch (stripeError) {
+        } catch (stripeError: any) {
           console.warn(`Error checking Stripe payment intent ${booking.stripePaymentIntentId}:`, stripeError);
           updates.push(`Error checking payment: ${stripeError.message}`);
         }
