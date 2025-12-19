@@ -307,6 +307,11 @@ export default function DumpstersPage() {
     queryKey: ["/api/bookings"],
   });
 
+  // Fetch all pricing data reliably for deployed count calculation
+  const { data: allPricing } = useQuery<DumpsterPricing[]>({
+    queryKey: ["/api/dumpster-pricing/all"],
+  });
+
   // Fetch pricing data for each dumpster
   useEffect(() => {
     if (dumpsters) {
@@ -325,14 +330,32 @@ export default function DumpstersPage() {
     }
   }, [dumpsters]);
 
-  // Get deployed count for a dumpster
+  // Get deployed count for a dumpster (only count bookings currently in their rental period)
   const getDeployedCount = (dumpsterId: number) => {
-    if (!bookings) return 0;
-    // Count bookings where dumpsters are actively deployed (not available for new bookings)
-    return bookings.filter(booking => 
-      booking.dumpsterId === dumpsterId && 
-      ['confirmed', 'delivered', 'picked_up'].includes(booking.status)
-    ).length;
+    if (!bookings || !allPricing) return 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    
+    return bookings.filter(booking => {
+      // Must be for this dumpster and in an active status
+      if (booking.dumpsterId !== dumpsterId) return false;
+      if (!['confirmed', 'delivered', 'picked_up'].includes(booking.status)) return false;
+      
+      // Get rental duration from allPricing (reliable query-based data)
+      const pricing = allPricing.find(p => p.id === booking.pricingId);
+      if (!pricing) return false; // Skip if pricing not found (data integrity issue)
+      
+      // Calculate rental period
+      const deliveryDate = new Date(booking.deliveryDate);
+      deliveryDate.setHours(0, 0, 0, 0);
+      
+      const pickupDate = new Date(deliveryDate);
+      pickupDate.setDate(pickupDate.getDate() + pricing.days);
+      
+      // Check if today is within the rental period (inclusive of delivery, exclusive of pickup)
+      return today >= deliveryDate && today < pickupDate;
+    }).length;
   };
 
   // Handle drag end for dumpsters
@@ -434,6 +457,9 @@ export default function DumpstersPage() {
         ...prev,
         [dumpsterId]: [...(prev[dumpsterId] || []), newPricing]
       }));
+      
+      // Invalidate allPricing cache to keep deployed counts accurate
+      queryClient.invalidateQueries({ queryKey: ["/api/dumpster-pricing/all"] });
 
       setAddingPricing(null);
       setNewPricingDays("");
@@ -461,6 +487,9 @@ export default function DumpstersPage() {
         ...prev,
         [dumpsterId]: prev[dumpsterId]?.filter(p => p.id !== pricingId) || []
       }));
+      
+      // Invalidate allPricing cache to keep deployed counts accurate
+      queryClient.invalidateQueries({ queryKey: ["/api/dumpster-pricing/all"] });
 
       toast({
         title: "Success",
