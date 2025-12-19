@@ -51,6 +51,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
   const [isValidatingZip, setIsValidatingZip] = useState(false);
   const [validatedZone, setValidatedZone] = useState<any>(null);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [fullyBookedDates, setFullyBookedDates] = useState<Date[]>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = useRef<HTMLButtonElement>(null);
@@ -100,6 +101,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
         dates.push(new Date(d));
       }
       setAvailableDates(dates);
+      setFullyBookedDates([]);
       return;
     }
     
@@ -109,6 +111,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
     const checkAvailabilityForDates = async () => {
       const today = new Date();
       const availableDatesArray: Date[] = [];
+      const fullyBookedDatesArray: Date[] = [];
       const endDate = new Date(today);
       endDate.setDate(endDate.getDate() + 30);
       
@@ -129,18 +132,23 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
         const data = await response.json();
         
         data.results.forEach((result: { date: string; available: boolean }) => {
+          // Parse date string back to Date object
+          const dateParts = result.date.split('-');
+          const year = parseInt(dateParts[0]);
+          const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+          const day = parseInt(dateParts[2]);
+          const dateObj = new Date(year, month, day, 12, 0, 0, 0);
+          
           if (result.available) {
-            // Parse date string back to Date object
-            const dateParts = result.date.split('-');
-            const year = parseInt(dateParts[0]);
-            const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
-            const day = parseInt(dateParts[2]);
-            const dateObj = new Date(year, month, day, 12, 0, 0, 0);
             availableDatesArray.push(dateObj);
+          } else {
+            // Track fully booked dates (future dates that are unavailable)
+            fullyBookedDatesArray.push(dateObj);
           }
         });
         
         setAvailableDates(availableDatesArray);
+        setFullyBookedDates(fullyBookedDatesArray);
       } catch (error) {
         console.error("Error checking availability:", error);
         toast({
@@ -457,6 +465,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                               );
                             }}
                             modifiers={{
+                              fullyBooked: fullyBookedDates,
                               deliveryDate: field.value && pricingOption ? (() => {
                                 // First day (delivery) - outlined
                                 const dateParts = field.value.split('-');
@@ -494,6 +503,11 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                               })() : []
                             }}
                             modifiersStyles={{
+                              fullyBooked: {
+                                backgroundColor: '#fee2e2',
+                                color: '#991b1b',
+                                opacity: 0.7
+                              },
                               deliveryDate: {
                                 backgroundColor: '#fef3c7',
                                 color: '#92400e',
@@ -516,23 +530,31 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                             }}
                             initialFocus
                           />
-                          {field.value && pricingOption && (
-                            <div className="p-3 border-t">
-                              <div className="flex items-center gap-4 text-xs text-neutral-600">
+                          <div className="p-3 border-t">
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-600">
+                              {fullyBookedDates.length > 0 && (
                                 <div className="flex items-center gap-1">
-                                  <div className="w-3 h-3 border-2 border-[#f7c948] rounded"></div>
-                                  <span>Delivery/Pickup</span>
+                                  <div className="w-3 h-3 bg-red-100 rounded opacity-70"></div>
+                                  <span>Fully booked</span>
                                 </div>
-                                {pricingOption.days > 1 && (
+                              )}
+                              {field.value && pricingOption && (
+                                <>
                                   <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 bg-yellow-100 rounded"></div>
-                                    <span>Rental period</span>
+                                    <div className="w-3 h-3 border-2 border-[#f7c948] rounded"></div>
+                                    <span>Delivery/Pickup</span>
                                   </div>
-                                )}
-                                <span className="text-neutral-500">({pricingOption.days} day{pricingOption.days === 1 ? '' : 's'} total)</span>
-                              </div>
+                                  {pricingOption.days > 1 && (
+                                    <div className="flex items-center gap-1">
+                                      <div className="w-3 h-3 bg-yellow-100 rounded"></div>
+                                      <span>Rental period</span>
+                                    </div>
+                                  )}
+                                  <span className="text-neutral-500">({pricingOption.days} day{pricingOption.days === 1 ? '' : 's'} total)</span>
+                                </>
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
                       ) : (
                         <div className="p-6 text-center">
