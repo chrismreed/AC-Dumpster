@@ -93,6 +93,11 @@ The system uses the following main entities:
 - **Session Management**: Database-backed session store
 - **Environment Variables**: `SESSION_SECRET`
 
+### Email Service
+- **Brevo (formerly Sendinblue)**: Transactional email via REST API
+- **Environment Variables**: `BREVO_API_KEY`, `BREVO_FROM_EMAIL` (optional), `BREVO_FROM_NAME` (optional)
+- **Features**: Booking confirmation emails sent automatically when bookings are created
+
 ## Deployment Strategy
 
 ### Environment Configuration
@@ -113,6 +118,7 @@ STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 VITE_GOOGLE_MAPS_API_KEY=AIza...
 SESSION_SECRET=...
+BREVO_API_KEY=xkeysib-...
 ```
 
 ## Changelog

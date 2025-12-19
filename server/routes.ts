@@ -18,6 +18,7 @@ import {
 } from "@shared/schema";
 import { apiLimiter, authLimiter } from "./middleware/security";
 import { getHealthStatus } from "./middleware/validation";
+import { sendBookingConfirmationEmail, sendPaymentReceiptEmail } from "./services/email-service";
 
 // Check for Stripe secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -911,6 +912,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const booking = await storage.createBooking(validatedData);
+      
+      // Send confirmation email (don't block the response)
+      try {
+        const dumpster = await storage.getDumpster(booking.dumpsterId);
+        const pricing = await storage.getDumpsterPricing(booking.pricingId);
+        
+        if (dumpster && pricing) {
+          const deliveryDate = new Date(booking.deliveryDate);
+          const pickupDate = new Date(deliveryDate);
+          pickupDate.setDate(pickupDate.getDate() + pricing.days);
+          
+          sendBookingConfirmationEmail({
+            customerName: booking.customerName,
+            customerEmail: booking.customerEmail,
+            dumpsterName: dumpster.name,
+            dumpsterSize: dumpster.size,
+            deliveryAddress: `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`,
+            deliveryDate: deliveryDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+            pickupDate: pickupDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+            rentalDays: pricing.days,
+            totalPrice: booking.totalPrice,
+            bookingId: booking.id,
+          }).catch(err => console.error('Failed to send booking confirmation email:', err));
+        }
+      } catch (emailErr) {
+        console.error('Error preparing confirmation email:', emailErr);
+      }
+      
       res.status(201).json(booking);
     } catch (err) {
       if (err instanceof z.ZodError) {
