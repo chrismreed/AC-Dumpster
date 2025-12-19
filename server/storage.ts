@@ -974,8 +974,7 @@ export class DatabaseStorage implements IStorage {
           or(
             eq(bookings.status, 'pending'),
             eq(bookings.status, 'confirmed'),
-            eq(bookings.status, 'delivered'),
-            eq(bookings.status, 'scheduled')
+            eq(bookings.status, 'delivered')
           )
         )
       );
@@ -1052,8 +1051,7 @@ export class DatabaseStorage implements IStorage {
           or(
             eq(bookings.status, 'pending'),
             eq(bookings.status, 'confirmed'),
-            eq(bookings.status, 'delivered'),
-            eq(bookings.status, 'scheduled')
+            eq(bookings.status, 'delivered')
           )
         )
       );

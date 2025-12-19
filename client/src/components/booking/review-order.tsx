@@ -218,7 +218,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
       customerPhone: formData.phone,
       totalPrice: calculatedPrice,
       paymentStatus: "pending",
-      status: "scheduled",
+      status: "pending",
       serviceZoneId: selectedZone?.id,
       // Pass the date string directly to the server
       deliveryDate: deliveryDate

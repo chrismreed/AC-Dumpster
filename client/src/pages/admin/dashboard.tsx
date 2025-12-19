@@ -339,7 +339,7 @@ export default function DashboardPage() {
   
   // Calculate summary statistics before any return statements to avoid hook order issues
   const totalBookings = bookings?.length || 0;
-  const activeBookings = bookings?.filter(b => b.status === 'scheduled').length || 0;
+  const activeBookings = bookings?.filter(b => b.status === 'pending').length || 0;
   const totalRevenue = bookings?.reduce((sum, booking) => sum + booking.totalPrice, 0) || 0;
   const serviceZoneCount = new Set(bookings?.map(b => b.serviceZoneId)).size || 0;
 
@@ -987,7 +987,7 @@ export default function DashboardPage() {
                           <td className="px-6 py-4">{deliveryDate}</td>
                           <td className="px-6 py-4">
                             <span className={`px-2 py-1 rounded text-xs ${
-                              status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' : 
+                              status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
                               status === 'completed' ? 'bg-gray-100 text-gray-800' : 
                               'bg-gray-100 text-gray-600'
                             }`}>
