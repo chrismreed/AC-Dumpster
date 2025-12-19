@@ -138,7 +138,7 @@ export const bookings = pgTable("bookings", {
   totalPrice: integer("total_price").notNull(), // In cents
   paymentStatus: text("payment_status").notNull().default("pending"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
-  status: text("status").notNull().default("scheduled"),
+  status: text("status").notNull().default("pending"),
   assignedFleetUnitId: integer("assigned_fleet_unit_id"), // Which specific dumpster unit is assigned
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
