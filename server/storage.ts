@@ -31,7 +31,12 @@ import {
   type InsertPaymentLink,
   legalDocuments,
   type LegalDocument,
-  type InsertLegalDocument
+  type InsertLegalDocument,
+  businessSettings,
+  type BusinessSetting,
+  services,
+  type Service,
+  type InsertService
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -135,6 +140,12 @@ export interface IStorage {
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: Partial<InsertService>): Promise<Service | undefined>;
   deleteService(id: number): Promise<boolean>;
+
+  // Business settings methods
+  getBusinessSetting(key: string): Promise<string | undefined>;
+  getAllBusinessSettings(): Promise<Record<string, string>>;
+  setBusinessSetting(key: string, value: string, description?: string): Promise<void>;
+  setBusinessSettings(settings: Record<string, string>): Promise<void>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -1262,6 +1273,39 @@ export class DatabaseStorage implements IStorage {
   async deleteService(id: number): Promise<boolean> {
     const result = await db.delete(services).where(eq(services.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Business settings methods
+  async getBusinessSetting(key: string): Promise<string | undefined> {
+    const [setting] = await db.select().from(businessSettings).where(eq(businessSettings.key, key));
+    return setting?.value;
+  }
+
+  async getAllBusinessSettings(): Promise<Record<string, string>> {
+    const settings = await db.select().from(businessSettings);
+    const result: Record<string, string> = {};
+    for (const setting of settings) {
+      result[setting.key] = setting.value;
+    }
+    return result;
+  }
+
+  async setBusinessSetting(key: string, value: string, description?: string): Promise<void> {
+    const [existing] = await db.select().from(businessSettings).where(eq(businessSettings.key, key));
+    
+    if (existing) {
+      await db.update(businessSettings)
+        .set({ value, updatedAt: new Date() })
+        .where(eq(businessSettings.key, key));
+    } else {
+      await db.insert(businessSettings).values({ key, value, description });
+    }
+  }
+
+  async setBusinessSettings(settings: Record<string, string>): Promise<void> {
+    for (const [key, value] of Object.entries(settings)) {
+      await this.setBusinessSetting(key, value);
+    }
   }
 }
 

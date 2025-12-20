@@ -166,6 +166,15 @@ export const paymentLinks = pgTable("payment_links", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Business settings (configurable by admin)
+export const businessSettings = pgTable("business_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Legal documents (terms of service, privacy policy)
 export const legalDocuments = pgTable("legal_documents", {
   id: serial("id").primaryKey(),
@@ -316,6 +325,12 @@ export const insertServiceSchema = createInsertSchema(services)
     createdAt: true,
   });
 
+export const insertBusinessSettingSchema = createInsertSchema(businessSettings)
+  .omit({
+    id: true,
+    updatedAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -355,3 +370,6 @@ export type InsertLegalDocument = z.infer<typeof insertLegalDocumentSchema>;
 
 export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
+
+export type BusinessSetting = typeof businessSettings.$inferSelect;
+export type InsertBusinessSetting = z.infer<typeof insertBusinessSettingSchema>;
