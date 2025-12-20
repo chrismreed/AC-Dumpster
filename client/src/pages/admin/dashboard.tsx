@@ -390,14 +390,14 @@ export default function DashboardPage() {
     return pickupDate < today;
   }) || [];
 
-  // Today's deliveries - compare using local date parts to avoid timezone issues
+  // Today's deliveries - compare using UTC date parts since DB stores dates as UTC
   const todaysDeliveries = bookings?.filter(booking => {
     if (!booking.deliveryDate) return false;
     const deliveryDate = new Date(booking.deliveryDate);
-    // Compare year, month, and day in local time
-    return deliveryDate.getFullYear() === today.getFullYear() &&
-           deliveryDate.getMonth() === today.getMonth() &&
-           deliveryDate.getDate() === today.getDate() &&
+    // Compare year, month, and day in UTC to match database storage
+    return deliveryDate.getUTCFullYear() === today.getFullYear() &&
+           deliveryDate.getUTCMonth() === today.getMonth() &&
+           deliveryDate.getUTCDate() === today.getDate() &&
            ['pending', 'confirmed'].includes(booking.status);
   }) || [];
 
