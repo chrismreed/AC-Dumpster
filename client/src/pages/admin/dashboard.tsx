@@ -390,12 +390,15 @@ export default function DashboardPage() {
     return pickupDate < today;
   }) || [];
 
-  // Today's deliveries
+  // Today's deliveries - compare using local date parts to avoid timezone issues
   const todaysDeliveries = bookings?.filter(booking => {
     if (!booking.deliveryDate) return false;
     const deliveryDate = new Date(booking.deliveryDate);
-    deliveryDate.setHours(0, 0, 0, 0);
-    return deliveryDate.getTime() === today.getTime() && ['pending', 'confirmed'].includes(booking.status);
+    // Compare year, month, and day in local time
+    return deliveryDate.getFullYear() === today.getFullYear() &&
+           deliveryDate.getMonth() === today.getMonth() &&
+           deliveryDate.getDate() === today.getDate() &&
+           ['pending', 'confirmed'].includes(booking.status);
   }) || [];
 
   // Today's pickups
