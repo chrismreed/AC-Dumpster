@@ -2107,6 +2107,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Business Settings routes
+  app.get("/api/admin/settings", isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllBusinessSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/admin/settings", isAdmin, async (req, res) => {
+    try {
+      const settings = req.body as Record<string, string>;
+      await storage.setBusinessSettings(settings);
+      res.json({ message: "Settings updated successfully" });
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      res.status(500).json({ message: "Failed to update settings" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
