@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -523,6 +524,15 @@ export default function DashboardPage() {
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2">
                 <div className="bg-blue-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  <div className="flex justify-end mb-2">
+                    <Link 
+                      href="/admin/bookings?status=confirmed&dateRange=today"
+                      className="text-blue-600 text-xs hover:underline"
+                      data-testid="link-deliveries-view-all"
+                    >
+                      View All in Bookings →
+                    </Link>
+                  </div>
                   {todaysDeliveries.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">No deliveries scheduled for today</p>
                   ) : (
@@ -593,6 +603,15 @@ export default function DashboardPage() {
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2">
                 <div className="bg-green-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  <div className="flex justify-end mb-2">
+                    <Link 
+                      href="/admin/bookings?status=delivered&dateRange=today"
+                      className="text-green-600 text-xs hover:underline"
+                      data-testid="link-pickups-view-all"
+                    >
+                      View All in Bookings →
+                    </Link>
+                  </div>
                   {todaysPickups.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">No pickups scheduled for today</p>
                   ) : (
@@ -676,6 +695,15 @@ export default function DashboardPage() {
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2">
                 <div className="bg-amber-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  <div className="flex justify-end mb-2">
+                    <Link 
+                      href="/admin/bookings?status=pending"
+                      className="text-amber-600 text-xs hover:underline"
+                      data-testid="link-pending-view-all"
+                    >
+                      View All in Bookings →
+                    </Link>
+                  </div>
                   {pendingBookings.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">No pending bookings</p>
                   ) : (
@@ -765,6 +793,15 @@ export default function DashboardPage() {
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-2">
                 <div className="bg-red-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  <div className="flex justify-end mb-2">
+                    <Link 
+                      href="/admin/bookings?status=delivered&dateRange=overdue"
+                      className="text-red-600 text-xs hover:underline"
+                      data-testid="link-overdue-view-all"
+                    >
+                      View All in Bookings →
+                    </Link>
+                  </div>
                   {overduePickups.length === 0 ? (
                     <div className="text-center py-4">
                       <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />

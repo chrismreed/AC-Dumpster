@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation, useSearch } from "wouter";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -32,8 +40,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing, Hub } from "@shared/schema";
-import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users, RefreshCw, User, ClipboardList, Search, Clock, X } from "lucide-react";
+import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users, RefreshCw, User, ClipboardList, Search, Clock, X, Filter, CalendarDays, ChevronRight, Check, Save, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -43,12 +52,43 @@ import { BookingCalendar } from "@/components/admin/booking-calendar";
 import { DeliveryMap } from "@/components/admin/maps/delivery-map";
 import { AdditionalCharges } from "@/components/admin/additional-charges";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+// Saved filter views type
+interface SavedView {
+  id: string;
+  name: string;
+  filters: {
+    status: string;
+    dateRange: string;
+    zoneId: string;
+  };
+}
+
+// Default saved views
+const defaultSavedViews: SavedView[] = [
+  { id: "today-deliveries", name: "Today's Deliveries", filters: { status: "confirmed", dateRange: "today", zoneId: "all" } },
+  { id: "pending-review", name: "Pending Review", filters: { status: "pending", dateRange: "all", zoneId: "all" } },
+  { id: "overdue-pickups", name: "Overdue Pickups", filters: { status: "delivered", dateRange: "overdue", zoneId: "all" } },
+  { id: "this-week", name: "This Week", filters: { status: "all", dateRange: "week", zoneId: "all" } },
+];
 
 export default function BookingsPage() {
   const { toast } = useToast();
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const searchParams = useSearch();
+  const [, setLocation] = useLocation();
+  
+  // Parse URL params for deep linking
+  const urlParams = new URLSearchParams(searchParams);
+  const initialStatus = urlParams.get("status") || "all";
+  const initialDateRange = urlParams.get("dateRange") || "all";
+  const initialZone = urlParams.get("zone") || "all";
+  
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus);
+  const [dateRangeFilter, setDateRangeFilter] = useState<string>(initialDateRange);
+  const [zoneFilter, setZoneFilter] = useState<string>(initialZone);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [isDropOffDialogOpen, setIsDropOffDialogOpen] = useState(false);
@@ -63,6 +103,34 @@ export default function BookingsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [chargesBooking, setChargesBooking] = useState<Booking | null>(null);
   const [isChargesDialogOpen, setIsChargesDialogOpen] = useState(false);
+  const [savedViews] = useState<SavedView[]>(defaultSavedViews);
+  const [isMobileView, setIsMobileView] = useState(false);
+
+  // Detect mobile view
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Apply saved view
+  const applySavedView = (view: SavedView) => {
+    setStatusFilter(view.filters.status);
+    setDateRangeFilter(view.filters.dateRange);
+    setZoneFilter(view.filters.zoneId);
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setDateRangeFilter("all");
+    setZoneFilter("all");
+    setSearchQuery("");
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = statusFilter !== "all" || dateRangeFilter !== "all" || zoneFilter !== "all" || searchQuery !== "";
   // Define status progression order
   const statusOrder = [
     { value: "pending", label: "Pending", step: 1 },
@@ -133,7 +201,7 @@ export default function BookingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
-      setIsViewDialogOpen(false);
+      setIsDetailSheetOpen(false);
       toast({
         title: "Booking updated",
         description: "The booking status has been updated successfully.",
@@ -330,7 +398,7 @@ export default function BookingsPage() {
 
   const handleViewBooking = (booking: Booking) => {
     setSelectedBooking(booking);
-    setIsViewDialogOpen(true);
+    setIsDetailSheetOpen(true);
   };
 
   const handleSelectBooking = (bookingId: number, checked: boolean) => {
@@ -385,15 +453,59 @@ export default function BookingsPage() {
     return { text: 'Just now', isUrgent: false };
   };
 
-  // Filter and sort bookings
+  // Filter and sort bookings with enhanced filtering
   const sortedAndFilteredBookings = useMemo(() => {
     if (!bookings) return [];
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() + 7);
     
     // First filter by status
     let result = bookings.filter((booking) => {
       if (statusFilter === "all") return true;
       return booking.status === statusFilter;
     });
+
+    // Filter by date range
+    if (dateRangeFilter !== "all") {
+      result = result.filter((booking) => {
+        const deliveryDate = new Date(booking.deliveryDate);
+        deliveryDate.setHours(0, 0, 0, 0);
+        
+        // Calculate pickup date
+        const durationDays = allPricing?.find(p => p.id === booking.pricingId)?.days || 7;
+        const pickupDate = new Date(deliveryDate);
+        pickupDate.setDate(deliveryDate.getDate() + Number(durationDays));
+        
+        switch (dateRangeFilter) {
+          case "today":
+            return deliveryDate.getTime() === today.getTime() || 
+                   (pickupDate.getTime() === today.getTime() && booking.status === "delivered");
+          case "tomorrow":
+            const tomorrowDate = new Date(today);
+            tomorrowDate.setDate(today.getDate() + 1);
+            return deliveryDate.getTime() === tomorrowDate.getTime();
+          case "week":
+            return deliveryDate >= today && deliveryDate <= weekEnd;
+          case "overdue":
+            // Overdue means pickup date has passed but status is still "delivered"
+            return booking.status === "delivered" && pickupDate < today;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Filter by zone (using serviceZoneId if available)
+    if (zoneFilter !== "all") {
+      result = result.filter((booking) => {
+        return (booking as any).serviceZoneId?.toString() === zoneFilter;
+      });
+    }
 
     // Then filter by search query
     if (searchQuery.trim()) {
@@ -447,7 +559,7 @@ export default function BookingsPage() {
     });
     
     return result;
-  }, [bookings, statusFilter, searchQuery, sortBy, sortOrder, allPricing]);
+  }, [bookings, statusFilter, dateRangeFilter, zoneFilter, searchQuery, sortBy, sortOrder, allPricing]);
 
   // Get related data for a booking
   const getDumpsterName = (id: number) => {
@@ -543,118 +655,238 @@ export default function BookingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
+        {/* Header with Search */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Bookings</h1>
             <p className="text-gray-500 text-sm">Manage and track all your dumpster rental bookings</p>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search by name, email, phone, address..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-8 w-full sm:w-[280px]"
-                data-testid="input-booking-search"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
-                >
-                  <X className="h-4 w-4 text-gray-400" />
-                </button>
-              )}
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-            >
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="picked_up">Picked Up</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search bookings..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-8 w-full sm:w-[280px]"
+              data-testid="input-booking-search"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="h-4 w-4 text-gray-400" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Search Results Summary */}
-        {searchQuery && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>Found {sortedAndFilteredBookings.length} booking{sortedAndFilteredBookings.length !== 1 ? 's' : ''} matching "{searchQuery}"</span>
-            <button
-              onClick={() => setSearchQuery("")}
-              className="text-blue-600 hover:underline"
+        {/* Quick View Buttons */}
+        <div className="flex flex-wrap gap-2">
+          {savedViews.map((view) => (
+            <Button
+              key={view.id}
+              variant="outline"
+              size="sm"
+              onClick={() => applySavedView(view)}
+              className={`text-xs ${
+                statusFilter === view.filters.status && 
+                dateRangeFilter === view.filters.dateRange && 
+                zoneFilter === view.filters.zoneId 
+                  ? 'bg-[#f7c948] text-black border-[#f7c948]' 
+                  : ''
+              }`}
+              data-testid={`quick-view-${view.id}`}
             >
-              Clear search
-            </button>
+              <Star className="h-3 w-3 mr-1" />
+              {view.name}
+            </Button>
+          ))}
+        </div>
+
+        {/* Filter Chips Row */}
+        <Card className="p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            
+            {/* Status Filter Chips */}
+            <div className="flex flex-wrap gap-1">
+              {[
+                { value: "all", label: "All" },
+                { value: "pending", label: "Pending", color: "bg-amber-100 text-amber-800" },
+                { value: "confirmed", label: "Confirmed", color: "bg-green-100 text-green-800" },
+                { value: "delivered", label: "Delivered", color: "bg-blue-100 text-blue-800" },
+                { value: "picked_up", label: "Picked Up", color: "bg-purple-100 text-purple-800" },
+                { value: "complete", label: "Complete", color: "bg-emerald-100 text-emerald-800" },
+                { value: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-800" },
+              ].map((status) => (
+                <button
+                  key={status.value}
+                  onClick={() => setStatusFilter(status.value)}
+                  className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                    statusFilter === status.value
+                      ? status.color || 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  data-testid={`filter-status-${status.value}`}
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-4 w-px bg-gray-300 mx-1" />
+
+            {/* Date Range Filter */}
+            <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
+              <SelectTrigger className="w-auto h-8 text-xs gap-1">
+                <CalendarDays className="h-3 w-3" />
+                <SelectValue placeholder="Date Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Dates</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Zone Filter */}
+            {zones && zones.length > 0 && (
+              <Select value={zoneFilter} onValueChange={setZoneFilter}>
+                <SelectTrigger className="w-auto h-8 text-xs gap-1">
+                  <MapPin className="h-3 w-3" />
+                  <SelectValue placeholder="Zone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Zones</SelectItem>
+                  {zones.map((zone) => (
+                    <SelectItem key={zone.id} value={zone.id.toString()}>
+                      {zone.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-8 text-xs text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear All
+              </Button>
+            )}
+            
+            {/* Results count */}
+            <span className="ml-auto text-xs text-gray-500">
+              {sortedAndFilteredBookings.length} booking{sortedAndFilteredBookings.length !== 1 ? 's' : ''}
+            </span>
           </div>
-        )}
+        </Card>
         
-        {/* Booking Details Dialog */}
-        {selectedBooking && (
-          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <DialogTitle className="text-lg">Booking Details</DialogTitle>
-                    <span className="text-sm font-medium text-muted-foreground">Booking #{selectedBooking.id}</span>
+        {/* Booking Details Sheet (Slide-out Panel) */}
+        <Sheet open={isDetailSheetOpen} onOpenChange={setIsDetailSheetOpen}>
+          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+            {selectedBooking && (
+              <>
+                <SheetHeader className="space-y-1">
+                  <SheetTitle className="flex items-center justify-between">
+                    <span>Booking #{selectedBooking.id}</span>
+                    <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
+                      {selectedBooking.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
+                    </Badge>
+                  </SheetTitle>
+                  <SheetDescription>
+                    {selectedBooking.customerName} • {getDumpsterName(selectedBooking.dumpsterId)}
+                  </SheetDescription>
+                </SheetHeader>
+
+                {/* Visual Status Timeline */}
+                <div className="my-6">
+                  <div className="flex items-center justify-between relative">
+                    {/* Progress line */}
+                    <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200" />
+                    <div 
+                      className="absolute top-4 left-0 h-0.5 bg-[#f7c948] transition-all"
+                      style={{ 
+                        width: selectedBooking.status === 'cancelled' ? '0%' : 
+                               `${(getCurrentStep(selectedBooking.status) / 5) * 100}%` 
+                      }}
+                    />
+                    
+                    {statusOrder.filter(s => s.step > 0).map((status) => {
+                      const isCompleted = getCurrentStep(selectedBooking.status) >= status.step;
+                      const isCurrent = selectedBooking.status === status.value;
+                      return (
+                        <div key={status.value} className="flex flex-col items-center relative z-10">
+                          <button
+                            onClick={() => handleStatusChange(selectedBooking.id, status.value)}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                              isCurrent
+                                ? 'bg-[#f7c948] text-black ring-2 ring-[#f7c948] ring-offset-2'
+                                : isCompleted
+                                ? 'bg-[#f7c948] text-black'
+                                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                            }`}
+                          >
+                            {isCompleted ? <Check className="h-4 w-4" /> : status.step}
+                          </button>
+                          <span className={`text-xs mt-2 ${isCurrent ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
+                            {status.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
+                  {selectedBooking.status === 'cancelled' && (
+                    <div className="mt-4 text-center">
+                      <Badge className="bg-red-500 text-white">Cancelled</Badge>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Actions */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Button 
+                    onClick={() => {
+                      const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
+                      const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                      window.open(mapsUrl, '_blank');
+                    }}
+                    className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black"
+                    size="sm"
+                  >
+                    <MapPin className="h-4 w-4 mr-1" />
+                    Navigate
+                  </Button>
+                  <a href={`tel:${selectedBooking.customerPhone}`}>
+                    <Button variant="outline" size="sm">
+                      <Phone className="h-4 w-4 mr-1" />
+                      Call
+                    </Button>
+                  </a>
+                  <a href={`mailto:${selectedBooking.customerEmail}`}>
+                    <Button variant="outline" size="sm">
+                      <Mail className="h-4 w-4 mr-1" />
+                      Email
+                    </Button>
+                  </a>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => checkPaymentStatusMutation.mutate(selectedBooking.id)}
                     disabled={checkPaymentStatusMutation.isPending}
-                    className="flex items-center gap-2"
                   >
-                    <RefreshCw className={`h-4 w-4 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
-                    Check Payment Status
+                    <RefreshCw className={`h-4 w-4 mr-1 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                    Check Payment
                   </Button>
-                </div>
-                <DialogDescription className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <Select 
-                      value={selectedBooking.status} 
-                      onValueChange={(value) => handleStatusChange(selectedBooking.id, value)}
-                    >
-                      <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="picked_up">Picked Up</SelectItem>
-                        <SelectItem value="complete">Complete</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      onClick={() => {
-                        const address = `${selectedBooking.deliveryAddress}, ${selectedBooking.deliveryCity}, ${selectedBooking.deliveryZipCode}`;
-                        const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
-                        window.open(mapsUrl, '_blank');
-                      }}
-                      className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-9 text-sm"
-                      size="sm"
-                    >
-                      <MapPin className="h-4 w-4 mr-1" />
-                      Navigate
-                    </Button>
-                  </div>
-                  
                   <Button
                     variant="outline"
                     size="sm"
@@ -662,127 +894,77 @@ export default function BookingsPage() {
                       setChargesBooking(selectedBooking);
                       setIsChargesDialogOpen(true);
                     }}
-                    className="text-sm"
                   >
                     <DollarSign className="h-4 w-4 mr-1" />
-                    Additional Charges
+                    Add Charges
                   </Button>
-                </DialogDescription>
-              </DialogHeader>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Booking Info Cards */}
                 <div className="space-y-4">
                   <div className="border rounded-md p-4">
-                    <h3 className="text-sm font-medium flex items-center mb-2">
+                    <h3 className="text-sm font-medium flex items-center mb-3">
                       <User className="mr-2 h-4 w-4 text-gray-500" />
-                      Customer Information
+                      Customer
                     </h3>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-sm font-medium">{selectedBooking.customerName}</span>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Mail className="mr-2 h-4 w-4" />
-                        <a href={`mailto:${selectedBooking.customerEmail}`} className="hover:underline">
-                          {selectedBooking.customerEmail}
-                        </a>
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Phone className="mr-2 h-4 w-4" />
-                        <a href={`tel:${selectedBooking.customerPhone}`} className="hover:underline">
-                          {selectedBooking.customerPhone}
-                        </a>
-                      </div>
+                    <div className="space-y-2 text-sm">
+                      <p className="font-medium">{selectedBooking.customerName}</p>
+                      <p className="text-gray-500">{selectedBooking.customerEmail}</p>
+                      <p className="text-gray-500">{selectedBooking.customerPhone}</p>
                     </div>
                   </div>
                   
                   <div className="border rounded-md p-4">
-                    <h3 className="text-sm font-medium flex items-center mb-2">
+                    <h3 className="text-sm font-medium flex items-center mb-3">
                       <MapPin className="mr-2 h-4 w-4 text-gray-500" />
-                      Delivery Information
+                      Delivery Location
                     </h3>
                     <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="block text-gray-500">Address</span>
-                        <span>{selectedBooking.deliveryAddress}</span>
-                      </div>
-                      <div>
-                        <span className="block text-gray-500">City & ZIP</span>
-                        <span>{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</span>
-                      </div>
+                      <p>{selectedBooking.deliveryAddress}</p>
+                      <p>{selectedBooking.deliveryCity}, {selectedBooking.deliveryZipCode}</p>
                       {selectedBooking.deliveryInstructions && (
-                        <div>
-                          <span className="block text-gray-500">Instructions</span>
-                          <span className="italic">{selectedBooking.deliveryInstructions}</span>
-                        </div>
+                        <p className="text-gray-500 italic">{selectedBooking.deliveryInstructions}</p>
                       )}
+                      <p className="text-gray-500">Placement: {selectedBooking.placementLocation}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-md p-4">
+                    <h3 className="text-sm font-medium flex items-center mb-3">
+                      <Calendar className="mr-2 h-4 w-4 text-gray-500" />
+                      Schedule
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="block text-gray-500">Placement</span>
-                        <span>{selectedBooking.placementLocation}</span>
+                        <p className="text-gray-500">Delivery</p>
+                        <p className="font-medium">{formatDate(selectedBooking.deliveryDate)}</p>
+                        <p className="text-xs text-gray-500">{selectedBooking.deliveryTimePreference}</p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="border rounded-md p-4">
-                    <h3 className="text-sm font-medium flex items-center mb-2">
-                      <ClipboardList className="mr-2 h-4 w-4 text-gray-500" />
-                      Booking Details
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Dumpster</span>
-                        <span>{getDumpsterName(selectedBooking.dumpsterId)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Rental Duration</span>
-                        <span>{getDurationDays(selectedBooking.pricingId)} days</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Delivery Date</span>
-                        <span>{formatDate(selectedBooking.deliveryDate)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Pickup Date (Est.)</span>
-                        <span>{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Time Preference</span>
-                        <span>{selectedBooking.deliveryTimePreference}</span>
+                      <div>
+                        <p className="text-gray-500">Pickup (Est.)</p>
+                        <p className="font-medium">{getPickupDate(selectedBooking.deliveryDate, selectedBooking.pricingId)}</p>
+                        <p className="text-xs text-gray-500">{getDurationDays(selectedBooking.pricingId)} day rental</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="border rounded-md p-4">
-                    <h3 className="text-sm font-medium flex items-center mb-2">
+                    <h3 className="text-sm font-medium flex items-center mb-3">
                       <DollarSign className="mr-2 h-4 w-4 text-gray-500" />
-                      Payment Information
+                      Payment
                     </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Payment Status</span>
-                        <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
-                          {selectedBooking.paymentStatus.charAt(0).toUpperCase() + selectedBooking.paymentStatus.slice(1)}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Total Amount</span>
-                        <span className="font-medium">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
-                      </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold">${(selectedBooking.totalPrice / 100).toFixed(2)}</span>
+                      <Badge className={selectedBooking.paymentStatus === 'paid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
+                        {selectedBooking.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                      </Badge>
                     </div>
                   </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                      Close
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
 
         {/* Delete Confirmation Dialog */}
         {bookingToDelete && (
@@ -979,6 +1161,96 @@ export default function BookingsPage() {
               </Card>
             )}
 
+            {/* Mobile Card View */}
+            {isMobileView ? (
+              <div className="space-y-3">
+                {sortedAndFilteredBookings.length === 0 ? (
+                  <Card className="p-8 text-center text-gray-500">
+                    No bookings found
+                  </Card>
+                ) : (
+                  sortedAndFilteredBookings.map((booking) => {
+                    const timePending = getTimePending(booking.createdAt);
+                    return (
+                      <Card 
+                        key={booking.id} 
+                        className={`p-4 cursor-pointer hover:shadow-md transition-shadow ${
+                          selectedBookings.has(booking.id) ? 'ring-2 ring-[#f7c948]' : ''
+                        }`}
+                        onClick={() => handleViewBooking(booking)}
+                        data-testid={`booking-card-${booking.id}`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={selectedBookings.has(booking.id)}
+                              onCheckedChange={(checked) => {
+                                handleSelectBooking(booking.id, checked as boolean);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div>
+                              <p className="font-medium">{booking.customerName}</p>
+                              <p className="text-xs text-gray-500">#{booking.id}</p>
+                            </div>
+                          </div>
+                          {getStatusBadge(booking.status)}
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                          <div>
+                            <p className="text-gray-500 text-xs">Dumpster</p>
+                            <p className="font-medium">{getDumpsterName(booking.dumpsterId)?.replace('Yard Dumpster', 'yd')}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Delivery</p>
+                            <p className="font-medium">{formatDate(booking.deliveryDate)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Location</p>
+                            <p className="font-medium truncate">{booking.deliveryZipCode}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Total</p>
+                            <p className="font-medium">${(booking.totalPrice / 100).toFixed(2)}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            timePending.isUrgent && booking.status === 'pending'
+                              ? 'bg-amber-100 text-amber-700' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            <Clock className="h-3 w-3 inline mr-1" />
+                            {timePending.text}
+                          </span>
+                          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                            <a href={`tel:${booking.customerPhone}`}>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <Phone className="h-4 w-4" />
+                              </Button>
+                            </a>
+                            <Button 
+                              size="sm" 
+                              className="bg-[#f7c948] hover:bg-[#f7c948]/90 text-black h-8 w-8 p-0"
+                              onClick={() => {
+                                const address = `${booking.deliveryAddress}, ${booking.deliveryCity}, ${booking.deliveryZipCode}`;
+                                const mapsUrl = `https://maps.google.com/maps?daddr=${encodeURIComponent(address)}`;
+                                window.open(mapsUrl, '_blank');
+                              }}
+                            >
+                              <MapPin className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            ) : (
+            /* Desktop Table View */
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
@@ -986,9 +1258,9 @@ export default function BookingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 sm:p-6">
-                <div className="rounded-md border">
+                <div className="rounded-md border max-h-[600px] overflow-auto">
                   <Table className="w-full">
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
                       <TableRow>
                         <TableHead className="w-8">
                           <Checkbox
@@ -1202,6 +1474,7 @@ export default function BookingsPage() {
                 </div>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="map" className="mt-4">
@@ -1356,18 +1629,25 @@ export default function BookingsPage() {
 
 
         {/* Additional Charges Dialog */}
-        {chargesBooking && (
-          <AdditionalCharges
-            bookingId={chargesBooking.id}
-            customerName={chargesBooking.customerName}
-            customerEmail={chargesBooking.customerEmail}
-            customerPhone={chargesBooking.customerPhone}
-            isOpen={isChargesDialogOpen}
-            onClose={() => {
+        {chargesBooking && isChargesDialogOpen && (
+          <Dialog open={isChargesDialogOpen} onOpenChange={(open) => {
+            if (!open) {
               setIsChargesDialogOpen(false);
               setChargesBooking(null);
-            }}
-          />
+            }
+          }}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Additional Charges - Booking #{chargesBooking.id}</DialogTitle>
+              </DialogHeader>
+              <AdditionalCharges
+                bookingId={chargesBooking.id}
+                customerName={chargesBooking.customerName}
+                customerEmail={chargesBooking.customerEmail}
+                customerPhone={chargesBooking.customerPhone}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </AdminLayout>
