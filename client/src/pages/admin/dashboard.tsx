@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/ui/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +43,10 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  Eye
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -58,6 +62,7 @@ export default function DashboardPage() {
   const [selectedCustomerBookingId, setSelectedCustomerBookingId] = useState<string>("");
   const [chargesBooking, setChargesBooking] = useState<Booking | null>(null);
   const [isChargesDialogOpen, setIsChargesDialogOpen] = useState(false);
+  const [expandedPlaybook, setExpandedPlaybook] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -473,148 +478,349 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Today's Playbook - Actionable Items */}
+        {/* Today's Playbook - Actionable Items with Expandable Sections */}
         <Card className="border-l-4 border-l-[#f7c948]">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <ClipboardList className="h-5 w-5 text-[#f7c948]" />
               Today's Playbook
+              <span className="text-sm font-normal text-gray-500 ml-2">Click any card to expand</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Today's Deliveries */}
-              <div className="bg-blue-50 rounded-lg p-4" data-testid="playbook-deliveries">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-blue-700">Deliveries Today</span>
-                  <Truck className="h-4 w-4 text-blue-600" />
-                </div>
-                <p className="text-2xl font-bold text-blue-900">{todaysDeliveries.length}</p>
-                {todaysDeliveries.length > 0 && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    {todaysDeliveries.filter(b => b.status === 'confirmed').length} confirmed
-                  </p>
-                )}
-              </div>
-
-              {/* Today's Pickups */}
-              <div className="bg-green-50 rounded-lg p-4" data-testid="playbook-pickups">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-green-700">Pickups Today</span>
-                  <Truck className="h-4 w-4 text-green-600" />
-                </div>
-                <p className="text-2xl font-bold text-green-900">{todaysPickups.length}</p>
-              </div>
-
-              {/* Pending Requiring Action */}
-              <div className={`rounded-lg p-4 ${urgentPendingCount > 0 ? 'bg-amber-50' : 'bg-gray-50'}`} data-testid="playbook-pending">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-sm font-medium ${urgentPendingCount > 0 ? 'text-amber-700' : 'text-gray-700'}`}>
-                    Pending Review
-                  </span>
-                  {urgentPendingCount > 0 ? (
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  ) : (
-                    <Clock className="h-4 w-4 text-gray-500" />
-                  )}
-                </div>
-                <p className={`text-2xl font-bold ${urgentPendingCount > 0 ? 'text-amber-900' : 'text-gray-900'}`}>
-                  {pendingBookings.length}
-                </p>
-                {urgentPendingCount > 0 && (
-                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    {urgentPendingCount} waiting 24h+
-                  </p>
-                )}
-              </div>
-
-              {/* Overdue Pickups */}
-              <div className={`rounded-lg p-4 ${overduePickups.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`} data-testid="playbook-overdue">
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-sm font-medium ${overduePickups.length > 0 ? 'text-red-700' : 'text-gray-700'}`}>
-                    Overdue Pickups
-                  </span>
-                  {overduePickups.length > 0 ? (
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 text-gray-500" />
-                  )}
-                </div>
-                <p className={`text-2xl font-bold ${overduePickups.length > 0 ? 'text-red-900' : 'text-gray-900'}`}>
-                  {overduePickups.length}
-                </p>
-                {overduePickups.length > 0 && (
-                  <p className="text-xs text-red-600 mt-1">Requires immediate attention</p>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Actions - Show urgent pending bookings */}
-            {pendingBookings.length > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Pending Bookings Requiring Review</h4>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {pendingBookings.slice(0, 5).map((booking) => {
-                    const timePending = getTimePending(booking.createdAt);
-                    const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
-                    return (
-                      <div 
-                        key={booking.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
-                        onClick={() => {
-                          setSelectedBooking(booking);
-                          setIsBookingDialogOpen(true);
-                        }}
-                        data-testid={`pending-booking-${booking.id}`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{booking.customerName}</p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {dumpster?.name} - {booking.deliveryAddress}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            timePending.isUrgent 
-                              ? 'bg-amber-100 text-amber-700' 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            <Clock className="h-3 w-3 inline mr-1" />
-                            {timePending.text}
-                          </span>
-                          <div className="flex gap-1">
-                            <a 
-                              href={`tel:${booking.customerPhone}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1.5 rounded-full hover:bg-blue-100 text-blue-600"
-                              title="Call customer"
-                            >
-                              <Phone className="h-4 w-4" />
-                            </a>
-                            <a 
-                              href={`mailto:${booking.customerEmail}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1.5 rounded-full hover:bg-blue-100 text-blue-600"
-                              title="Email customer"
-                            >
-                              <Mail className="h-4 w-4" />
-                            </a>
-                          </div>
-                        </div>
+          <CardContent className="space-y-3">
+            {/* Deliveries Today - Collapsible */}
+            <Collapsible 
+              open={expandedPlaybook === 'deliveries'} 
+              onOpenChange={(open) => setExpandedPlaybook(open ? 'deliveries' : null)}
+            >
+              <CollapsibleTrigger asChild>
+                <div 
+                  className="bg-blue-50 rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition-colors" 
+                  data-testid="playbook-deliveries"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <span className="text-sm font-medium text-blue-700">Deliveries Today</span>
+                        {todaysDeliveries.length > 0 && (
+                          <p className="text-xs text-blue-600">
+                            {todaysDeliveries.filter(b => b.status === 'confirmed').length} confirmed
+                          </p>
+                        )}
                       </div>
-                    );
-                  })}
-                  {pendingBookings.length > 5 && (
-                    <p className="text-xs text-gray-500 text-center pt-2">
-                      +{pendingBookings.length - 5} more pending bookings
-                    </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-blue-900">{todaysDeliveries.length}</span>
+                      {expandedPlaybook === 'deliveries' ? (
+                        <ChevronUp className="h-5 w-5 text-blue-600" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-blue-600" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-blue-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  {todaysDeliveries.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">No deliveries scheduled for today</p>
+                  ) : (
+                    todaysDeliveries.map((booking) => {
+                      const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                      return (
+                        <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{booking.customerName}</p>
+                            <p className="text-xs text-gray-500 truncate">{dumpster?.name} - {booking.deliveryAddress}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Select 
+                              value={booking.status} 
+                              onValueChange={(value) => handleStatusChange(booking.id, value)}
+                            >
+                              <SelectTrigger className="w-28 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="picked_up">Picked Up</SelectItem>
+                                <SelectItem value="complete">Complete</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setSelectedBooking(booking); setIsBookingDialogOpen(true); }}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <a href={`tel:${booking.customerPhone}`} className="p-1.5 rounded hover:bg-blue-100 text-blue-600"><Phone className="h-4 w-4" /></a>
+                            <a href={`mailto:${booking.customerEmail}`} className="p-1.5 rounded hover:bg-blue-100 text-blue-600"><Mail className="h-4 w-4" /></a>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
-              </div>
-            )}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Pickups Today - Collapsible */}
+            <Collapsible 
+              open={expandedPlaybook === 'pickups'} 
+              onOpenChange={(open) => setExpandedPlaybook(open ? 'pickups' : null)}
+            >
+              <CollapsibleTrigger asChild>
+                <div 
+                  className="bg-green-50 rounded-lg p-4 cursor-pointer hover:bg-green-100 transition-colors" 
+                  data-testid="playbook-pickups"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-5 w-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-700">Pickups Today</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-green-900">{todaysPickups.length}</span>
+                      {expandedPlaybook === 'pickups' ? (
+                        <ChevronUp className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-green-600" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-green-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  {todaysPickups.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">No pickups scheduled for today</p>
+                  ) : (
+                    todaysPickups.map((booking) => {
+                      const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                      return (
+                        <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{booking.customerName}</p>
+                            <p className="text-xs text-gray-500 truncate">{dumpster?.name} - {booking.deliveryAddress}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Select 
+                              value={booking.status} 
+                              onValueChange={(value) => handleStatusChange(booking.id, value)}
+                            >
+                              <SelectTrigger className="w-28 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="picked_up">Picked Up</SelectItem>
+                                <SelectItem value="complete">Complete</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setSelectedBooking(booking); setIsBookingDialogOpen(true); }}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <a href={`tel:${booking.customerPhone}`} className="p-1.5 rounded hover:bg-green-100 text-green-600"><Phone className="h-4 w-4" /></a>
+                            <a href={`mailto:${booking.customerEmail}`} className="p-1.5 rounded hover:bg-green-100 text-green-600"><Mail className="h-4 w-4" /></a>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Pending Review - Collapsible */}
+            <Collapsible 
+              open={expandedPlaybook === 'pending'} 
+              onOpenChange={(open) => setExpandedPlaybook(open ? 'pending' : null)}
+            >
+              <CollapsibleTrigger asChild>
+                <div 
+                  className={`rounded-lg p-4 cursor-pointer transition-colors ${urgentPendingCount > 0 ? 'bg-amber-50 hover:bg-amber-100' : 'bg-gray-50 hover:bg-gray-100'}`} 
+                  data-testid="playbook-pending"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {urgentPendingCount > 0 ? (
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
+                      ) : (
+                        <Clock className="h-5 w-5 text-gray-500" />
+                      )}
+                      <div>
+                        <span className={`text-sm font-medium ${urgentPendingCount > 0 ? 'text-amber-700' : 'text-gray-700'}`}>
+                          Pending Review
+                        </span>
+                        {urgentPendingCount > 0 && (
+                          <p className="text-xs text-amber-600">{urgentPendingCount} waiting 24h+</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-2xl font-bold ${urgentPendingCount > 0 ? 'text-amber-900' : 'text-gray-900'}`}>
+                        {pendingBookings.length}
+                      </span>
+                      {expandedPlaybook === 'pending' ? (
+                        <ChevronUp className={`h-5 w-5 ${urgentPendingCount > 0 ? 'text-amber-600' : 'text-gray-500'}`} />
+                      ) : (
+                        <ChevronDown className={`h-5 w-5 ${urgentPendingCount > 0 ? 'text-amber-600' : 'text-gray-500'}`} />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-amber-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  {pendingBookings.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">No pending bookings</p>
+                  ) : (
+                    pendingBookings.map((booking) => {
+                      const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                      const timePending = getTimePending(booking.createdAt);
+                      return (
+                        <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{booking.customerName}</p>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${timePending.isUrgent ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                                <Clock className="h-3 w-3 inline mr-1" />{timePending.text}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{dumpster?.name} - {booking.deliveryAddress}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Select 
+                              value={booking.status} 
+                              onValueChange={(value) => handleStatusChange(booking.id, value)}
+                            >
+                              <SelectTrigger className="w-28 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="picked_up">Picked Up</SelectItem>
+                                <SelectItem value="complete">Complete</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setSelectedBooking(booking); setIsBookingDialogOpen(true); }}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <a href={`tel:${booking.customerPhone}`} className="p-1.5 rounded hover:bg-amber-100 text-amber-600"><Phone className="h-4 w-4" /></a>
+                            <a href={`mailto:${booking.customerEmail}`} className="p-1.5 rounded hover:bg-amber-100 text-amber-600"><Mail className="h-4 w-4" /></a>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Overdue Pickups - Collapsible */}
+            <Collapsible 
+              open={expandedPlaybook === 'overdue'} 
+              onOpenChange={(open) => setExpandedPlaybook(open ? 'overdue' : null)}
+            >
+              <CollapsibleTrigger asChild>
+                <div 
+                  className={`rounded-lg p-4 cursor-pointer transition-colors ${overduePickups.length > 0 ? 'bg-red-50 hover:bg-red-100' : 'bg-gray-50 hover:bg-gray-100'}`} 
+                  data-testid="playbook-overdue"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {overduePickups.length > 0 ? (
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5 text-gray-500" />
+                      )}
+                      <div>
+                        <span className={`text-sm font-medium ${overduePickups.length > 0 ? 'text-red-700' : 'text-gray-700'}`}>
+                          Overdue Pickups
+                        </span>
+                        {overduePickups.length > 0 && (
+                          <p className="text-xs text-red-600">Requires immediate attention</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-2xl font-bold ${overduePickups.length > 0 ? 'text-red-900' : 'text-gray-900'}`}>
+                        {overduePickups.length}
+                      </span>
+                      {expandedPlaybook === 'overdue' ? (
+                        <ChevronUp className={`h-5 w-5 ${overduePickups.length > 0 ? 'text-red-600' : 'text-gray-500'}`} />
+                      ) : (
+                        <ChevronDown className={`h-5 w-5 ${overduePickups.length > 0 ? 'text-red-600' : 'text-gray-500'}`} />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-red-50/50 rounded-lg p-3 space-y-2 max-h-64 overflow-y-auto">
+                  {overduePickups.length === 0 ? (
+                    <div className="text-center py-4">
+                      <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No overdue pickups - great job!</p>
+                    </div>
+                  ) : (
+                    overduePickups.map((booking) => {
+                      const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                      const pricing = allPricing?.find(p => p.id === booking.pricingId);
+                      const rentalDays = pricing?.days || 7;
+                      const deliveryDate = new Date(booking.deliveryDate);
+                      const pickupDate = new Date(deliveryDate);
+                      pickupDate.setDate(deliveryDate.getDate() + rentalDays);
+                      const daysOverdue = Math.floor((today.getTime() - pickupDate.getTime()) / (1000 * 60 * 60 * 24));
+                      
+                      return (
+                        <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border-l-4 border-red-500">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{booking.customerName}</p>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{dumpster?.name} - {booking.deliveryAddress}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Select 
+                              value={booking.status} 
+                              onValueChange={(value) => handleStatusChange(booking.id, value)}
+                            >
+                              <SelectTrigger className="w-28 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="picked_up">Picked Up</SelectItem>
+                                <SelectItem value="complete">Complete</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setSelectedBooking(booking); setIsBookingDialogOpen(true); }}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <a href={`tel:${booking.customerPhone}`} className="p-1.5 rounded hover:bg-red-100 text-red-600"><Phone className="h-4 w-4" /></a>
+                            <a href={`mailto:${booking.customerEmail}`} className="p-1.5 rounded hover:bg-red-100 text-red-600"><Mail className="h-4 w-4" /></a>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardContent>
         </Card>
 
