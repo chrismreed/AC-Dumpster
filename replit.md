@@ -49,6 +49,7 @@ The system uses the following main entities:
 - **Hub Management**: Storage location configuration
 - **Booking Management**: Order processing and status updates
 - **Payment Management**: Stripe integration with additional charges
+- **Business Settings**: White-label configuration for business name, contact info, and email sender
 
 ## Data Flow
 
@@ -122,6 +123,7 @@ BREVO_API_KEY=xkeysib-...
 ```
 
 ## Changelog
+- December 20, 2025. Added Business Settings page for white-label configuration (business name, sender email, contact info)
 - July 06, 2025. Initial setup
 
 ## User Preferences
