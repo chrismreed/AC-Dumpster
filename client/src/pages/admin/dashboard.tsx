@@ -38,7 +38,11 @@ import {
   User,
   Mail,
   Phone,
-  ClipboardList
+  ClipboardList,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  ExternalLink
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -343,6 +347,63 @@ export default function DashboardPage() {
   const totalRevenue = bookings?.reduce((sum, booking) => sum + booking.totalPrice, 0) || 0;
   const serviceZoneCount = new Set(bookings?.map(b => b.serviceZoneId)).size || 0;
 
+  // Helper function to calculate time since booking creation
+  const getTimePending = (createdAt: Date | string) => {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) return { text: `${diffDays}d ago`, isUrgent: diffDays >= 1 };
+    if (diffHours > 0) return { text: `${diffHours}h ago`, isUrgent: diffHours >= 24 };
+    return { text: 'Just now', isUrgent: false };
+  };
+
+  // Calculate "Today's Playbook" data
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Pending bookings requiring attention (older than 24h get flagged)
+  const pendingBookings = bookings?.filter(b => b.status === 'pending') || [];
+  const urgentPendingCount = pendingBookings.filter(b => {
+    const created = new Date(b.createdAt);
+    const hoursSince = (new Date().getTime() - created.getTime()) / (1000 * 60 * 60);
+    return hoursSince >= 24;
+  }).length;
+
+  // Overdue pickups (delivered status but pickup date has passed)
+  const overduePickups = bookings?.filter(booking => {
+    if (booking.status !== 'delivered') return false;
+    const pricing = allPricing?.find(p => p.id === booking.pricingId);
+    const rentalDays = pricing?.days || 7;
+    const deliveryDate = new Date(booking.deliveryDate);
+    const pickupDate = new Date(deliveryDate);
+    pickupDate.setDate(deliveryDate.getDate() + rentalDays);
+    pickupDate.setHours(0, 0, 0, 0);
+    return pickupDate < today;
+  }) || [];
+
+  // Today's deliveries
+  const todaysDeliveries = bookings?.filter(booking => {
+    if (!booking.deliveryDate) return false;
+    const deliveryDate = new Date(booking.deliveryDate);
+    deliveryDate.setHours(0, 0, 0, 0);
+    return deliveryDate.getTime() === today.getTime() && ['pending', 'confirmed'].includes(booking.status);
+  }) || [];
+
+  // Today's pickups
+  const todaysPickups = bookings?.filter(booking => {
+    if (!booking.deliveryDate || booking.status === 'complete' || booking.status === 'cancelled') return false;
+    const pricing = allPricing?.find(p => p.id === booking.pricingId);
+    const rentalDays = pricing?.days || 7;
+    const deliveryDate = new Date(booking.deliveryDate);
+    const pickupDate = new Date(deliveryDate);
+    pickupDate.setDate(deliveryDate.getDate() + rentalDays);
+    pickupDate.setHours(0, 0, 0, 0);
+    return pickupDate.getTime() === today.getTime() && booking.status === 'delivered';
+  }) || [];
+
   if (isLoadingBookings || isLoadingDumpsters || isLoadingPricing) {
     return (
       <AdminLayout>
@@ -411,6 +472,151 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Today's Playbook - Actionable Items */}
+        <Card className="border-l-4 border-l-[#f7c948]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ClipboardList className="h-5 w-5 text-[#f7c948]" />
+              Today's Playbook
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Today's Deliveries */}
+              <div className="bg-blue-50 rounded-lg p-4" data-testid="playbook-deliveries">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-700">Deliveries Today</span>
+                  <Truck className="h-4 w-4 text-blue-600" />
+                </div>
+                <p className="text-2xl font-bold text-blue-900">{todaysDeliveries.length}</p>
+                {todaysDeliveries.length > 0 && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    {todaysDeliveries.filter(b => b.status === 'confirmed').length} confirmed
+                  </p>
+                )}
+              </div>
+
+              {/* Today's Pickups */}
+              <div className="bg-green-50 rounded-lg p-4" data-testid="playbook-pickups">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-green-700">Pickups Today</span>
+                  <Truck className="h-4 w-4 text-green-600" />
+                </div>
+                <p className="text-2xl font-bold text-green-900">{todaysPickups.length}</p>
+              </div>
+
+              {/* Pending Requiring Action */}
+              <div className={`rounded-lg p-4 ${urgentPendingCount > 0 ? 'bg-amber-50' : 'bg-gray-50'}`} data-testid="playbook-pending">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-medium ${urgentPendingCount > 0 ? 'text-amber-700' : 'text-gray-700'}`}>
+                    Pending Review
+                  </span>
+                  {urgentPendingCount > 0 ? (
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  ) : (
+                    <Clock className="h-4 w-4 text-gray-500" />
+                  )}
+                </div>
+                <p className={`text-2xl font-bold ${urgentPendingCount > 0 ? 'text-amber-900' : 'text-gray-900'}`}>
+                  {pendingBookings.length}
+                </p>
+                {urgentPendingCount > 0 && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {urgentPendingCount} waiting 24h+
+                  </p>
+                )}
+              </div>
+
+              {/* Overdue Pickups */}
+              <div className={`rounded-lg p-4 ${overduePickups.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`} data-testid="playbook-overdue">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-medium ${overduePickups.length > 0 ? 'text-red-700' : 'text-gray-700'}`}>
+                    Overdue Pickups
+                  </span>
+                  {overduePickups.length > 0 ? (
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 text-gray-500" />
+                  )}
+                </div>
+                <p className={`text-2xl font-bold ${overduePickups.length > 0 ? 'text-red-900' : 'text-gray-900'}`}>
+                  {overduePickups.length}
+                </p>
+                {overduePickups.length > 0 && (
+                  <p className="text-xs text-red-600 mt-1">Requires immediate attention</p>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions - Show urgent pending bookings */}
+            {pendingBookings.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Pending Bookings Requiring Review</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {pendingBookings.slice(0, 5).map((booking) => {
+                    const timePending = getTimePending(booking.createdAt);
+                    const dumpster = dumpsters?.find(d => d.id === booking.dumpsterId);
+                    return (
+                      <div 
+                        key={booking.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
+                        onClick={() => {
+                          setSelectedBooking(booking);
+                          setIsBookingDialogOpen(true);
+                        }}
+                        data-testid={`pending-booking-${booking.id}`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{booking.customerName}</p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {dumpster?.name} - {booking.deliveryAddress}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            timePending.isUrgent 
+                              ? 'bg-amber-100 text-amber-700' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            <Clock className="h-3 w-3 inline mr-1" />
+                            {timePending.text}
+                          </span>
+                          <div className="flex gap-1">
+                            <a 
+                              href={`tel:${booking.customerPhone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-full hover:bg-blue-100 text-blue-600"
+                              title="Call customer"
+                            >
+                              <Phone className="h-4 w-4" />
+                            </a>
+                            <a 
+                              href={`mailto:${booking.customerEmail}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-full hover:bg-blue-100 text-blue-600"
+                              title="Email customer"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {pendingBookings.length > 5 && (
+                    <p className="text-xs text-gray-500 text-center pt-2">
+                      +{pendingBookings.length - 5} more pending bookings
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Deliveries & Pickups */}
         <Card>

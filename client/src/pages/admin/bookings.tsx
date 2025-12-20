@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Booking, Dumpster, AddOn, ServiceZone, RentalDuration, DumpsterPricing, Hub } from "@shared/schema";
-import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users, RefreshCw, User, ClipboardList } from "lucide-react";
+import { Loader2, Eye, Package, MapPin, Calendar, Phone, Mail, DollarSign, List, Trash2, Settings, Building2, Users, RefreshCw, User, ClipboardList, Search, Clock, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ import { Label } from "@/components/ui/label";
 export default function BookingsPage() {
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
@@ -370,6 +372,19 @@ export default function BookingsPage() {
     }
   };
 
+  // Helper function to calculate time since booking creation
+  const getTimePending = (createdAt: Date | string) => {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) return { text: `${diffDays}d ago`, isUrgent: diffDays >= 1 };
+    if (diffHours > 0) return { text: `${diffHours}h ago`, isUrgent: diffHours >= 24 };
+    return { text: 'Just now', isUrgent: false };
+  };
+
   // Filter and sort bookings
   const sortedAndFilteredBookings = useMemo(() => {
     if (!bookings) return [];
@@ -379,6 +394,26 @@ export default function BookingsPage() {
       if (statusFilter === "all") return true;
       return booking.status === statusFilter;
     });
+
+    // Then filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((booking) => {
+        const searchableFields = [
+          booking.customerName,
+          booking.customerEmail,
+          booking.customerPhone,
+          booking.deliveryAddress,
+          booking.deliveryCity,
+          booking.deliveryZipCode,
+          `#${booking.id}`,
+          booking.id.toString(),
+        ];
+        return searchableFields.some(field => 
+          field?.toLowerCase().includes(query)
+        );
+      });
+    }
 
     // Then sort by the selected field
     result = [...result].sort((a, b) => {
@@ -412,7 +447,7 @@ export default function BookingsPage() {
     });
     
     return result;
-  }, [bookings, statusFilter, sortBy, sortOrder, allPricing]);
+  }, [bookings, statusFilter, searchQuery, sortBy, sortOrder, allPricing]);
 
   // Get related data for a booking
   const getDumpsterName = (id: number) => {
@@ -513,17 +548,36 @@ export default function BookingsPage() {
             <h1 className="text-xl sm:text-2xl font-bold">Bookings</h1>
             <p className="text-gray-500 text-sm">Manage and track all your dumpster rental bookings</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Filter by status:</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search by name, email, phone, address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-8 w-full sm:w-[280px]"
+                data-testid="input-booking-search"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="h-4 w-4 text-gray-400" />
+                </button>
+              )}
+            </div>
             <Select
               value={statusFilter}
               onValueChange={setStatusFilter}
             >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a status" />
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Bookings</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="confirmed">Confirmed</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
@@ -534,6 +588,19 @@ export default function BookingsPage() {
             </Select>
           </div>
         </div>
+
+        {/* Search Results Summary */}
+        {searchQuery && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Found {sortedAndFilteredBookings.length} booking{sortedAndFilteredBookings.length !== 1 ? 's' : ''} matching "{searchQuery}"</span>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-blue-600 hover:underline"
+            >
+              Clear search
+            </button>
+          </div>
+        )}
         
         {/* Booking Details Dialog */}
         {selectedBooking && (
