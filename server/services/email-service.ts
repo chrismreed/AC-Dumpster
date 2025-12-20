@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { storage } from '../storage';
 
 interface EmailRecipient {
   email: string;
@@ -30,8 +31,16 @@ interface BookingEmailData {
 }
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
-const FROM_EMAIL = process.env.BREVO_FROM_EMAIL || 'noreply@alleycatdumpsters.com';
-const FROM_NAME = process.env.BREVO_FROM_NAME || 'Alley Cat Dumpster Rentals';
+
+async function getEmailSettings(): Promise<{ fromEmail: string; fromName: string; businessName: string }> {
+  const settings = await storage.getAllBusinessSettings();
+  
+  return {
+    fromEmail: settings.senderEmail || process.env.BREVO_FROM_EMAIL || 'noreply@alleycatdumpsters.com',
+    fromName: settings.senderName || process.env.BREVO_FROM_NAME || 'Alley Cat Dumpster Rentals',
+    businessName: settings.businessName || 'Alley Cat Dumpster Rentals',
+  };
+}
 
 async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const apiKey = process.env.BREVO_API_KEY;
@@ -41,11 +50,13 @@ async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean;
     return { success: false, error: 'Email service not configured' };
   }
 
+  const { fromEmail, fromName } = await getEmailSettings();
+
   try {
     const response = await axios.post(
       BREVO_API_URL,
       {
-        sender: { name: FROM_NAME, email: FROM_EMAIL },
+        sender: { name: fromName, email: fromEmail },
         to: options.to,
         subject: options.subject,
         htmlContent: options.htmlContent,
@@ -75,6 +86,8 @@ async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean;
 
 export async function sendBookingConfirmationEmail(data: BookingEmailData): Promise<{ success: boolean; error?: string }> {
   const formattedPrice = (data.totalPrice / 100).toFixed(2);
+  const { businessName, fromEmail } = await getEmailSettings();
+  const supportEmail = (await storage.getBusinessSetting('supportEmail')) || fromEmail;
   
   const htmlContent = `
     <!DOCTYPE html>
@@ -145,18 +158,18 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData): Prom
         
         <p>If you have any questions or need to make changes to your booking, please don't hesitate to contact us.</p>
         
-        <p>Thank you for choosing Alley Cat Dumpster Rentals!</p>
+        <p>Thank you for choosing ${businessName}!</p>
       </div>
       <div class="footer">
-        <p>Alley Cat Dumpster Rentals</p>
-        <p>Questions? Contact us at support@alleycatdumpsters.com</p>
+        <p>${businessName}</p>
+        <p>Questions? Contact us at ${supportEmail}</p>
       </div>
     </body>
     </html>
   `;
 
   const textContent = `
-Booking Confirmation - Alley Cat Dumpster Rentals
+Booking Confirmation - ${businessName}
 
 Hi ${data.customerName},
 
@@ -177,12 +190,12 @@ What's Next?
 
 If you have any questions, please contact us.
 
-Thank you for choosing Alley Cat Dumpster Rentals!
+Thank you for choosing ${businessName}!
   `.trim();
 
   return sendEmail({
     to: [{ email: data.customerEmail, name: data.customerName }],
-    subject: `Booking Confirmation #${data.bookingId} - Alley Cat Dumpster Rentals`,
+    subject: `Booking Confirmation #${data.bookingId} - ${businessName}`,
     htmlContent,
     textContent,
   });
@@ -196,6 +209,7 @@ export async function sendPaymentReceiptEmail(data: {
   description: string;
 }): Promise<{ success: boolean; error?: string }> {
   const formattedAmount = (data.amount / 100).toFixed(2);
+  const { businessName } = await getEmailSettings();
   
   const htmlContent = `
     <!DOCTYPE html>
@@ -231,7 +245,7 @@ export async function sendPaymentReceiptEmail(data: {
         <p>Thank you for your business!</p>
       </div>
       <div class="footer">
-        <p>Alley Cat Dumpster Rentals</p>
+        <p>${businessName}</p>
       </div>
     </body>
     </html>

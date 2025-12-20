@@ -17,7 +17,8 @@ import {
   Menu,
   X,
   FileText,
-  Shield
+  Shield,
+  Wrench
 } from "lucide-react";
 import { Button } from "./button";
 
@@ -55,7 +56,7 @@ export function AdminNav() {
     {
       title: "Services",
       href: "/admin/services",
-      icon: <Settings className="mr-2 h-4 w-4" />
+      icon: <Wrench className="mr-2 h-4 w-4" />
     },
     {
       title: "Bookings",
@@ -72,6 +73,11 @@ export function AdminNav() {
       title: "Legal Documents",
       href: "/admin/legal-documents",
       icon: <FileText className="mr-2 h-4 w-4" />
+    },
+    {
+      title: "Business Settings",
+      href: "/admin/settings",
+      icon: <Settings className="mr-2 h-4 w-4" />
     },
     {
       title: "Account Settings",

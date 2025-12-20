@@ -12,51 +12,44 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Save } from "lucide-react";
-
-interface AppSetting {
-  key: string;
-  value: string;
-  description: string;
-}
+import { Loader2, Save, Mail, Building2 } from "lucide-react";
 
 export default function SettingsPage() {
   const { toast } = useToast();
-  const [defaultRentalHours, setDefaultRentalHours] = useState("24");
+  
+  const [businessName, setBusinessName] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [supportEmail, setSupportEmail] = useState("");
 
-  // Fetch current settings
-  const { data: settings, isLoading } = useQuery<AppSetting[]>({
-    queryKey: ["/api/settings"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/settings");
-      return response.json();
-    },
+  const { data: settings, isLoading } = useQuery<Record<string, string>>({
+    queryKey: ["/api/admin/settings"],
   });
 
-  // Set default rental hours from settings when loaded
   useEffect(() => {
     if (settings) {
-      const defaultRentalSetting = settings.find(s => s.key === "default_rental_hours");
-      if (defaultRentalSetting) {
-        setDefaultRentalHours(defaultRentalSetting.value);
-      }
+      setBusinessName(settings.businessName || "");
+      setSenderEmail(settings.senderEmail || "");
+      setSenderName(settings.senderName || "");
+      setPhoneNumber(settings.phoneNumber || "");
+      setSupportEmail(settings.supportEmail || "");
     }
   }, [settings]);
 
-  // Update settings mutation
-  const updateSettingMutation = useMutation({
-    mutationFn: async (data: { key: string; value: string; description: string }) => {
-      const response = await apiRequest("POST", "/api/settings", data);
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (data: Record<string, string>) => {
+      const response = await apiRequest("POST", "/api/admin/settings", data);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
       toast({
         title: "Settings Updated",
         description: "Your changes have been saved successfully.",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to update settings. Please try again.",
@@ -65,11 +58,18 @@ export default function SettingsPage() {
     },
   });
 
-  const handleSave = () => {
-    updateSettingMutation.mutate({
-      key: "default_rental_hours",
-      value: defaultRentalHours,
-      description: "Default rental duration displayed to customers"
+  const handleSaveBusinessInfo = () => {
+    updateSettingsMutation.mutate({
+      businessName,
+      phoneNumber,
+      supportEmail,
+    });
+  };
+
+  const handleSaveEmailSettings = () => {
+    updateSettingsMutation.mutate({
+      senderEmail,
+      senderName,
     });
   };
 
@@ -84,43 +84,69 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-[#2c2c2c]">Settings</h1>
+        <h1 className="text-3xl font-bold text-[#2c2c2c]">Business Settings</h1>
         <p className="text-neutral-600 mt-2">
-          Configure your application settings and defaults.
+          Configure your business information and email settings.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Rental Duration Settings</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Business Information
+          </CardTitle>
           <CardDescription>
-            Set the default rental duration that appears throughout your application.
+            Set your business name and contact details that appear in emails and customer communications.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="defaultRentalHours">Default Rental Duration (hours)</Label>
+            <Label htmlFor="businessName">Business Name</Label>
             <Input
-              id="defaultRentalHours"
-              type="number"
-              min="1"
-              max="8760"
-              value={defaultRentalHours}
-              onChange={(e) => setDefaultRentalHours(e.target.value)}
-              placeholder="24"
+              id="businessName"
+              data-testid="input-business-name"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="Acme Dumpster Rentals"
             />
             <p className="text-sm text-neutral-500">
-              This value will be displayed in pricing cards and booking descriptions.
-              For example: "24" will show as "24-hour rental included".
+              This name will appear in email headers and customer-facing communications.
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              data-testid="input-phone-number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="(555) 123-4567"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="supportEmail">Support Email</Label>
+            <Input
+              id="supportEmail"
+              data-testid="input-support-email"
+              type="email"
+              value={supportEmail}
+              onChange={(e) => setSupportEmail(e.target.value)}
+              placeholder="support@yourbusiness.com"
+            />
+            <p className="text-sm text-neutral-500">
+              This email address will be shown to customers for support inquiries.
             </p>
           </div>
           
           <Button 
-            onClick={handleSave}
-            disabled={updateSettingMutation.isPending}
-            className="w-full sm:w-auto"
+            onClick={handleSaveBusinessInfo}
+            disabled={updateSettingsMutation.isPending}
+            data-testid="button-save-business-info"
           >
-            {updateSettingMutation.isPending ? (
+            {updateSettingsMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Saving...
@@ -128,7 +154,68 @@ export default function SettingsPage() {
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Save Settings
+                Save Business Info
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email Settings
+          </CardTitle>
+          <CardDescription>
+            Configure the sender information for automated emails like booking confirmations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="senderEmail">Sender Email Address</Label>
+            <Input
+              id="senderEmail"
+              data-testid="input-sender-email"
+              type="email"
+              value={senderEmail}
+              onChange={(e) => setSenderEmail(e.target.value)}
+              placeholder="noreply@yourbusiness.com"
+            />
+            <p className="text-sm text-neutral-500">
+              This email address will be used as the "From" address in automated emails.
+              Make sure this domain is verified in your Brevo account.
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="senderName">Sender Name</Label>
+            <Input
+              id="senderName"
+              data-testid="input-sender-name"
+              value={senderName}
+              onChange={(e) => setSenderName(e.target.value)}
+              placeholder="Acme Dumpster Rentals"
+            />
+            <p className="text-sm text-neutral-500">
+              This name will appear as the sender in customer emails (e.g., "Acme Dumpster Rentals").
+            </p>
+          </div>
+          
+          <Button 
+            onClick={handleSaveEmailSettings}
+            disabled={updateSettingsMutation.isPending}
+            data-testid="button-save-email-settings"
+          >
+            {updateSettingsMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Email Settings
               </>
             )}
           </Button>
