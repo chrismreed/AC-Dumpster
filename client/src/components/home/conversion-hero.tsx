@@ -11,9 +11,9 @@ export function ConversionHero() {
         }}></div>
       </div>
       <div className="container mx-auto px-4 py-20 md:py-28 relative">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left side - Main content */}
-          <div className="text-center lg:text-left">
+        <div className="max-w-3xl mx-auto">
+          {/* Main content */}
+          <div className="text-center">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#f7c948]/10 text-[#f7c948] mb-6 border border-[#f7c948]/20">
               <span className="text-sm font-semibold">Effingham's #1 Dumpster Rental</span>
             </div>
@@ -24,23 +24,23 @@ export function ConversionHero() {
               <span className="text-white">When You Need Them</span>
             </h1>
             
-            <p className="text-xl text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">Family-owned business serving the Effingham area with roll-off dumpsters. Book in just a few minutes.</p>
+            <p className="text-xl text-gray-300 mb-8 max-w-xl mx-auto">Family-owned business serving the Effingham area with roll-off dumpsters. Book in just a few minutes.</p>
 
             {/* Key benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-lg mx-auto">
-              <div className="flex items-center justify-center sm:justify-start">
+              <div className="flex items-center justify-center">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">2,000 lbs included</span>
               </div>
-              <div className="flex items-center justify-center sm:justify-start">
+              <div className="flex items-center justify-center">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">Same-day delivery available</span>
               </div>
-              <div className="flex items-center justify-center sm:justify-start">
+              <div className="flex items-center justify-center">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">Free electronics recycling</span>
               </div>
-              <div className="flex items-center justify-center sm:justify-start">
+              <div className="flex items-center justify-center">
                 <CheckCircle className="h-5 w-5 text-[#f7c948] mr-3 flex-shrink-0" />
                 <span className="text-gray-300">Transparent pricing</span>
               </div>
@@ -69,41 +69,13 @@ export function ConversionHero() {
             </div>
 
             {/* Trust indicators */}
-            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-gray-400">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
               <div className="flex items-center">
                 <span className="text-[#f7c948] font-bold text-lg mr-1">★★★★★</span>
                 <span>5/5 Star Rating</span>
               </div>
               <div>200+ Happy Customers</div>
               <div>Family-Owned Since 2021</div>
-            </div>
-          </div>
-
-          {/* Right side - Visual element */}
-          <div className="hidden lg:block">
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-              <h3 className="text-2xl font-bold mb-6 text-center">Quick Quote Calculator</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Container Size</label>
-                  <select className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white">
-                    <option>10-yard (small projects)</option>
-                    <option>20-yard (medium projects)</option>
-                    <option>30-yard (large projects)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Rental Duration</label>
-                  <select className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white">
-                    <option>7 days (standard)</option>
-                    <option>3 days</option>
-                    <option>14 days</option>
-                  </select>
-                </div>
-                <Button className="w-full bg-[#f7c948] text-black hover:bg-[#f7c948]/90 font-bold py-3">
-                  Get Instant Quote
-                </Button>
-              </div>
             </div>
           </div>
         </div>
