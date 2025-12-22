@@ -24,9 +24,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Plus, Users, Key, Copy, Check, UserCheck, UserX } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +52,12 @@ interface NewAccountResponse extends CustomerAccount {
   plainAccessCode: string;
 }
 
+interface UniqueCustomer {
+  email: string;
+  name: string;
+  bookingCount: number;
+}
+
 export default function CustomerAccountsPage() {
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -53,9 +67,15 @@ export default function CustomerAccountsPage() {
   const [email, setEmail] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [copiedCode, setCopiedCode] = useState(false);
+  const [createMode, setCreateMode] = useState<"picker" | "manual">("picker");
+  const [selectedCustomer, setSelectedCustomer] = useState("");
 
   const { data: accounts, isLoading } = useQuery<CustomerAccount[]>({
     queryKey: ["/api/admin/customer-accounts"],
+  });
+
+  const { data: uniqueCustomers } = useQuery<UniqueCustomer[]>({
+    queryKey: ["/api/admin/unique-customers"],
   });
 
   const createAccountMutation = useMutation({
@@ -68,9 +88,11 @@ export default function CustomerAccountsPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/customer-accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/unique-customers"] });
       setIsCreateDialogOpen(false);
       setEmail("");
       setCompanyName("");
+      setSelectedCustomer("");
       setNewAccountCode(data.plainAccessCode);
       setNewAccountEmail(data.email);
       setIsCodeDialogOpen(true);
@@ -131,15 +153,38 @@ export default function CustomerAccountsPage() {
   });
 
   const handleCreateAccount = () => {
-    if (!email.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Email is required",
-        variant: "destructive",
-      });
-      return;
+    let accountEmail = "";
+    let accountCompanyName = "";
+    
+    if (createMode === "picker") {
+      if (!selectedCustomer) {
+        toast({
+          title: "Validation Error",
+          description: "Please select a customer",
+          variant: "destructive",
+        });
+        return;
+      }
+      const customer = uniqueCustomers?.find(c => c.email === selectedCustomer);
+      accountEmail = selectedCustomer;
+      accountCompanyName = customer?.name || "";
+    } else {
+      if (!email.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Email is required",
+          variant: "destructive",
+        });
+        return;
+      }
+      accountEmail = email.trim();
+      accountCompanyName = companyName.trim();
     }
-    createAccountMutation.mutate({ email: email.trim(), companyName: companyName.trim() || undefined });
+    
+    createAccountMutation.mutate({ 
+      email: accountEmail, 
+      companyName: accountCompanyName || undefined 
+    });
   };
 
   const handleCopyCode = async () => {
@@ -269,37 +314,75 @@ export default function CustomerAccountsPage() {
         </Card>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]">
+          <DialogContent className="sm:max-w-[450px]">
             <DialogHeader>
               <DialogTitle>Create Customer Account</DialogTitle>
               <DialogDescription>
-                Create a new portal login for a commercial customer. An access code will be generated automatically.
+                Create a portal login for a customer. An access code will be generated automatically.
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="customer@company.com"
-                  data-testid="input-email"
-                />
-              </div>
-              <div>
-                <Label htmlFor="companyName">Company Name (optional)</Label>
-                <Input
-                  id="companyName"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Acme Construction"
-                  data-testid="input-company-name"
-                />
-              </div>
-            </div>
+            <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as "picker" | "manual")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="picker" data-testid="tab-picker">Select Customer</TabsTrigger>
+                <TabsTrigger value="manual" data-testid="tab-manual">Enter Manually</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="picker" className="space-y-4 mt-4">
+                {uniqueCustomers && uniqueCustomers.length > 0 ? (
+                  <div>
+                    <Label htmlFor="customerSelect">Select from past customers</Label>
+                    <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+                      <SelectTrigger id="customerSelect" data-testid="select-customer">
+                        <SelectValue placeholder="Choose a customer..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {uniqueCustomers.map((customer) => (
+                          <SelectItem key={customer.email} value={customer.email}>
+                            <div className="flex flex-col">
+                              <span>{customer.name}</span>
+                              <span className="text-xs text-muted-foreground">{customer.email} ({customer.bookingCount} booking{customer.bookingCount > 1 ? 's' : ''})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only shows customers who don't have an account yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <p>All customers already have accounts, or no bookings yet.</p>
+                    <p className="text-sm mt-1">Switch to "Enter Manually" to add a new email.</p>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="manual" className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="customer@company.com"
+                    data-testid="input-email"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyName">Company Name (optional)</Label>
+                  <Input
+                    id="companyName"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Acme Construction"
+                    data-testid="input-company-name"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
             
             <DialogFooter>
               <Button

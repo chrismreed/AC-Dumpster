@@ -416,6 +416,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin route to get unique customers from bookings (for customer picker)
+  app.get("/api/admin/unique-customers", isAdmin, async (req, res) => {
+    try {
+      const bookings = await storage.listBookings();
+      const customerMap = new Map<string, { email: string; name: string; bookingCount: number }>();
+      
+      for (const booking of bookings) {
+        const email = booking.customerEmail.toLowerCase();
+        if (customerMap.has(email)) {
+          const existing = customerMap.get(email)!;
+          existing.bookingCount++;
+        } else {
+          customerMap.set(email, {
+            email: booking.customerEmail,
+            name: booking.customerName,
+            bookingCount: 1
+          });
+        }
+      }
+      
+      // Get existing customer accounts to filter them out
+      const accounts = await storage.listCustomerAccounts();
+      const accountEmails = new Set(accounts.map(a => a.email.toLowerCase()));
+      
+      // Filter out customers who already have accounts
+      const availableCustomers = Array.from(customerMap.values())
+        .filter(c => !accountEmails.has(c.email.toLowerCase()))
+        .sort((a, b) => b.bookingCount - a.bookingCount);
+      
+      res.json(availableCustomers);
+    } catch (err) {
+      console.error("Error listing unique customers:", err);
+      res.status(500).json({ message: "Failed to list customers" });
+    }
+  });
+
   // Admin route to regenerate access code for customer account
   app.post("/api/admin/customer-accounts/:id/regenerate-code", isAdmin, async (req, res) => {
     try {
@@ -2195,6 +2231,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
               session.payment_intent
             );
             console.log(`Booking payment completed for booking ${bookingId}`);
+            
+            // Auto-create customer account if setting is enabled
+            try {
+              const autoCreateSetting = await storage.getBusinessSetting('autoCreateCustomerAccounts');
+              if (autoCreateSetting === 'true') {
+                const booking = await storage.getBooking(bookingId);
+                if (booking) {
+                  // Check if account already exists
+                  const existingAccount = await storage.getCustomerAccountByEmail(booking.customerEmail);
+                  if (!existingAccount) {
+                    const accessCode = await generateAccessCode();
+                    await storage.createCustomerAccount({
+                      email: booking.customerEmail,
+                      accessCode,
+                      companyName: booking.customerName || null,
+                      isBusinessAccount: false
+                    });
+                    console.log(`Auto-created customer account for ${booking.customerEmail}`);
+                    // TODO: Send email with access code to customer
+                  }
+                }
+              }
+            } catch (accountErr) {
+              console.error('Error auto-creating customer account:', accountErr);
+              // Don't fail the webhook if account creation fails
+            }
           }
           break;
           

@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Save, Mail, Building2 } from "lucide-react";
+import { Loader2, Save, Mail, Building2, Users } from "lucide-react";
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -23,6 +24,7 @@ export default function SettingsPage() {
   const [senderName, setSenderName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
+  const [autoCreateCustomerAccounts, setAutoCreateCustomerAccounts] = useState(false);
 
   const { data: settings, isLoading } = useQuery<Record<string, string>>({
     queryKey: ["/api/admin/settings"],
@@ -35,6 +37,7 @@ export default function SettingsPage() {
       setSenderName(settings.senderName || "");
       setPhoneNumber(settings.phoneNumber || "");
       setSupportEmail(settings.supportEmail || "");
+      setAutoCreateCustomerAccounts(settings.autoCreateCustomerAccounts === "true");
     }
   }, [settings]);
 
@@ -71,6 +74,12 @@ export default function SettingsPage() {
     updateSettingsMutation.mutate({
       senderEmail,
       senderName,
+    });
+  };
+
+  const handleSavePortalSettings = () => {
+    updateSettingsMutation.mutate({
+      autoCreateCustomerAccounts: autoCreateCustomerAccounts ? "true" : "false",
     });
   };
 
@@ -220,6 +229,53 @@ export default function SettingsPage() {
               <>
                 <Save className="w-4 h-4 mr-2" />
                 Save Email Settings
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Customer Portal Settings
+          </CardTitle>
+          <CardDescription>
+            Configure how customer portal accounts are created and managed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="autoCreateAccounts">Auto-create customer accounts</Label>
+              <p className="text-sm text-neutral-500">
+                Automatically create a portal account for every customer when their booking is paid.
+                They'll receive an access code to track their rental, request swaps, or complete early.
+              </p>
+            </div>
+            <Switch
+              id="autoCreateAccounts"
+              data-testid="switch-auto-create-accounts"
+              checked={autoCreateCustomerAccounts}
+              onCheckedChange={setAutoCreateCustomerAccounts}
+            />
+          </div>
+          
+          <Button 
+            onClick={handleSavePortalSettings}
+            disabled={updateSettingsMutation.isPending}
+            data-testid="button-save-portal-settings"
+          >
+            {updateSettingsMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Portal Settings
               </>
             )}
           </Button>
