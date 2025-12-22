@@ -36,7 +36,22 @@ import {
   type BusinessSetting,
   services,
   type Service,
-  type InsertService
+  type InsertService,
+  customerAccounts,
+  type CustomerAccount,
+  type InsertCustomerAccount,
+  swapRequests,
+  type SwapRequest,
+  type InsertSwapRequest,
+  customerCredits,
+  type CustomerCredit,
+  type InsertCustomerCredit,
+  loadBillingConfig,
+  type LoadBillingConfig,
+  type InsertLoadBillingConfig,
+  loadRecords,
+  type LoadRecord,
+  type InsertLoadRecord
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -146,6 +161,42 @@ export interface IStorage {
   getAllBusinessSettings(): Promise<Record<string, string>>;
   setBusinessSetting(key: string, value: string, description?: string): Promise<void>;
   setBusinessSettings(settings: Record<string, string>): Promise<void>;
+
+  // Customer account methods
+  getCustomerAccount(id: number): Promise<CustomerAccount | undefined>;
+  getCustomerAccountByEmail(email: string): Promise<CustomerAccount | undefined>;
+  createCustomerAccount(account: InsertCustomerAccount): Promise<CustomerAccount>;
+  verifyAccessCode(email: string, accessCode: string): Promise<CustomerAccount | null>;
+  updateCustomerAccountLastLogin(id: number): Promise<void>;
+  listCustomerAccounts(): Promise<CustomerAccount[]>;
+
+  // Swap request methods
+  getSwapRequest(id: number): Promise<SwapRequest | undefined>;
+  listSwapRequests(): Promise<SwapRequest[]>;
+  listSwapRequestsByBooking(bookingId: number): Promise<SwapRequest[]>;
+  listSwapRequestsByStatus(status: string): Promise<SwapRequest[]>;
+  createSwapRequest(request: InsertSwapRequest): Promise<SwapRequest>;
+  updateSwapRequest(id: number, request: Partial<InsertSwapRequest>): Promise<SwapRequest | undefined>;
+
+  // Customer credit methods
+  getCustomerCredits(customerAccountId: number): Promise<CustomerCredit[]>;
+  getAvailableCredits(customerAccountId: number): Promise<CustomerCredit[]>;
+  createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit>;
+  useCustomerCredit(id: number, bookingId: number): Promise<CustomerCredit | undefined>;
+
+  // Load billing methods
+  getLoadBillingConfig(dumpsterId: number): Promise<LoadBillingConfig | undefined>;
+  listLoadBillingConfigs(): Promise<LoadBillingConfig[]>;
+  createLoadBillingConfig(config: InsertLoadBillingConfig): Promise<LoadBillingConfig>;
+  updateLoadBillingConfig(id: number, config: Partial<InsertLoadBillingConfig>): Promise<LoadBillingConfig | undefined>;
+  deleteLoadBillingConfig(id: number): Promise<boolean>;
+
+  // Load record methods
+  getLoadRecords(bookingId: number): Promise<LoadRecord[]>;
+  createLoadRecord(record: InsertLoadRecord): Promise<LoadRecord>;
+
+  // Booking lookup by email (for customer portal)
+  listBookingsByEmail(email: string): Promise<Booking[]>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -1306,6 +1357,161 @@ export class DatabaseStorage implements IStorage {
     for (const [key, value] of Object.entries(settings)) {
       await this.setBusinessSetting(key, value);
     }
+  }
+
+  // Customer account methods
+  async getCustomerAccount(id: number): Promise<CustomerAccount | undefined> {
+    const [account] = await db.select().from(customerAccounts).where(eq(customerAccounts.id, id));
+    return account;
+  }
+
+  async getCustomerAccountByEmail(email: string): Promise<CustomerAccount | undefined> {
+    const [account] = await db.select().from(customerAccounts).where(eq(customerAccounts.email, email.toLowerCase()));
+    return account;
+  }
+
+  async createCustomerAccount(account: InsertCustomerAccount): Promise<CustomerAccount> {
+    // Hash the access code like a password for security
+    const bcrypt = await import("bcryptjs");
+    const hashedAccessCode = await bcrypt.hash(account.accessCode, 10);
+    
+    const [newAccount] = await db.insert(customerAccounts).values({
+      ...account,
+      email: account.email.toLowerCase(),
+      accessCode: hashedAccessCode
+    }).returning();
+    return newAccount;
+  }
+
+  async verifyAccessCode(email: string, accessCode: string): Promise<CustomerAccount | null> {
+    const account = await this.getCustomerAccountByEmail(email);
+    if (!account) return null;
+    
+    const bcrypt = await import("bcryptjs");
+    const isValid = await bcrypt.compare(accessCode, account.accessCode);
+    
+    if (isValid) {
+      await this.updateCustomerAccountLastLogin(account.id);
+      return account;
+    }
+    return null;
+  }
+
+  async updateCustomerAccountLastLogin(id: number): Promise<void> {
+    await db.update(customerAccounts)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(customerAccounts.id, id));
+  }
+
+  async listCustomerAccounts(): Promise<CustomerAccount[]> {
+    return db.select().from(customerAccounts);
+  }
+
+  // Swap request methods
+  async getSwapRequest(id: number): Promise<SwapRequest | undefined> {
+    const [request] = await db.select().from(swapRequests).where(eq(swapRequests.id, id));
+    return request;
+  }
+
+  async listSwapRequests(): Promise<SwapRequest[]> {
+    return db.select().from(swapRequests);
+  }
+
+  async listSwapRequestsByBooking(bookingId: number): Promise<SwapRequest[]> {
+    return db.select().from(swapRequests).where(eq(swapRequests.bookingId, bookingId));
+  }
+
+  async listSwapRequestsByStatus(status: string): Promise<SwapRequest[]> {
+    return db.select().from(swapRequests).where(eq(swapRequests.status, status));
+  }
+
+  async createSwapRequest(request: InsertSwapRequest): Promise<SwapRequest> {
+    const [newRequest] = await db.insert(swapRequests).values(request).returning();
+    return newRequest;
+  }
+
+  async updateSwapRequest(id: number, requestUpdate: Partial<InsertSwapRequest>): Promise<SwapRequest | undefined> {
+    const updateData = { ...requestUpdate, updatedAt: new Date() };
+    const [updatedRequest] = await db
+      .update(swapRequests)
+      .set(updateData)
+      .where(eq(swapRequests.id, id))
+      .returning();
+    return updatedRequest;
+  }
+
+  // Customer credit methods
+  async getCustomerCredits(customerAccountId: number): Promise<CustomerCredit[]> {
+    return db.select().from(customerCredits).where(eq(customerCredits.customerAccountId, customerAccountId));
+  }
+
+  async getAvailableCredits(customerAccountId: number): Promise<CustomerCredit[]> {
+    const now = new Date();
+    const credits = await db.select().from(customerCredits)
+      .where(eq(customerCredits.customerAccountId, customerAccountId));
+    // Filter to only unused credits that haven't expired
+    return credits.filter(credit => 
+      !credit.usedAt && (!credit.expiresAt || new Date(credit.expiresAt) > now)
+    );
+  }
+
+  async createCustomerCredit(credit: InsertCustomerCredit): Promise<CustomerCredit> {
+    const [newCredit] = await db.insert(customerCredits).values(credit).returning();
+    return newCredit;
+  }
+
+  async useCustomerCredit(id: number, bookingId: number): Promise<CustomerCredit | undefined> {
+    const [updatedCredit] = await db
+      .update(customerCredits)
+      .set({ usedInBookingId: bookingId, usedAt: new Date() })
+      .where(eq(customerCredits.id, id))
+      .returning();
+    return updatedCredit;
+  }
+
+  // Load billing methods
+  async getLoadBillingConfig(dumpsterId: number): Promise<LoadBillingConfig | undefined> {
+    const [config] = await db.select().from(loadBillingConfig)
+      .where(and(eq(loadBillingConfig.dumpsterId, dumpsterId), eq(loadBillingConfig.isActive, true)));
+    return config;
+  }
+
+  async listLoadBillingConfigs(): Promise<LoadBillingConfig[]> {
+    return db.select().from(loadBillingConfig);
+  }
+
+  async createLoadBillingConfig(config: InsertLoadBillingConfig): Promise<LoadBillingConfig> {
+    const [newConfig] = await db.insert(loadBillingConfig).values(config).returning();
+    return newConfig;
+  }
+
+  async updateLoadBillingConfig(id: number, configUpdate: Partial<InsertLoadBillingConfig>): Promise<LoadBillingConfig | undefined> {
+    const [updatedConfig] = await db
+      .update(loadBillingConfig)
+      .set(configUpdate)
+      .where(eq(loadBillingConfig.id, id))
+      .returning();
+    return updatedConfig;
+  }
+
+  async deleteLoadBillingConfig(id: number): Promise<boolean> {
+    const result = await db.delete(loadBillingConfig).where(eq(loadBillingConfig.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Load record methods
+  async getLoadRecords(bookingId: number): Promise<LoadRecord[]> {
+    return db.select().from(loadRecords).where(eq(loadRecords.bookingId, bookingId));
+  }
+
+  async createLoadRecord(record: InsertLoadRecord): Promise<LoadRecord> {
+    const [newRecord] = await db.insert(loadRecords).values(record).returning();
+    return newRecord;
+  }
+
+  // Booking lookup by email
+  async listBookingsByEmail(email: string): Promise<Booking[]> {
+    return db.select().from(bookings).where(eq(bookings.customerEmail, email.toLowerCase()));
   }
 }
 

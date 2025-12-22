@@ -14,7 +14,10 @@ import {
   insertHubSchema,
   insertAdditionalChargeSchema,
   insertLegalDocumentSchema,
-  insertServiceSchema
+  insertServiceSchema,
+  insertSwapRequestSchema,
+  insertCustomerAccountSchema,
+  type CustomerAccount
 } from "@shared/schema";
 import { apiLimiter, authLimiter } from "./middleware/security";
 import { getHealthStatus } from "./middleware/validation";
@@ -136,6 +139,296 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update profile" });
     }
   });
+
+  // ===== CUSTOMER PORTAL ROUTES =====
+  
+  // Apply rate limiting to customer login
+  app.use("/api/customer/login", authLimiter);
+  
+  // Generate a cryptographically secure 6-digit access code
+  async function generateAccessCode(): Promise<string> {
+    const crypto = await import("crypto");
+    return crypto.randomInt(100000, 999999).toString();
+  }
+
+  // Customer login - verify email + access code
+  app.post("/api/customer/login", async (req, res) => {
+    try {
+      const { email, accessCode } = req.body;
+      
+      if (!email || !accessCode) {
+        return res.status(400).json({ message: "Email and access code are required" });
+      }
+      
+      const account = await storage.verifyAccessCode(email, accessCode);
+      
+      if (!account) {
+        return res.status(401).json({ message: "Invalid email or access code" });
+      }
+      
+      // Store customer in session
+      (req.session as any).customerAccountId = account.id;
+      (req.session as any).customerEmail = account.email;
+      
+      res.json({ 
+        id: account.id, 
+        email: account.email, 
+        companyName: account.companyName,
+        isBusinessAccount: account.isBusinessAccount 
+      });
+    } catch (err) {
+      console.error("Error in customer login:", err);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Customer logout
+  app.post("/api/customer/logout", (req, res) => {
+    delete (req.session as any).customerAccountId;
+    delete (req.session as any).customerEmail;
+    res.json({ message: "Logged out successfully" });
+  });
+
+  // Get current customer session
+  app.get("/api/customer/me", async (req, res) => {
+    try {
+      const customerAccountId = (req.session as any).customerAccountId;
+      
+      if (!customerAccountId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const account = await storage.getCustomerAccount(customerAccountId);
+      
+      if (!account) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+      
+      res.json({ 
+        id: account.id, 
+        email: account.email, 
+        companyName: account.companyName,
+        isBusinessAccount: account.isBusinessAccount 
+      });
+    } catch (err) {
+      console.error("Error fetching customer:", err);
+      res.status(500).json({ message: "Failed to fetch customer data" });
+    }
+  });
+
+  // Customer middleware
+  const isCustomer = (req: Request, res: Response, next: Function) => {
+    const customerAccountId = (req.session as any).customerAccountId;
+    if (!customerAccountId) {
+      return res.status(401).json({ message: "Unauthorized - Customer login required" });
+    }
+    next();
+  };
+
+  // Get customer's active bookings (by email from their bookings)
+  app.get("/api/customer/bookings", isCustomer, async (req, res) => {
+    try {
+      const customerEmail = (req.session as any).customerEmail;
+      const bookings = await storage.listBookingsByEmail(customerEmail);
+      
+      // Get related data for display
+      const dumpsters = await storage.listDumpsters();
+      const allPricing = await storage.getAllDumpsterPricing();
+      
+      // Enrich bookings with dumpster info
+      const enrichedBookings = bookings.map(booking => {
+        const dumpster = dumpsters.find(d => d.id === booking.dumpsterId);
+        const pricing = allPricing.find(p => p.id === booking.pricingId);
+        return {
+          ...booking,
+          dumpsterName: dumpster?.name || 'Unknown',
+          dumpsterDimensions: dumpster?.dimensions || '',
+          rentalDays: pricing?.days || 7
+        };
+      });
+      
+      res.json(enrichedBookings);
+    } catch (err) {
+      console.error("Error fetching customer bookings:", err);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
+  // Get customer's credits
+  app.get("/api/customer/credits", isCustomer, async (req, res) => {
+    try {
+      const customerAccountId = (req.session as any).customerAccountId;
+      const credits = await storage.getAvailableCredits(customerAccountId);
+      
+      // Calculate total available credit
+      const totalCredit = credits.reduce((sum, c) => sum + c.amount, 0);
+      
+      res.json({ credits, totalCredit });
+    } catch (err) {
+      console.error("Error fetching customer credits:", err);
+      res.status(500).json({ message: "Failed to fetch credits" });
+    }
+  });
+
+  // Create a swap or pickup request
+  app.post("/api/customer/swap-request", isCustomer, async (req, res) => {
+    try {
+      const customerAccountId = (req.session as any).customerAccountId;
+      const customerEmail = (req.session as any).customerEmail;
+      
+      const { bookingId, requestType, requestedDate, notes } = req.body;
+      
+      if (!bookingId || !requestType) {
+        return res.status(400).json({ message: "Booking ID and request type are required" });
+      }
+      
+      if (!['pickup', 'swap', 'early_complete'].includes(requestType)) {
+        return res.status(400).json({ message: "Invalid request type" });
+      }
+      
+      // Verify the booking belongs to this customer
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      if (booking.customerEmail.toLowerCase() !== customerEmail.toLowerCase()) {
+        return res.status(403).json({ message: "This booking doesn't belong to you" });
+      }
+      
+      // Check booking is in a valid state for requests
+      if (!['confirmed', 'delivered'].includes(booking.status)) {
+        return res.status(400).json({ message: "Cannot create request for this booking status" });
+      }
+      
+      const swapRequest = await storage.createSwapRequest({
+        bookingId,
+        customerAccountId,
+        requestType,
+        requestedDate: requestedDate || null,
+        notes: notes || null,
+        status: 'pending'
+      });
+      
+      res.status(201).json(swapRequest);
+    } catch (err) {
+      console.error("Error creating swap request:", err);
+      res.status(500).json({ message: "Failed to create request" });
+    }
+  });
+
+  // Get customer's swap requests
+  app.get("/api/customer/swap-requests", isCustomer, async (req, res) => {
+    try {
+      const customerEmail = (req.session as any).customerEmail;
+      const bookings = await storage.listBookingsByEmail(customerEmail);
+      const bookingIds = bookings.map(b => b.id);
+      
+      // Get all swap requests for customer's bookings
+      const allSwapRequests = await storage.listSwapRequests();
+      const customerRequests = allSwapRequests.filter(r => bookingIds.includes(r.bookingId));
+      
+      res.json(customerRequests);
+    } catch (err) {
+      console.error("Error fetching swap requests:", err);
+      res.status(500).json({ message: "Failed to fetch swap requests" });
+    }
+  });
+
+  // Admin route to create customer account (auto-generates access code)
+  app.post("/api/admin/customer-accounts", isAdmin, async (req, res) => {
+    try {
+      const { email, companyName, isBusinessAccount } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Check if account already exists
+      const existing = await storage.getCustomerAccountByEmail(email);
+      if (existing) {
+        return res.status(400).json({ message: "Account with this email already exists" });
+      }
+      
+      const accessCode = await generateAccessCode();
+      
+      const account = await storage.createCustomerAccount({
+        email,
+        accessCode, // Will be hashed in storage
+        companyName: companyName || null,
+        isBusinessAccount: isBusinessAccount || false
+      });
+      
+      // Return the unhashed access code so admin can share it with customer
+      res.status(201).json({ 
+        ...account, 
+        plainAccessCode: accessCode,
+        message: "Share this access code with the customer. It cannot be retrieved later."
+      });
+    } catch (err) {
+      console.error("Error creating customer account:", err);
+      res.status(500).json({ message: "Failed to create customer account" });
+    }
+  });
+
+  // Admin route to list all customer accounts
+  app.get("/api/admin/customer-accounts", isAdmin, async (req, res) => {
+    try {
+      const accounts = await storage.listCustomerAccounts();
+      res.json(accounts);
+    } catch (err) {
+      console.error("Error listing customer accounts:", err);
+      res.status(500).json({ message: "Failed to list customer accounts" });
+    }
+  });
+
+  // Admin route to view all swap requests
+  app.get("/api/admin/swap-requests", isAdmin, async (req, res) => {
+    try {
+      const requests = await storage.listSwapRequests();
+      
+      // Enrich with booking and customer info
+      const enrichedRequests = await Promise.all(requests.map(async (request) => {
+        const booking = await storage.getBooking(request.bookingId);
+        return {
+          ...request,
+          customerName: booking?.customerName || 'Unknown',
+          customerEmail: booking?.customerEmail || 'Unknown',
+          deliveryAddress: booking?.deliveryAddress || 'Unknown'
+        };
+      }));
+      
+      res.json(enrichedRequests);
+    } catch (err) {
+      console.error("Error fetching swap requests:", err);
+      res.status(500).json({ message: "Failed to fetch swap requests" });
+    }
+  });
+
+  // Admin route to update swap request status
+  app.put("/api/admin/swap-requests/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { status, adminNotes, scheduledDate } = req.body;
+      
+      const updated = await storage.updateSwapRequest(id, {
+        status,
+        adminNotes: adminNotes || undefined,
+        scheduledDate: scheduledDate || undefined
+      });
+      
+      if (!updated) {
+        return res.status(404).json({ message: "Swap request not found" });
+      }
+      
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating swap request:", err);
+      res.status(500).json({ message: "Failed to update swap request" });
+    }
+  });
+
+  // ===== END CUSTOMER PORTAL ROUTES =====
 
   // Dumpster routes
   app.get("/api/dumpsters", async (_req, res) => {

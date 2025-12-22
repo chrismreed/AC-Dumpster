@@ -166,6 +166,67 @@ export const paymentLinks = pgTable("payment_links", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Customer accounts for portal access (simple email + access code login)
+export const customerAccounts = pgTable("customer_accounts", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  accessCode: text("access_code").notNull(), // 6-digit code for simple login
+  companyName: text("company_name"), // For business accounts
+  isBusinessAccount: boolean("is_business_account").default(false),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Swap/pickup requests from customers
+export const swapRequests = pgTable("swap_requests", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").notNull().references(() => bookings.id),
+  customerAccountId: integer("customer_account_id").references(() => customerAccounts.id),
+  requestType: text("request_type").notNull(), // "pickup" (final), "swap" (replace with new), "early_complete"
+  status: text("status").notNull().default("pending"), // "pending", "approved", "scheduled", "completed", "cancelled"
+  requestedDate: timestamp("requested_date"), // When customer wants pickup/swap
+  notes: text("notes"), // Customer notes
+  adminNotes: text("admin_notes"), // Admin response notes
+  scheduledDate: timestamp("scheduled_date"), // When admin schedules it
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Customer credits for early returns and loyalty
+export const customerCredits = pgTable("customer_credits", {
+  id: serial("id").primaryKey(),
+  customerAccountId: integer("customer_account_id").notNull().references(() => customerAccounts.id),
+  bookingId: integer("booking_id").references(() => bookings.id), // Source booking if from early return
+  amount: integer("amount").notNull(), // In cents
+  type: text("type").notNull(), // "early_return", "loyalty", "adjustment"
+  description: text("description"),
+  usedInBookingId: integer("used_in_booking_id").references(() => bookings.id), // If redeemed
+  usedAt: timestamp("used_at"),
+  expiresAt: timestamp("expires_at"), // Credits can expire
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Per-load billing configuration for commercial accounts
+export const loadBillingConfig = pgTable("load_billing_config", {
+  id: serial("id").primaryKey(),
+  dumpsterId: integer("dumpster_id").notNull().references(() => dumpsters.id),
+  pricePerLoad: integer("price_per_load").notNull(), // In cents
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Track loads/hauls for per-load billing
+export const loadRecords = pgTable("load_records", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").notNull().references(() => bookings.id),
+  swapRequestId: integer("swap_request_id").references(() => swapRequests.id),
+  loadNumber: integer("load_number").notNull(), // 1, 2, 3, etc.
+  priceCharged: integer("price_charged").notNull(), // In cents
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Business settings (configurable by admin)
 export const businessSettings = pgTable("business_settings", {
   id: serial("id").primaryKey(),
@@ -331,6 +392,64 @@ export const insertBusinessSettingSchema = createInsertSchema(businessSettings)
     updatedAt: true,
   });
 
+export const insertCustomerAccountSchema = createInsertSchema(customerAccounts)
+  .omit({
+    id: true,
+    createdAt: true,
+    lastLoginAt: true,
+  });
+
+export const insertSwapRequestSchema = createInsertSchema(swapRequests)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    completedAt: true,
+  })
+  .extend({
+    requestedDate: z.string().or(z.date()).optional().transform(val => {
+      if (!val) return undefined;
+      if (typeof val === 'string') {
+        const dateParts = val.split('-');
+        if (dateParts.length !== 3) {
+          throw new Error('Invalid date format - expected YYYY-MM-DD');
+        }
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1;
+        const day = parseInt(dateParts[2]);
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          throw new Error('Invalid date format - non-numeric components');
+        }
+        const date = new Date(year, month, day, 12, 0, 0, 0);
+        if (isNaN(date.getTime())) {
+          throw new Error('Invalid date');
+        }
+        return date;
+      }
+      return val;
+    })
+  });
+
+export const insertCustomerCreditSchema = createInsertSchema(customerCredits)
+  .omit({
+    id: true,
+    createdAt: true,
+    usedAt: true,
+  });
+
+export const insertLoadBillingConfigSchema = createInsertSchema(loadBillingConfig)
+  .omit({
+    id: true,
+    createdAt: true,
+  });
+
+export const insertLoadRecordSchema = createInsertSchema(loadRecords)
+  .omit({
+    id: true,
+    createdAt: true,
+    completedAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -373,3 +492,18 @@ export type InsertService = z.infer<typeof insertServiceSchema>;
 
 export type BusinessSetting = typeof businessSettings.$inferSelect;
 export type InsertBusinessSetting = z.infer<typeof insertBusinessSettingSchema>;
+
+export type CustomerAccount = typeof customerAccounts.$inferSelect;
+export type InsertCustomerAccount = z.infer<typeof insertCustomerAccountSchema>;
+
+export type SwapRequest = typeof swapRequests.$inferSelect;
+export type InsertSwapRequest = z.infer<typeof insertSwapRequestSchema>;
+
+export type CustomerCredit = typeof customerCredits.$inferSelect;
+export type InsertCustomerCredit = z.infer<typeof insertCustomerCreditSchema>;
+
+export type LoadBillingConfig = typeof loadBillingConfig.$inferSelect;
+export type InsertLoadBillingConfig = z.infer<typeof insertLoadBillingConfigSchema>;
+
+export type LoadRecord = typeof loadRecords.$inferSelect;
+export type InsertLoadRecord = z.infer<typeof insertLoadRecordSchema>;

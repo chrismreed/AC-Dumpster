@@ -40,6 +40,10 @@ import ConstructionServicePage from "@/pages/services/construction";
 import LandscapingServicePage from "@/pages/services/landscaping";
 import RenovationServicePage from "@/pages/services/renovation";
 
+// Customer portal pages
+import CustomerLoginPage from "@/pages/customer/login";
+import CustomerDashboardPage from "@/pages/customer/dashboard";
+
 function Router() {
   return (
     <Switch>
@@ -60,6 +64,10 @@ function Router() {
       <Route path="/services/construction" component={ConstructionServicePage} />
       <Route path="/services/landscaping" component={LandscapingServicePage} />
       <Route path="/services/renovation" component={RenovationServicePage} />
+      
+      {/* Customer portal routes */}
+      <Route path="/customer/login" component={CustomerLoginPage} />
+      <Route path="/customer/dashboard" component={CustomerDashboardPage} />
       
       {/* Admin routes */}
       <ProtectedRoute path="/admin" component={DashboardPage} adminOnly />
@@ -95,14 +103,16 @@ function App() {
 function AppContent() {
   const [location] = useLocation();
   const isAdminPage = location.startsWith('/admin');
+  const isCustomerPortal = location.startsWith('/customer');
+  const hideHeaderFooter = isAdminPage || isCustomerPortal;
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAdminPage && <StickyHeader />}
-      <main className={`flex-grow ${!isAdminPage ? 'pt-16 md:pt-20' : ''}`}>
+      {!hideHeaderFooter && <StickyHeader />}
+      <main className={`flex-grow ${!hideHeaderFooter ? 'pt-16 md:pt-20' : ''}`}>
         <Router />
       </main>
-      {!isAdminPage && <ImprovedFooter />}
+      {!hideHeaderFooter && <ImprovedFooter />}
       <AdminStylesOverride />
     </div>
   );
