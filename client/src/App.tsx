@@ -22,6 +22,7 @@ import PaymentSettingsPage from "@/pages/admin/payment-settings";
 import LegalDocumentsPage from "@/pages/admin/legal-documents";
 import SecurityPage from "@/pages/admin/security";
 import SettingsPage from "@/pages/admin/settings";
+import SwapRequestsPage from "@/pages/admin/swap-requests";
 import BookingConfirmationPage from "@/pages/booking-confirmation";
 import PaymentSuccessPage from "@/pages/payment-success";
 import PaymentPage from "@/pages/payment-page";
@@ -82,6 +83,7 @@ function Router() {
       <ProtectedRoute path="/admin/legal-documents" component={LegalDocumentsPage} adminOnly />
       <ProtectedRoute path="/admin/settings" component={SettingsPage} adminOnly />
       <ProtectedRoute path="/admin/security" component={SecurityPage} adminOnly />
+      <ProtectedRoute path="/admin/swap-requests" component={SwapRequestsPage} adminOnly />
       <Route component={NotFound} />
     </Switch>
   );

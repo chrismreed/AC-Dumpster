@@ -18,7 +18,8 @@ import {
   X,
   FileText,
   Shield,
-  Wrench
+  Wrench,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "./button";
 
@@ -63,7 +64,11 @@ export function AdminNav() {
       href: "/admin/bookings",
       icon: <Calendar className="mr-2 h-4 w-4" />
     },
-
+    {
+      title: "Swap Requests",
+      href: "/admin/swap-requests",
+      icon: <RefreshCw className="mr-2 h-4 w-4" />
+    },
     {
       title: "Payment Settings",
       href: "/admin/payment-settings",

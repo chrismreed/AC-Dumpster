@@ -166,15 +166,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid email or access code" });
       }
       
-      // Store customer in session
-      (req.session as any).customerAccountId = account.id;
-      (req.session as any).customerEmail = account.email;
-      
-      res.json({ 
-        id: account.id, 
-        email: account.email, 
-        companyName: account.companyName,
-        isBusinessAccount: account.isBusinessAccount 
+      // Regenerate session to prevent session fixation attacks
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Session regeneration error:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        
+        // Store customer in new session
+        (req.session as any).customerAccountId = account.id;
+        (req.session as any).customerEmail = account.email;
+        
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr);
+            return res.status(500).json({ message: "Login failed" });
+          }
+          
+          res.json({ 
+            id: account.id, 
+            email: account.email, 
+            companyName: account.companyName,
+            isBusinessAccount: account.isBusinessAccount 
+          });
+        });
       });
     } catch (err) {
       console.error("Error in customer login:", err);
@@ -409,22 +424,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/swap-requests/:id", isAdmin, async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const { status, adminNotes, scheduledDate } = req.body;
+      const { status, adminNotes, scheduledDate, issueCredit, creditAmount } = req.body;
+      
+      const request = await storage.getSwapRequest(id);
+      if (!request) {
+        return res.status(404).json({ message: "Swap request not found" });
+      }
       
       const updated = await storage.updateSwapRequest(id, {
         status,
         adminNotes: adminNotes || undefined,
-        scheduledDate: scheduledDate || undefined
+        scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+        completedAt: status === "completed" ? new Date() : undefined
       });
       
       if (!updated) {
-        return res.status(404).json({ message: "Swap request not found" });
+        return res.status(404).json({ message: "Failed to update swap request" });
+      }
+      
+      // If this is an early completion being completed and credit should be issued
+      if (request.requestType === "early_complete" && issueCredit && request.customerAccountId) {
+        // Validate credit amount
+        const parsedAmount = Number(creditAmount);
+        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || parsedAmount > 1000000) {
+          return res.status(400).json({ message: "Invalid credit amount. Must be a positive value." });
+        }
+        
+        // Only issue credits when status is set to completed
+        if (status !== "completed") {
+          return res.status(400).json({ message: "Credits can only be issued when completing the request." });
+        }
+        
+        await storage.createCustomerCredit({
+          customerAccountId: request.customerAccountId,
+          bookingId: request.bookingId,
+          amount: Math.round(parsedAmount), // In cents, ensure integer
+          type: "early_return",
+          description: `Credit for early completion of booking #${request.bookingId}`,
+          expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year expiry
+        });
       }
       
       res.json(updated);
     } catch (err) {
       console.error("Error updating swap request:", err);
       res.status(500).json({ message: "Failed to update swap request" });
+    }
+  });
+  
+  // Admin route to issue credit manually
+  app.post("/api/admin/credits", isAdmin, async (req, res) => {
+    try {
+      const { customerAccountId, amount, type, description, bookingId } = req.body;
+      
+      if (!customerAccountId || !amount || !type) {
+        return res.status(400).json({ message: "customerAccountId, amount, and type are required" });
+      }
+      
+      const credit = await storage.createCustomerCredit({
+        customerAccountId,
+        bookingId: bookingId || null,
+        amount,
+        type,
+        description: description || null,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year expiry
+      });
+      
+      res.status(201).json(credit);
+    } catch (err) {
+      console.error("Error creating credit:", err);
+      res.status(500).json({ message: "Failed to create credit" });
+    }
+  });
+  
+  // Calculate suggested credit for early completion
+  app.get("/api/admin/swap-requests/:id/calculate-credit", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const request = await storage.getSwapRequest(id);
+      
+      if (!request) {
+        return res.status(404).json({ message: "Swap request not found" });
+      }
+      
+      if (request.requestType !== "early_complete") {
+        return res.status(400).json({ message: "Credit calculation only applies to early completion requests" });
+      }
+      
+      const booking = await storage.getBooking(request.bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Calculate unused days
+      const deliveryDate = new Date(booking.deliveryDate);
+      const rentalDays = booking.rentalDays;
+      
+      if (!rentalDays || rentalDays <= 0 || !booking.totalPrice || booking.totalPrice <= 0) {
+        // Return 200 with zero values - this is a valid scenario, not an error
+        return res.json({ 
+          message: "Cannot calculate credit: booking is missing rental days or total price data",
+          unusedDays: 0,
+          dailyRate: 0,
+          suggestedCredit: 0
+        });
+      }
+      
+      const expectedEndDate = new Date(deliveryDate);
+      expectedEndDate.setDate(expectedEndDate.getDate() + rentalDays);
+      
+      // Use requested date or today as completion date
+      const completionDate = request.requestedDate ? new Date(request.requestedDate) : new Date();
+      
+      // Calculate unused days
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const unusedDays = Math.max(0, Math.floor((expectedEndDate.getTime() - completionDate.getTime()) / msPerDay));
+      
+      // Calculate daily rate from total price
+      const dailyRate = Math.round(booking.totalPrice / rentalDays);
+      const suggestedCredit = unusedDays * dailyRate;
+      
+      res.json({
+        unusedDays,
+        dailyRate,
+        suggestedCredit,
+        deliveryDate: booking.deliveryDate,
+        expectedEndDate: expectedEndDate.toISOString(),
+        completionDate: completionDate.toISOString(),
+        rentalDays,
+        totalPrice: booking.totalPrice,
+      });
+    } catch (err) {
+      console.error("Error calculating credit:", err);
+      res.status(500).json({ message: "Failed to calculate credit" });
+    }
+  });
+  
+  // Get credits for a customer account
+  app.get("/api/admin/credits/:customerAccountId", isAdmin, async (req, res) => {
+    try {
+      const customerAccountId = Number(req.params.customerAccountId);
+      const credits = await storage.getCustomerCredits(customerAccountId);
+      res.json(credits);
+    } catch (err) {
+      console.error("Error fetching credits:", err);
+      res.status(500).json({ message: "Failed to fetch credits" });
     }
   });
 
