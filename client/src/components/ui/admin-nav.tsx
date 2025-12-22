@@ -19,7 +19,8 @@ import {
   FileText,
   Shield,
   Wrench,
-  RefreshCw
+  RefreshCw,
+  Users
 } from "lucide-react";
 import { Button } from "./button";
 
@@ -68,6 +69,11 @@ export function AdminNav() {
       title: "Swap Requests",
       href: "/admin/swap-requests",
       icon: <RefreshCw className="mr-2 h-4 w-4" />
+    },
+    {
+      title: "Customer Accounts",
+      href: "/admin/customer-accounts",
+      icon: <Users className="mr-2 h-4 w-4" />
     },
     {
       title: "Payment Settings",

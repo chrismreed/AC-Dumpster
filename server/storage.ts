@@ -169,6 +169,8 @@ export interface IStorage {
   verifyAccessCode(email: string, accessCode: string): Promise<CustomerAccount | null>;
   updateCustomerAccountLastLogin(id: number): Promise<void>;
   listCustomerAccounts(): Promise<CustomerAccount[]>;
+  updateCustomerAccount(id: number, updates: Partial<{ isActive: boolean }>): Promise<CustomerAccount | undefined>;
+  updateCustomerAccountAccessCode(id: number, newAccessCode: string): Promise<void>;
 
   // Swap request methods
   getSwapRequest(id: number): Promise<SwapRequest | undefined>;
@@ -1405,6 +1407,24 @@ export class DatabaseStorage implements IStorage {
 
   async listCustomerAccounts(): Promise<CustomerAccount[]> {
     return db.select().from(customerAccounts);
+  }
+
+  async updateCustomerAccount(id: number, updates: Partial<{ isActive: boolean }>): Promise<CustomerAccount | undefined> {
+    const [updated] = await db
+      .update(customerAccounts)
+      .set(updates)
+      .where(eq(customerAccounts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateCustomerAccountAccessCode(id: number, newAccessCode: string): Promise<void> {
+    const bcrypt = await import("bcryptjs");
+    const hashedAccessCode = await bcrypt.hash(newAccessCode, 10);
+    await db
+      .update(customerAccounts)
+      .set({ accessCode: hashedAccessCode })
+      .where(eq(customerAccounts.id, id));
   }
 
   // Swap request methods

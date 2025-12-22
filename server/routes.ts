@@ -397,6 +397,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin route to update customer account (toggle active status)
+  app.patch("/api/admin/customer-accounts/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { isActive } = req.body;
+      
+      const account = await storage.getCustomerAccount(id);
+      if (!account) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+      
+      const updated = await storage.updateCustomerAccount(id, { isActive });
+      res.json(updated);
+    } catch (err) {
+      console.error("Error updating customer account:", err);
+      res.status(500).json({ message: "Failed to update customer account" });
+    }
+  });
+
+  // Admin route to regenerate access code for customer account
+  app.post("/api/admin/customer-accounts/:id/regenerate-code", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      
+      const account = await storage.getCustomerAccount(id);
+      if (!account) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+      
+      const newAccessCode = await generateAccessCode();
+      await storage.updateCustomerAccountAccessCode(id, newAccessCode);
+      
+      res.json({ 
+        accessCode: newAccessCode,
+        email: account.email,
+        message: "Share this new access code with the customer. It cannot be retrieved later."
+      });
+    } catch (err) {
+      console.error("Error regenerating access code:", err);
+      res.status(500).json({ message: "Failed to regenerate access code" });
+    }
+  });
+
   // Admin route to view all swap requests
   app.get("/api/admin/swap-requests", isAdmin, async (req, res) => {
     try {
