@@ -476,6 +476,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin route to send credentials email to customer
+  app.post("/api/admin/customer-accounts/:id/send-credentials", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { accessCode } = req.body;
+      
+      const account = await storage.getCustomerAccount(id);
+      if (!account) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+      
+      if (!accessCode) {
+        return res.status(400).json({ message: "Access code is required to send credentials" });
+      }
+      
+      const { sendAccountCredentialsEmail } = await import("./services/email-service");
+      
+      // Construct the portal URL from the request
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const host = req.headers['host'] || '';
+      const portalUrl = host ? `${protocol}://${host}/customer/login` : '/customer/login';
+      
+      const result = await sendAccountCredentialsEmail({
+        email: account.email,
+        companyName: account.companyName || undefined,
+        accessCode,
+        portalUrl,
+      });
+      
+      if (result.success) {
+        res.json({ message: "Credentials email sent successfully" });
+      } else {
+        res.status(500).json({ message: result.error || "Failed to send email" });
+      }
+    } catch (err) {
+      console.error("Error sending credentials email:", err);
+      res.status(500).json({ message: "Failed to send credentials email" });
+    }
+  });
+
   // Admin route to view all swap requests
   app.get("/api/admin/swap-requests", isAdmin, async (req, res) => {
     try {
@@ -2249,7 +2289,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       isBusinessAccount: false
                     });
                     console.log(`Auto-created customer account for ${booking.customerEmail}`);
-                    // TODO: Send email with access code to customer
+                    
+                    // Send email with access code to customer
+                    try {
+                      const { sendAccountCredentialsEmail } = await import("./services/email-service");
+                      await sendAccountCredentialsEmail({
+                        email: booking.customerEmail,
+                        companyName: booking.customerName || undefined,
+                        accessCode,
+                      });
+                      console.log(`Sent credentials email to ${booking.customerEmail}`);
+                    } catch (emailErr) {
+                      console.error('Error sending credentials email:', emailErr);
+                    }
                   }
                 }
               }

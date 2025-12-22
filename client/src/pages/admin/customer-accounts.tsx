@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Plus, Users, Key, Copy, Check, UserCheck, UserX } from "lucide-react";
+import { Loader2, Plus, Users, Key, Copy, Check, UserCheck, UserX, Mail } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -69,6 +69,7 @@ export default function CustomerAccountsPage() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [createMode, setCreateMode] = useState<"picker" | "manual">("picker");
   const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [newAccountId, setNewAccountId] = useState<number | null>(null);
 
   const { data: accounts, isLoading } = useQuery<CustomerAccount[]>({
     queryKey: ["/api/admin/customer-accounts"],
@@ -95,6 +96,7 @@ export default function CustomerAccountsPage() {
       setSelectedCustomer("");
       setNewAccountCode(data.plainAccessCode);
       setNewAccountEmail(data.email);
+      setNewAccountId(data.id);
       setIsCodeDialogOpen(true);
     },
     onError: (error: any) => {
@@ -137,6 +139,7 @@ export default function CustomerAccountsPage() {
     onSuccess: (data) => {
       setNewAccountCode(data.accessCode);
       setNewAccountEmail(data.email);
+      setNewAccountId(accounts?.find(a => a.email === data.email)?.id || null);
       setIsCodeDialogOpen(true);
       toast({
         title: "Code Regenerated",
@@ -147,6 +150,28 @@ export default function CustomerAccountsPage() {
       toast({
         title: "Error",
         description: error?.message || "Failed to regenerate code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendCredentialsMutation = useMutation({
+    mutationFn: async ({ id, accessCode }: { id: number; accessCode: string }) => {
+      const response = await apiRequest("POST", `/api/admin/customer-accounts/${id}/send-credentials`, {
+        accessCode,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email Sent",
+        description: "Account credentials have been sent to the customer.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to send credentials email",
         variant: "destructive",
       });
     },
@@ -445,7 +470,23 @@ export default function CustomerAccountsPage() {
               </div>
             </div>
             
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (newAccountId) {
+                    sendCredentialsMutation.mutate({ id: newAccountId, accessCode: newAccountCode });
+                  }
+                }}
+                disabled={sendCredentialsMutation.isPending || !newAccountId}
+                data-testid="button-send-credentials"
+              >
+                {sendCredentialsMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</>
+                ) : (
+                  <><Mail className="h-4 w-4 mr-2" />Send to Customer</>
+                )}
+              </Button>
               <Button onClick={() => setIsCodeDialogOpen(false)} data-testid="button-close-code-dialog">
                 Done
               </Button>

@@ -258,6 +258,115 @@ export async function sendPaymentReceiptEmail(data: {
   });
 }
 
+export async function sendAccountCredentialsEmail(data: {
+  email: string;
+  companyName?: string;
+  accessCode: string;
+  portalUrl?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const { businessName, fromEmail } = await getEmailSettings();
+  const supportEmail = (await storage.getBusinessSetting('supportEmail')) || fromEmail;
+  const phoneNumber = (await storage.getBusinessSetting('phoneNumber')) || '';
+  
+  const portalUrl = data.portalUrl || '/customer/login';
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+        .header { background-color: #f7c948; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; color: #1a1a1a; font-size: 24px; }
+        .content { padding: 30px 20px; }
+        .credentials-box { background-color: #f9f9f9; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+        .credentials-box h2 { margin-top: 0; color: #1a1a1a; font-size: 18px; }
+        .access-code { font-size: 32px; font-weight: 700; letter-spacing: 4px; font-family: monospace; color: #1a1a1a; background: #fff; padding: 15px 25px; border-radius: 8px; display: inline-block; margin: 10px 0; border: 2px dashed #f7c948; }
+        .email-display { font-size: 16px; color: #666; margin-bottom: 15px; }
+        .cta-button { display: inline-block; background-color: #f7c948; color: #1a1a1a; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 600; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #eee; }
+        .steps { text-align: left; background: #f0f9ff; padding: 15px 20px; border-radius: 8px; margin: 20px 0; }
+        .steps h3 { margin-top: 0; color: #1a1a1a; }
+        .steps ol { margin: 0; padding-left: 20px; }
+        .steps li { margin: 8px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Your Customer Portal Account</h1>
+      </div>
+      <div class="content">
+        <p>Hi${data.companyName ? ` ${data.companyName}` : ''},</p>
+        <p>Welcome to the ${businessName} customer portal! You can now view your rental bookings, request pickups or dumpster swaps, and manage your account online.</p>
+        
+        <div class="credentials-box">
+          <h2>Your Login Credentials</h2>
+          <div class="email-display"><strong>Email:</strong> ${data.email}</div>
+          <div><strong>Access Code:</strong></div>
+          <div class="access-code">${data.accessCode}</div>
+        </div>
+        
+        <div class="steps">
+          <h3>How to Log In:</h3>
+          <ol>
+            <li>Click the button below or visit our customer portal</li>
+            <li>Enter your email address</li>
+            <li>Enter the 6-digit access code above</li>
+            <li>You're in! View your rentals and make requests.</li>
+          </ol>
+        </div>
+        
+        <div style="text-align: center;">
+          <a href="${portalUrl}" class="cta-button" style="display: inline-block; background-color: #f7c948; color: #1a1a1a; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 600;">Log In to Customer Portal</a>
+        </div>
+        
+        <p><strong>Important:</strong> Keep this code secure. If you lose it, contact us and we'll generate a new one for you.</p>
+        
+        <p>Thank you for choosing ${businessName}!</p>
+      </div>
+      <div class="footer">
+        <p>${businessName}</p>
+        ${phoneNumber ? `<p>Phone: ${phoneNumber}</p>` : ''}
+        <p>Questions? Contact us at ${supportEmail}</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+Your Customer Portal Account - ${businessName}
+
+Hi${data.companyName ? ` ${data.companyName}` : ''},
+
+Welcome to the ${businessName} customer portal! You can now view your rental bookings, request pickups or dumpster swaps, and manage your account online.
+
+YOUR LOGIN CREDENTIALS
+----------------------
+Email: ${data.email}
+Access Code: ${data.accessCode}
+
+HOW TO LOG IN:
+1. Visit our customer portal
+2. Enter your email address
+3. Enter the 6-digit access code above
+4. You're in! View your rentals and make requests.
+
+Important: Keep this code secure. If you lose it, contact us and we'll generate a new one for you.
+
+Thank you for choosing ${businessName}!
+${phoneNumber ? `Phone: ${phoneNumber}` : ''}
+Questions? Contact us at ${supportEmail}
+  `.trim();
+
+  return sendEmail({
+    to: [{ email: data.email, name: data.companyName }],
+    subject: `Your ${businessName} Customer Portal Login`,
+    htmlContent,
+    textContent,
+  });
+}
+
 export async function sendAdminNotificationEmail(data: {
   subject: string;
   message: string;
