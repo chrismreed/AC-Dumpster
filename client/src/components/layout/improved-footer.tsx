@@ -57,6 +57,11 @@ export function ImprovedFooter() {
               <li>
                 <a href="#contact" className="text-gray-400 hover:text-[#facc15] transition-colors">Contact</a>
               </li>
+              <li>
+                <Link href="/customer/login">
+                  <div className="text-gray-400 hover:text-[#facc15] transition-colors cursor-pointer">Customer Portal</div>
+                </Link>
+              </li>
             </ul>
           </div>
           

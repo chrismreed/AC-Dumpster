@@ -138,6 +138,12 @@ export function StickyHeader() {
             >
               Contact
             </Link>
+            <Link 
+              href="/customer/login"
+              className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium"
+            >
+              Customer Portal
+            </Link>
             
             {user && (
               <Link href="/admin/dashboard" className="px-4 py-3 mx-1 rounded-md text-sm hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer text-[#ffffff] text-center font-medium">
@@ -218,6 +224,7 @@ export function StickyHeader() {
                 <MobileNavLink href="/about" label="About Us" onClick={() => setIsMobileMenuOpen(false)} />
                 <MobileNavLink href="/faq" label="FAQ" onClick={() => setIsMobileMenuOpen(false)} />
                 <MobileNavLink href="/contact" label="Contact" onClick={() => setIsMobileMenuOpen(false)} />
+                <MobileNavLink href="/customer/login" label="Customer Portal" onClick={() => setIsMobileMenuOpen(false)} />
                 
                 {user && (
                   <MobileNavLink href="/admin/dashboard" label="Dashboard" onClick={() => setIsMobileMenuOpen(false)} />
