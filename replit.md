@@ -35,6 +35,9 @@ The system uses the following main entities:
 - **AddOns**: Additional services (same-day delivery, etc.)
 - **PaymentLinks**: Stripe payment integration
 - **AdditionalCharges**: Post-booking charges
+- **CustomerAccounts**: Commercial customer portal login (email + access code)
+- **SwapRequests**: Customer pickup/swap/early-completion requests
+- **CustomerCredits**: Early-return credits for future bookings
 
 ### Customer Booking Flow
 1. **Dumpster Selection**: Choose size and rental duration
@@ -48,8 +51,15 @@ The system uses the following main entities:
 - **Service Zone Management**: Geofenced areas with custom pricing
 - **Hub Management**: Storage location configuration
 - **Booking Management**: Order processing and status updates
+- **Swap Requests**: Customer pickup/swap request management with credit issuance
 - **Payment Management**: Stripe integration with additional charges
 - **Business Settings**: White-label configuration for business name, contact info, and email sender
+
+### Customer Portal (Commercial Accounts)
+- **Login**: Email + 6-digit access code authentication (no passwords)
+- **Dashboard**: View active and past rental bookings
+- **Swap Requests**: Request pickup, dumpster swap, or early completion
+- **Credits**: View available credits from early returns for use on future bookings
 
 ## Data Flow
 
@@ -123,6 +133,8 @@ BREVO_API_KEY=xkeysib-...
 ```
 
 ## Changelog
+- December 22, 2025. Added Customer Portal with login, dashboard, swap requests, and early-completion credits
+- December 22, 2025. Added Admin Swap Requests page for managing customer pickup/swap requests
 - December 20, 2025. Added Business Settings page for white-label configuration (business name, sender email, contact info)
 - July 06, 2025. Initial setup
 
