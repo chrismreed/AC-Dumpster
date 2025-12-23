@@ -23,6 +23,7 @@ import LegalDocumentsPage from "@/pages/admin/legal-documents";
 import SecurityPage from "@/pages/admin/security";
 import SettingsPage from "@/pages/admin/settings";
 import SwapRequestsPage from "@/pages/admin/swap-requests";
+import SwapPricingPage from "@/pages/admin/swap-pricing";
 import CustomerAccountsPage from "@/pages/admin/customer-accounts";
 import BookingConfirmationPage from "@/pages/booking-confirmation";
 import PaymentSuccessPage from "@/pages/payment-success";
@@ -85,6 +86,7 @@ function Router() {
       <ProtectedRoute path="/admin/settings" component={SettingsPage} adminOnly />
       <ProtectedRoute path="/admin/security" component={SecurityPage} adminOnly />
       <ProtectedRoute path="/admin/swap-requests" component={SwapRequestsPage} adminOnly />
+      <ProtectedRoute path="/admin/swap-pricing" component={SwapPricingPage} adminOnly />
       <ProtectedRoute path="/admin/customer-accounts" component={CustomerAccountsPage} adminOnly />
       <Route component={NotFound} />
     </Switch>

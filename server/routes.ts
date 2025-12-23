@@ -17,11 +17,12 @@ import {
   insertServiceSchema,
   insertSwapRequestSchema,
   insertCustomerAccountSchema,
+  insertSwapPricingSchema,
   type CustomerAccount
 } from "@shared/schema";
 import { apiLimiter, authLimiter } from "./middleware/security";
 import { getHealthStatus } from "./middleware/validation";
-import { sendBookingConfirmationEmail, sendPaymentReceiptEmail } from "./services/email-service";
+import { sendBookingConfirmationEmail, sendPaymentReceiptEmail, sendSwapRequestPaymentEmail, sendSwapRequestStatusEmail } from "./services/email-service";
 
 // Check for Stripe secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -543,19 +544,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/swap-requests/:id", isAdmin, async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const { status, adminNotes, scheduledDate, issueCredit, creditAmount } = req.body;
+      const { status, adminNotes, scheduledDate, issueCredit, creditAmount, skipPayment } = req.body;
       
       const request = await storage.getSwapRequest(id);
       if (!request) {
         return res.status(404).json({ message: "Swap request not found" });
       }
+
+      // Get the booking for customer info
+      const booking = await storage.getBooking(request.bookingId);
       
-      const updated = await storage.updateSwapRequest(id, {
-        status,
+      // Check for swap pricing when approving
+      let feeAmount = 0;
+      let paymentStatus = "not_required";
+      let stripePaymentLinkId: string | undefined;
+      let stripePaymentLinkUrl: string | undefined;
+      
+      if (status === "approved" && !skipPayment) {
+        // Get the swap pricing for this request type
+        const pricing = await storage.getSwapPricing(request.requestType);
+        if (pricing && pricing.isActive && pricing.baseFee > 0) {
+          feeAmount = pricing.baseFee;
+          
+          // Create Stripe payment link for this swap fee
+          if (stripe && booking) {
+            try {
+              // Create a product and price for this swap
+              const product = await stripe.products.create({
+                name: `${pricing.name} - Booking #${request.bookingId}`,
+                description: pricing.description || `Service fee for ${pricing.name.toLowerCase()}`,
+              });
+              
+              const price = await stripe.prices.create({
+                product: product.id,
+                unit_amount: feeAmount,
+                currency: 'usd',
+              });
+              
+              const paymentLink = await stripe.paymentLinks.create({
+                line_items: [{ price: price.id, quantity: 1 }],
+                metadata: {
+                  type: "swap_request",
+                  swap_request_id: request.id.toString(),
+                  booking_id: request.bookingId.toString(),
+                  request_type: request.requestType,
+                },
+              });
+              
+              stripePaymentLinkId = paymentLink.id;
+              stripePaymentLinkUrl = paymentLink.url;
+              paymentStatus = "pending";
+            } catch (stripeError) {
+              console.error("Failed to create Stripe payment link:", stripeError);
+              // Continue without payment link if Stripe fails
+            }
+          }
+        }
+      }
+      
+      const updateData: any = {
+        status: paymentStatus === "pending" ? "awaiting_payment" : status,
         adminNotes: adminNotes || undefined,
         scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
-        completedAt: status === "completed" ? new Date() : undefined
-      });
+        completedAt: status === "completed" ? new Date() : undefined,
+      };
+      
+      // Add payment fields if there's a fee
+      if (feeAmount > 0) {
+        updateData.feeAmount = feeAmount;
+        updateData.paymentStatus = paymentStatus;
+        if (stripePaymentLinkId) updateData.stripePaymentLinkId = stripePaymentLinkId;
+        if (stripePaymentLinkUrl) updateData.stripePaymentLinkUrl = stripePaymentLinkUrl;
+      }
+      
+      const updated = await storage.updateSwapRequest(id, updateData);
       
       if (!updated) {
         return res.status(404).json({ message: "Failed to update swap request" });
@@ -582,6 +644,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: `Credit for early completion of booking #${request.bookingId}`,
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year expiry
         });
+      }
+      
+      // Send email notifications
+      if (booking) {
+        try {
+          // Send payment email if payment is required
+          if (paymentStatus === "pending" && stripePaymentLinkUrl) {
+            await sendSwapRequestPaymentEmail({
+              customerName: booking.customerName,
+              customerEmail: booking.customerEmail,
+              bookingId: request.bookingId,
+              requestType: request.requestType,
+              feeAmount: feeAmount,
+              paymentUrl: stripePaymentLinkUrl,
+              adminNotes: adminNotes,
+            });
+          }
+          // Send status update email for approved/scheduled/completed status changes (without payment)
+          else if (['approved', 'scheduled', 'completed'].includes(status) && paymentStatus === "not_required") {
+            await sendSwapRequestStatusEmail({
+              customerName: booking.customerName,
+              customerEmail: booking.customerEmail,
+              bookingId: request.bookingId,
+              requestType: request.requestType,
+              status: status,
+              scheduledDate: scheduledDate || undefined,
+              adminNotes: adminNotes,
+            });
+          }
+        } catch (emailError) {
+          console.error("Failed to send swap request email:", emailError);
+          // Don't fail the request if email fails
+        }
       }
       
       res.json(updated);
@@ -688,6 +783,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error fetching credits:", err);
       res.status(500).json({ message: "Failed to fetch credits" });
+    }
+  });
+
+  // ===== SWAP PRICING ROUTES =====
+  
+  // Get all swap pricing configurations
+  app.get("/api/admin/swap-pricing", isAdmin, async (req, res) => {
+    try {
+      const pricing = await storage.listSwapPricing();
+      res.json(pricing);
+    } catch (err) {
+      console.error("Error fetching swap pricing:", err);
+      res.status(500).json({ message: "Failed to fetch swap pricing" });
+    }
+  });
+
+  // Get swap pricing by request type (public for customers to see fees)
+  app.get("/api/swap-pricing/:requestType", async (req, res) => {
+    try {
+      const pricing = await storage.getSwapPricing(req.params.requestType);
+      if (!pricing) {
+        return res.json({ baseFee: 0 }); // Default to no fee if not configured
+      }
+      res.json(pricing);
+    } catch (err) {
+      console.error("Error fetching swap pricing:", err);
+      res.status(500).json({ message: "Failed to fetch swap pricing" });
+    }
+  });
+
+  // Create or update swap pricing
+  app.post("/api/admin/swap-pricing", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertSwapPricingSchema.parse(req.body);
+      
+      // Check if pricing already exists for this request type
+      const existing = await storage.getSwapPricing(validatedData.requestType);
+      
+      if (existing) {
+        // Update existing
+        const updated = await storage.updateSwapPricing(existing.id, validatedData);
+        res.json(updated);
+      } else {
+        // Create new
+        const pricing = await storage.createSwapPricing(validatedData);
+        res.status(201).json(pricing);
+      }
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid pricing data", errors: err.errors });
+      }
+      console.error("Error saving swap pricing:", err);
+      res.status(500).json({ message: "Failed to save swap pricing" });
+    }
+  });
+
+  // Update swap pricing
+  app.put("/api/admin/swap-pricing/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const validatedData = insertSwapPricingSchema.partial().parse(req.body);
+      const updated = await storage.updateSwapPricing(id, validatedData);
+      if (!updated) {
+        return res.status(404).json({ message: "Swap pricing not found" });
+      }
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid pricing data", errors: err.errors });
+      }
+      console.error("Error updating swap pricing:", err);
+      res.status(500).json({ message: "Failed to update swap pricing" });
+    }
+  });
+
+  // Delete swap pricing
+  app.delete("/api/admin/swap-pricing/:id", isAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const deleted = await storage.deleteSwapPricing(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Swap pricing not found" });
+      }
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting swap pricing:", err);
+      res.status(500).json({ message: "Failed to delete swap pricing" });
     }
   });
 
@@ -2505,28 +2687,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const session = event.data.object;
           console.log('Payment completed for session:', session.id);
           
-          // Find the payment link by Stripe payment link ID
-          const allBookings = await storage.listBookings();
-          let paymentLink = null;
+          // First, check session metadata (from direct checkout sessions)
+          let swapRequestMetadata = session.metadata;
           
-          for (const booking of allBookings) {
-            const links = await storage.getPaymentLinks(booking.id);
-            const foundLink = links.find(link => 
-              link.stripePaymentLinkId === session.payment_link
-            );
-            if (foundLink) {
-              paymentLink = foundLink;
-              break;
+          // If no metadata in session, try to get it from the Payment Link
+          if ((!swapRequestMetadata?.type || swapRequestMetadata?.type !== 'swap_request') && session.payment_link && stripe) {
+            try {
+              const paymentLink = await stripe.paymentLinks.retrieve(session.payment_link as string);
+              if (paymentLink.metadata?.type === 'swap_request') {
+                swapRequestMetadata = paymentLink.metadata;
+                console.log('Retrieved metadata from payment link:', swapRequestMetadata);
+              }
+            } catch (plError) {
+              console.error('Failed to retrieve payment link metadata:', plError);
             }
           }
+          
+          // Check if this is a swap request payment
+          if (swapRequestMetadata?.type === 'swap_request' && swapRequestMetadata?.swap_request_id) {
+            const swapRequestId = parseInt(swapRequestMetadata.swap_request_id);
+            const swapRequest = await storage.getSwapRequest(swapRequestId);
+            
+            if (swapRequest && swapRequest.paymentStatus === 'pending') {
+              // Try to get receipt URL from the checkout session
+              let receiptUrl = null;
+              try {
+                if (session.payment_intent && stripe) {
+                  const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string, {
+                    expand: ['latest_charge'],
+                  });
+                  const charge = paymentIntent.latest_charge as Stripe.Charge | null;
+                  if (charge?.receipt_url) {
+                    receiptUrl = charge.receipt_url;
+                  }
+                }
+              } catch (receiptError) {
+                console.error('Failed to retrieve receipt URL:', receiptError);
+              }
+              
+              await storage.updateSwapRequest(swapRequestId, {
+                paymentStatus: 'paid',
+                status: 'approved', // Move to approved now that payment is complete
+                receiptUrl: receiptUrl || undefined,
+              });
+              console.log(`Updated swap request ${swapRequestId} to paid/approved status`);
+              
+              // Send confirmation email
+              const booking = await storage.getBooking(swapRequest.bookingId);
+              if (booking) {
+                try {
+                  await sendSwapRequestStatusEmail({
+                    customerName: booking.customerName,
+                    customerEmail: booking.customerEmail,
+                    bookingId: swapRequest.bookingId,
+                    requestType: swapRequest.requestType,
+                    status: 'approved',
+                    adminNotes: 'Your payment has been received. Your request has been approved.',
+                  });
+                } catch (emailError) {
+                  console.error('Failed to send swap payment confirmation email:', emailError);
+                }
+              }
+            }
+          } else {
+            // Find the payment link by Stripe payment link ID (for additional charges)
+            const allBookings = await storage.listBookings();
+            let paymentLink = null;
+            
+            for (const booking of allBookings) {
+              const links = await storage.getPaymentLinks(booking.id);
+              const foundLink = links.find(link => 
+                link.stripePaymentLinkId === session.payment_link
+              );
+              if (foundLink) {
+                paymentLink = foundLink;
+                break;
+              }
+            }
 
-          if (paymentLink && paymentLink.status !== 'paid') {
-            await storage.updatePaymentLinkStatus(
-              paymentLink.id, 
-              'paid', 
-              new Date()
-            );
-            console.log(`Updated payment link ${paymentLink.id} to paid status`);
+            if (paymentLink && paymentLink.status !== 'paid') {
+              await storage.updatePaymentLinkStatus(
+                paymentLink.id, 
+                'paid', 
+                new Date()
+              );
+              console.log(`Updated payment link ${paymentLink.id} to paid status`);
+            }
           }
         } catch (error) {
           console.error('Error processing webhook:', error);

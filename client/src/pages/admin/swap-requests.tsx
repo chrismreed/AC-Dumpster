@@ -37,7 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, RefreshCw, Truck, Package, Clock, Check, X, Calendar, MapPin, User, MessageSquare, DollarSign } from "lucide-react";
+import { Loader2, RefreshCw, Truck, Package, Clock, Check, X, Calendar, MapPin, User, MessageSquare, DollarSign, Download, ExternalLink } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -57,6 +57,18 @@ interface SwapRequestWithDetails {
   customerName: string;
   customerEmail: string;
   deliveryAddress: string;
+  feeAmount: number | null;
+  paymentStatus: string | null;
+  stripePaymentLinkUrl: string | null;
+  receiptUrl: string | null;
+}
+
+interface SwapPricing {
+  id: number;
+  requestType: string;
+  name: string;
+  baseFee: number;
+  isActive: boolean;
 }
 
 export default function SwapRequestsPage() {
@@ -69,19 +81,25 @@ export default function SwapRequestsPage() {
   const [newStatus, setNewStatus] = useState("");
   const [issueCredit, setIssueCredit] = useState(false);
   const [creditAmount, setCreditAmount] = useState("");
+  const [skipPayment, setSkipPayment] = useState(false);
 
   const { data: requests, isLoading } = useQuery<SwapRequestWithDetails[]>({
     queryKey: ["/api/admin/swap-requests"],
   });
 
+  const { data: swapPricing } = useQuery<SwapPricing[]>({
+    queryKey: ["/api/admin/swap-pricing"],
+  });
+
   const updateRequestMutation = useMutation({
-    mutationFn: async ({ id, status, adminNotes, scheduledDate, issueCredit, creditAmount }: { id: number; status: string; adminNotes?: string; scheduledDate?: string; issueCredit?: boolean; creditAmount?: number }) => {
+    mutationFn: async ({ id, status, adminNotes, scheduledDate, issueCredit, creditAmount, skipPayment }: { id: number; status: string; adminNotes?: string; scheduledDate?: string; issueCredit?: boolean; creditAmount?: number; skipPayment?: boolean }) => {
       const response = await apiRequest("PUT", `/api/admin/swap-requests/${id}`, {
         status,
         adminNotes,
         scheduledDate,
         issueCredit,
         creditAmount,
+        skipPayment,
       });
       return response.json();
     },
@@ -112,6 +130,11 @@ export default function SwapRequestsPage() {
   const [creditCalc, setCreditCalc] = useState<CreditCalculation | null>(null);
   const [loadingCredit, setLoadingCredit] = useState(false);
   
+  const getFeeForRequestType = (requestType: string) => {
+    const pricing = swapPricing?.find(p => p.requestType === requestType && p.isActive);
+    return pricing?.baseFee || 0;
+  };
+
   const handleOpenDetail = async (request: SwapRequestWithDetails) => {
     setSelectedRequest(request);
     setAdminNotes(request.adminNotes || "");
@@ -120,6 +143,7 @@ export default function SwapRequestsPage() {
     setIssueCredit(false);
     setCreditAmount("");
     setCreditCalc(null);
+    setSkipPayment(false);
     setIsDetailDialogOpen(true);
     
     // Auto-fetch credit calculation for early_complete requests
@@ -159,6 +183,7 @@ export default function SwapRequestsPage() {
       scheduledDate: scheduledDate || undefined,
       issueCredit: issueCredit && selectedRequest.requestType === "early_complete",
       creditAmount: issueCredit ? Math.round(parseFloat(creditAmount) * 100) : undefined, // Convert to cents
+      skipPayment,
     });
   };
 
@@ -201,6 +226,8 @@ export default function SwapRequestsPage() {
     switch (status) {
       case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+      case "awaiting_payment":
+        return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100"><DollarSign className="h-3 w-3 mr-1" />Awaiting Payment</Badge>;
       case "approved":
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100"><Check className="h-3 w-3 mr-1" />Approved</Badge>;
       case "scheduled":
@@ -431,6 +458,73 @@ export default function SwapRequestsPage() {
                       data-testid="textarea-admin-notes"
                     />
                   </div>
+
+                  {selectedRequest.status === "pending" && newStatus === "approved" && getFeeForRequestType(selectedRequest.requestType) > 0 && (
+                    <div className="p-3 border rounded-lg bg-orange-50 border-orange-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="h-4 w-4 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-800">Service Fee</span>
+                      </div>
+                      <p className="text-sm text-orange-700 mb-3">
+                        This request type has a configured fee of ${(getFeeForRequestType(selectedRequest.requestType) / 100).toFixed(2)}.
+                        The customer will receive a payment link before the request is processed.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="skipPayment"
+                          checked={skipPayment}
+                          onCheckedChange={(checked) => setSkipPayment(checked === true)}
+                          data-testid="checkbox-skip-payment"
+                        />
+                        <Label htmlFor="skipPayment" className="text-sm">Waive fee for this request</Label>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedRequest.status === "awaiting_payment" && selectedRequest.stripePaymentLinkUrl && (
+                    <div className="p-3 border rounded-lg bg-orange-50 border-orange-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="h-4 w-4 text-orange-600" />
+                        <span className="text-sm font-medium text-orange-800">Payment Pending</span>
+                      </div>
+                      <p className="text-sm text-orange-700 mb-2">
+                        Fee: ${selectedRequest.feeAmount ? (selectedRequest.feeAmount / 100).toFixed(2) : '0.00'}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(selectedRequest.stripePaymentLinkUrl!, '_blank')}
+                        data-testid="button-view-payment-link"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Payment Link
+                      </Button>
+                    </div>
+                  )}
+
+                  {selectedRequest.paymentStatus === "paid" && selectedRequest.feeAmount && (
+                    <div className="p-3 border rounded-lg bg-green-50 border-green-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-800">Payment Received</span>
+                      </div>
+                      <p className="text-sm text-green-700 mb-2">
+                        Paid: ${(selectedRequest.feeAmount / 100).toFixed(2)}
+                      </p>
+                      {selectedRequest.receiptUrl && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-green-500 text-green-700 hover:bg-green-100"
+                          onClick={() => window.open(selectedRequest.receiptUrl!, '_blank')}
+                          data-testid="button-download-receipt"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download Receipt
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   
                   {selectedRequest.requestType === "early_complete" && (
                     <div className="p-3 border rounded-lg bg-green-50 border-green-200">

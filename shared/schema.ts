@@ -183,12 +183,20 @@ export const swapRequests = pgTable("swap_requests", {
   bookingId: integer("booking_id").notNull().references(() => bookings.id),
   customerAccountId: integer("customer_account_id").references(() => customerAccounts.id),
   requestType: text("request_type").notNull(), // "pickup" (final), "swap" (replace with new), "early_complete"
-  status: text("status").notNull().default("pending"), // "pending", "approved", "scheduled", "completed", "cancelled"
+  status: text("status").notNull().default("pending"), // "pending", "approved", "awaiting_payment", "scheduled", "completed", "cancelled"
   requestedDate: timestamp("requested_date"), // When customer wants pickup/swap
   notes: text("notes"), // Customer notes
   adminNotes: text("admin_notes"), // Admin response notes
   scheduledDate: timestamp("scheduled_date"), // When admin schedules it
   completedAt: timestamp("completed_at"),
+  // Payment fields
+  feeAmount: integer("fee_amount"), // In cents - the fee charged for this swap/pickup
+  paymentStatus: text("payment_status").default("not_required"), // "not_required", "pending", "paid"
+  stripePaymentLinkId: text("stripe_payment_link_id"),
+  stripePaymentLinkUrl: text("stripe_payment_link_url"),
+  invoiceUrl: text("invoice_url"),
+  receiptUrl: text("receipt_url"),
+  paidAt: timestamp("paid_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -225,6 +233,18 @@ export const loadRecords = pgTable("load_records", {
   priceCharged: integer("price_charged").notNull(), // In cents
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Swap/pickup pricing configuration
+export const swapPricing = pgTable("swap_pricing", {
+  id: serial("id").primaryKey(),
+  requestType: text("request_type").notNull().unique(), // "swap", "pickup", "early_complete"
+  name: text("name").notNull(), // Display name
+  description: text("description"),
+  baseFee: integer("base_fee").notNull().default(0), // In cents
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Business settings (configurable by admin)
@@ -450,6 +470,13 @@ export const insertLoadRecordSchema = createInsertSchema(loadRecords)
     completedAt: true,
   });
 
+export const insertSwapPricingSchema = createInsertSchema(swapPricing)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -507,3 +534,6 @@ export type InsertLoadBillingConfig = z.infer<typeof insertLoadBillingConfigSche
 
 export type LoadRecord = typeof loadRecords.$inferSelect;
 export type InsertLoadRecord = z.infer<typeof insertLoadRecordSchema>;
+
+export type SwapPricing = typeof swapPricing.$inferSelect;
+export type InsertSwapPricing = z.infer<typeof insertSwapPricingSchema>;

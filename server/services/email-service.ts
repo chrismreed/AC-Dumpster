@@ -406,4 +406,186 @@ export async function sendAdminNotificationEmail(data: {
   });
 }
 
+interface SwapRequestEmailData {
+  customerName: string;
+  customerEmail: string;
+  bookingId: number;
+  requestType: string;
+  feeAmount?: number;
+  paymentUrl?: string;
+  scheduledDate?: string;
+  adminNotes?: string;
+}
+
+export async function sendSwapRequestPaymentEmail(data: SwapRequestEmailData): Promise<{ success: boolean; error?: string }> {
+  const { businessName, fromEmail } = await getEmailSettings();
+  const supportEmail = (await storage.getBusinessSetting('supportEmail')) || fromEmail;
+  const phoneNumber = await storage.getBusinessSetting('phoneNumber');
+  
+  const requestTypeLabel = data.requestType === 'swap' ? 'Dumpster Swap' :
+    data.requestType === 'early_complete' ? 'Early Completion' : 'Pickup Request';
+  const formattedFee = data.feeAmount ? (data.feeAmount / 100).toFixed(2) : '0.00';
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+        .header { background-color: #f7c948; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; color: #1a1a1a; font-size: 24px; }
+        .content { padding: 30px 20px; }
+        .amount-box { background-color: #fff3cd; border: 2px solid #f7c948; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+        .amount { font-size: 32px; font-weight: bold; color: #1a1a1a; }
+        .cta-button { display: inline-block; background-color: #f7c948; color: #1a1a1a; padding: 16px 32px; text-decoration: none; border-radius: 4px; font-weight: 600; margin: 20px 0; font-size: 18px; }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #eee; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Payment Required</h1>
+      </div>
+      <div class="content">
+        <p>Hi ${data.customerName},</p>
+        <p>Your <strong>${requestTypeLabel}</strong> request for Booking #${data.bookingId} has been approved.</p>
+        <p>Before we can process your request, please complete the following payment:</p>
+        
+        <div class="amount-box">
+          <div class="amount">$${formattedFee}</div>
+          <p style="margin: 5px 0 0 0; color: #666;">${requestTypeLabel} Fee</p>
+        </div>
+        
+        <p style="text-align: center;">
+          <a href="${data.paymentUrl}" class="cta-button">Pay Now</a>
+        </p>
+        
+        <p>Once payment is received, we'll schedule your ${requestTypeLabel.toLowerCase()} and send you a confirmation.</p>
+        
+        ${data.adminNotes ? `<p><strong>Note from our team:</strong> ${data.adminNotes}</p>` : ''}
+        
+        <p>If you have any questions, please don't hesitate to contact us.</p>
+        
+        <p>Thank you for choosing ${businessName}!</p>
+      </div>
+      <div class="footer">
+        <p>${businessName}</p>
+        ${phoneNumber ? `<p>Phone: ${phoneNumber}</p>` : ''}
+        <p>Questions? Contact us at ${supportEmail}</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+Payment Required - ${businessName}
+
+Hi ${data.customerName},
+
+Your ${requestTypeLabel} request for Booking #${data.bookingId} has been approved.
+
+Amount Due: $${formattedFee}
+
+Pay now: ${data.paymentUrl}
+
+Once payment is received, we'll schedule your ${requestTypeLabel.toLowerCase()} and send you a confirmation.
+
+${data.adminNotes ? `Note from our team: ${data.adminNotes}` : ''}
+
+Thank you for choosing ${businessName}!
+${phoneNumber ? `Phone: ${phoneNumber}` : ''}
+Questions? Contact us at ${supportEmail}
+  `.trim();
+
+  return sendEmail({
+    to: [{ email: data.customerEmail, name: data.customerName }],
+    subject: `Payment Required - ${requestTypeLabel} for Booking #${data.bookingId}`,
+    htmlContent,
+    textContent,
+  });
+}
+
+export async function sendSwapRequestStatusEmail(data: SwapRequestEmailData & { status: string }): Promise<{ success: boolean; error?: string }> {
+  const { businessName, fromEmail } = await getEmailSettings();
+  const supportEmail = (await storage.getBusinessSetting('supportEmail')) || fromEmail;
+  const phoneNumber = await storage.getBusinessSetting('phoneNumber');
+  
+  const requestTypeLabel = data.requestType === 'swap' ? 'Dumpster Swap' :
+    data.requestType === 'early_complete' ? 'Early Completion' : 'Pickup Request';
+    
+  const statusLabel = data.status === 'approved' ? 'Approved' :
+    data.status === 'scheduled' ? 'Scheduled' :
+    data.status === 'completed' ? 'Completed' :
+    data.status === 'cancelled' ? 'Cancelled' : data.status;
+    
+  const statusColor = data.status === 'approved' || data.status === 'completed' ? '#22c55e' :
+    data.status === 'scheduled' ? '#3b82f6' :
+    data.status === 'cancelled' ? '#ef4444' : '#f7c948';
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+        .header { background-color: #f7c948; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; color: #1a1a1a; font-size: 24px; }
+        .content { padding: 30px 20px; }
+        .status-badge { display: inline-block; background-color: ${statusColor}; color: white; padding: 8px 16px; border-radius: 4px; font-weight: 600; margin: 10px 0; }
+        .details-box { background-color: #f9f9f9; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #eee; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>${requestTypeLabel} Update</h1>
+      </div>
+      <div class="content">
+        <p>Hi ${data.customerName},</p>
+        <p>Your <strong>${requestTypeLabel}</strong> request for Booking #${data.bookingId} has been updated:</p>
+        
+        <p><span class="status-badge">${statusLabel}</span></p>
+        
+        ${data.scheduledDate ? `<div class="details-box"><p><strong>Scheduled Date:</strong> ${data.scheduledDate}</p></div>` : ''}
+        
+        ${data.adminNotes ? `<p><strong>Note from our team:</strong> ${data.adminNotes}</p>` : ''}
+        
+        <p>If you have any questions, please don't hesitate to contact us.</p>
+        
+        <p>Thank you for choosing ${businessName}!</p>
+      </div>
+      <div class="footer">
+        <p>${businessName}</p>
+        ${phoneNumber ? `<p>Phone: ${phoneNumber}</p>` : ''}
+        <p>Questions? Contact us at ${supportEmail}</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+${requestTypeLabel} Update - ${businessName}
+
+Hi ${data.customerName},
+
+Your ${requestTypeLabel} request for Booking #${data.bookingId} has been updated.
+
+Status: ${statusLabel}
+${data.scheduledDate ? `Scheduled Date: ${data.scheduledDate}` : ''}
+${data.adminNotes ? `Note from our team: ${data.adminNotes}` : ''}
+
+Thank you for choosing ${businessName}!
+${phoneNumber ? `Phone: ${phoneNumber}` : ''}
+Questions? Contact us at ${supportEmail}
+  `.trim();
+
+  return sendEmail({
+    to: [{ email: data.customerEmail, name: data.customerName }],
+    subject: `${requestTypeLabel} ${statusLabel} - Booking #${data.bookingId}`,
+    htmlContent,
+    textContent,
+  });
+}
+
 export { sendEmail };

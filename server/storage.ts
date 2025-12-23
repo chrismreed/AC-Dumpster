@@ -51,7 +51,10 @@ import {
   type InsertLoadBillingConfig,
   loadRecords,
   type LoadRecord,
-  type InsertLoadRecord
+  type InsertLoadRecord,
+  swapPricing,
+  type SwapPricing,
+  type InsertSwapPricing
 } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
@@ -199,6 +202,13 @@ export interface IStorage {
 
   // Booking lookup by email (for customer portal)
   listBookingsByEmail(email: string): Promise<Booking[]>;
+
+  // Swap pricing methods
+  getSwapPricing(requestType: string): Promise<SwapPricing | undefined>;
+  listSwapPricing(): Promise<SwapPricing[]>;
+  createSwapPricing(pricing: InsertSwapPricing): Promise<SwapPricing>;
+  updateSwapPricing(id: number, pricing: Partial<InsertSwapPricing>): Promise<SwapPricing | undefined>;
+  deleteSwapPricing(id: number): Promise<boolean>;
 
   // Session store
   sessionStore: session.SessionStore;
@@ -1532,6 +1542,36 @@ export class DatabaseStorage implements IStorage {
   // Booking lookup by email
   async listBookingsByEmail(email: string): Promise<Booking[]> {
     return db.select().from(bookings).where(eq(bookings.customerEmail, email.toLowerCase()));
+  }
+
+  // Swap pricing methods
+  async getSwapPricing(requestType: string): Promise<SwapPricing | undefined> {
+    const [pricing] = await db.select().from(swapPricing)
+      .where(eq(swapPricing.requestType, requestType));
+    return pricing;
+  }
+
+  async listSwapPricing(): Promise<SwapPricing[]> {
+    return db.select().from(swapPricing);
+  }
+
+  async createSwapPricing(pricing: InsertSwapPricing): Promise<SwapPricing> {
+    const [newPricing] = await db.insert(swapPricing).values(pricing).returning();
+    return newPricing;
+  }
+
+  async updateSwapPricing(id: number, pricingUpdate: Partial<InsertSwapPricing>): Promise<SwapPricing | undefined> {
+    const [updated] = await db
+      .update(swapPricing)
+      .set({ ...pricingUpdate, updatedAt: new Date() })
+      .where(eq(swapPricing.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSwapPricing(id: number): Promise<boolean> {
+    const result = await db.delete(swapPricing).where(eq(swapPricing.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 

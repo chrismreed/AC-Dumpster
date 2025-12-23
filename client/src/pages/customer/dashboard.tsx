@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Truck, LogOut, Calendar, MapPin, Package, 
   AlertTriangle, CheckCircle2, Clock, ArrowRight,
-  CreditCard, RefreshCw
+  CreditCard, RefreshCw, Download, Receipt
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -52,6 +52,10 @@ interface SwapRequest {
   notes: string | null;
   adminNotes: string | null;
   createdAt: string;
+  feeAmount: number | null;
+  paymentStatus: string | null;
+  stripePaymentLinkUrl: string | null;
+  receiptUrl: string | null;
 }
 
 interface CustomerCredits {
@@ -254,6 +258,128 @@ export default function CustomerDashboard() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {swapRequests && swapRequests.filter(r => r.status === 'awaiting_payment' && r.stripePaymentLinkUrl).length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Outstanding Invoices
+            </h2>
+            <div className="grid gap-4">
+              {swapRequests
+                .filter(r => r.status === 'awaiting_payment' && r.stripePaymentLinkUrl)
+                .map((request) => {
+                  const booking = bookings?.find(b => b.id === request.bookingId);
+                  const getRequestTypeLabel = (type: string) => {
+                    switch (type) {
+                      case 'swap': return 'Dumpster Swap';
+                      case 'pickup': return 'Early Pickup';
+                      case 'early_complete': return 'Early Completion';
+                      default: return type;
+                    }
+                  };
+                  return (
+                    <Card 
+                      key={request.id} 
+                      className="border-orange-200 bg-orange-50"
+                      data-testid={`card-invoice-${request.id}`}
+                    >
+                      <CardContent className="py-4">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div>
+                            <p className="font-medium text-orange-800">
+                              {getRequestTypeLabel(request.requestType)} Fee
+                            </p>
+                            <p className="text-sm text-orange-600">
+                              Booking #{request.bookingId}
+                              {booking && ` - ${booking.dumpsterName}`}
+                            </p>
+                            {request.adminNotes && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Note: {request.adminNotes}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="font-bold text-lg text-orange-800">
+                              {request.feeAmount ? formatPrice(request.feeAmount) : 'View Details'}
+                            </span>
+                            <Button
+                              className="bg-[#f7c948] text-black hover:bg-[#f7c948]/90"
+                              onClick={() => window.open(request.stripePaymentLinkUrl!, '_blank')}
+                              data-testid={`button-pay-${request.id}`}
+                            >
+                              Pay Now
+                              <ArrowRight className="h-4 w-4 ml-2" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        {swapRequests && swapRequests.filter(r => r.paymentStatus === 'paid' && r.receiptUrl).length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-green-500" />
+              Payment Receipts
+            </h2>
+            <div className="grid gap-4">
+              {swapRequests
+                .filter(r => r.paymentStatus === 'paid' && r.receiptUrl)
+                .map((request) => {
+                  const booking = bookings?.find(b => b.id === request.bookingId);
+                  const getRequestTypeLabel = (type: string) => {
+                    switch (type) {
+                      case 'swap': return 'Dumpster Swap';
+                      case 'pickup': return 'Early Pickup';
+                      case 'early_complete': return 'Early Completion';
+                      default: return type;
+                    }
+                  };
+                  return (
+                    <Card 
+                      key={request.id} 
+                      className="border-green-200 bg-green-50"
+                      data-testid={`card-receipt-${request.id}`}
+                    >
+                      <CardContent className="py-4">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div>
+                            <p className="font-medium text-green-800">
+                              {getRequestTypeLabel(request.requestType)} - Paid
+                            </p>
+                            <p className="text-sm text-green-600">
+                              Booking #{request.bookingId}
+                              {booking && ` - ${booking.dumpsterName}`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className="font-bold text-lg text-green-800">
+                              {request.feeAmount ? formatPrice(request.feeAmount) : ''}
+                            </span>
+                            <Button
+                              variant="outline"
+                              className="border-green-500 text-green-700 hover:bg-green-100"
+                              onClick={() => window.open(request.receiptUrl!, '_blank')}
+                              data-testid={`button-receipt-${request.id}`}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Receipt
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+          </div>
         )}
 
         <div className="mb-8">
