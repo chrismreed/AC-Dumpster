@@ -133,6 +133,7 @@ BREVO_API_KEY=xkeysib-...
 ```
 
 ## Changelog
+- December 23, 2025. Added configurable swap/pickup pricing with Stripe payment link integration for swap request fees
 - December 22, 2025. Added Customer Portal with login, dashboard, swap requests, and early-completion credits
 - December 22, 2025. Added Admin Swap Requests page for managing customer pickup/swap requests
 - December 20, 2025. Added Business Settings page for white-label configuration (business name, sender email, contact info)
