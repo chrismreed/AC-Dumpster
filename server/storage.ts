@@ -621,10 +621,11 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    const PgStore = connectPgSimple(session);
-    this.sessionStore = new PgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true
+    // Use memory store for sessions - simpler and avoids SSL complications with pg session store
+    // For production, you might want to use Redis or configure connect-pg-simple with proper SSL
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
     });
     this.initializeDefaultData();
   }

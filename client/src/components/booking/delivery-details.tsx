@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { GooglePlacesAutocomplete } from "./google-places-autocomplete";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, CheckCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -105,6 +105,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
       return;
     }
     
+    console.log("DeliveryDetails: Starting availability check", { selectedDumpsterId, selectedPricingId });
     setIsLoadingAvailability(true);
     
     // Calculate available dates for the next 30 days using batch API
@@ -304,7 +305,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                   {validatedZone && (
                     <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
                       <p className="text-sm text-green-800">
-                        ✓ Service available in <span className="font-medium">{validatedZone.name}</span>
+              <CheckCircle className="inline h-4 w-4 mr-1" /> Service available in <span className="font-medium">{validatedZone.name}</span>
                       </p>
                       <p className="text-xs text-green-600 mt-1">
                         Base delivery fee: ${(validatedZone.deliveryFee / 100).toFixed(2)}
@@ -617,7 +618,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                           return (
                             <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                               <p className="text-sm text-yellow-800 font-medium">
-                                🚚 Same-Day Delivery Available
+                                ðŸšš Same-Day Delivery Available
                               </p>
                               <p className="text-xs text-yellow-700 mt-1">
                                 Order by {formatTime(cutoffTime)} for delivery today. Additional fee: ${(validatedZone.sameDayDeliveryFee / 100).toFixed(2)}
@@ -628,7 +629,7 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
                           return (
                             <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                               <p className="text-sm text-blue-800">
-                                📅 Next-Day Delivery
+                                ðŸ“… Next-Day Delivery
                               </p>
                               <p className="text-xs text-blue-700 mt-1">
                                 Same-day cutoff time ({formatTime(cutoffTime)}) has passed. Your order will be delivered tomorrow.

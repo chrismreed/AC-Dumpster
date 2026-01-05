@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/ui/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -53,28 +53,14 @@ import {
 import * as z from "zod";
 import { cn } from "@/lib/utils";
 
-// Extended schema for the form
+// Extended schema for the form - simplified to allow saving with either mode
 const extendedZoneSchema = insertServiceZoneSchema.extend({
   deliveryFee: z.coerce.number().min(0, { message: "Delivery fee must be a positive number" }),
-  sameDayDeliveryFee: z.coerce.number().min(0, { message: "Same-day delivery fee must be a positive number" }),
+  sameDayDeliveryFee: z.coerce.number().min(0, { message: "Same-day delivery fee must be a positive number" }).optional(),
   useGeofencing: z.boolean().optional(),
   sameDayDeliveryEnabled: z.boolean().optional(),
-}).refine((data) => {
-  // Ensure either zip codes or geofencing is used, but not both
-  const hasZipCodes = data.zipCodes && data.zipCodes.trim().length > 0;
-  const hasGeofencing = data.useGeofencing;
-  
-  if (!hasZipCodes && !hasGeofencing) {
-    return false; // Must have either zip codes or geofencing
-  }
-  if (hasZipCodes && hasGeofencing) {
-    return false; // Cannot have both
-  }
-  return true;
-}, {
-  message: "Please choose either ZIP codes OR boundary-based service area, not both",
-  path: ["zipCodes"], // Show error on zip codes field
 });
+// Note: Removed .refine() validation - user can choose ZIP codes OR custom boundary
 
 export default function ZonesNewLayoutPage() {
   const { toast } = useToast();
@@ -204,13 +190,19 @@ export default function ZonesNewLayoutPage() {
   });
 
   const onAddSubmit = (data: z.infer<typeof extendedZoneSchema>) => {
-    // Filter out useGeofencing field since it's not part of the database schema
-    const { useGeofencing, ...createData } = data;
+    // Extract useGeofencing and prepare create data
+    const { useGeofencing, ...restData } = data;
     
     // If using geofencing, clear zip codes
     if (useGeofencing) {
-      createData.zipCodes = "";
+      restData.zipCodes = "";
     }
+    
+    // Include useGeofencing in the data sent to API
+    const createData = {
+      ...restData,
+      useGeofencing: useGeofencing ?? false,
+    };
     
     createZoneMutation.mutate(createData);
   };

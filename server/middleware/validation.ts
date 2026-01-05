@@ -42,10 +42,9 @@ export function validateEnvironment() {
 // Database connection validation
 export async function validateDatabaseConnection() {
   try {
-    const { pool } = await import('../db');
-    const client = await pool.connect();
-    await client.query('SELECT 1');
-    client.release();
+    const { db } = await import('../db');
+    // Simple query to test connection
+    await db.execute('SELECT 1');
     return true;
   } catch (error) {
     console.error('Database connection failed:', error);
