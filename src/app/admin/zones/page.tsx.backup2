@@ -1,0 +1,814 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Plus, Edit, Trash2, MapPin, Globe, Map, Navigation, Loader2 } from 'lucide-react';
+
+interface ServiceZone {
+  id: number;
+  name: string;
+  zipCodes: string;
+  deliveryFee: number;
+  useGeofencing: boolean;
+  centerLat?: number | null;
+  centerLng?: number | null;
+  radiusMeters?: number | null;
+  polygonPath?: string | null;
+  feeMultiplier: number;
+  maxDrivingMinutes?: number | null;
+  sameDayDeliveryEnabled: boolean;
+  sameDayDeliveryFee: number;
+  sameDayCutoffTime?: string | null;
+  createdAt: string;
+}
+
+interface ZoneForm {
+  name: string;
+  zipCodes: string;
+  deliveryFee: number;
+  useGeofencing: boolean;
+  centerLat: string;
+  centerLng: string;
+  radiusMeters: string;
+  feeMultiplier: number;
+  maxDrivingMinutes: string;
+  sameDayDeliveryEnabled: boolean;
+  sameDayDeliveryFee: number;
+  sameDayCutoffTime: string;
+}
+
+export default function AdminZonesPage() {
+  const [zones, setZones] = useState<ServiceZone[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedZone, setSelectedZone] = useState<ServiceZone | null>(null);
+  const [zoneForm, setZoneForm] = useState<ZoneForm>({
+    name: '',
+    zipCodes: '',
+    deliveryFee: 0,
+    useGeofencing: false,
+    centerLat: '',
+    centerLng: '',
+    radiusMeters: '',
+    feeMultiplier: 1.0,
+    maxDrivingMinutes: '',
+    sameDayDeliveryEnabled: false,
+    sameDayDeliveryFee: 0,
+    sameDayCutoffTime: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchZones();
+  }, []);
+
+  const fetchZones = async () => {
+    try {
+      const response = await fetch('/api/admin/zones');
+      if (response.ok) {
+        const data = await response.json();
+        setZones(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch zones:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setZoneForm({
+      name: '',
+      zipCodes: '',
+      deliveryFee: 0,
+      useGeofencing: false,
+      centerLat: '',
+      centerLng: '',
+      radiusMeters: '',
+      feeMultiplier: 1.0,
+      maxDrivingMinutes: '',
+      sameDayDeliveryEnabled: false,
+      sameDayDeliveryFee: 0,
+      sameDayCutoffTime: '',
+    });
+  };
+
+  const handleAddZone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const formData = {
+        name: zoneForm.name,
+        zipCodes: zoneForm.zipCodes,
+        deliveryFee: Math.round(zoneForm.deliveryFee * 100), // Convert to cents
+        useGeofencing: zoneForm.useGeofencing,
+        centerLat: zoneForm.centerLat ? parseFloat(zoneForm.centerLat) : null,
+        centerLng: zoneForm.centerLng ? parseFloat(zoneForm.centerLng) : null,
+        radiusMeters: zoneForm.radiusMeters ? parseInt(zoneForm.radiusMeters) : null,
+        feeMultiplier: zoneForm.feeMultiplier,
+        maxDrivingMinutes: zoneForm.maxDrivingMinutes ? parseInt(zoneForm.maxDrivingMinutes) : null,
+        sameDayDeliveryEnabled: zoneForm.sameDayDeliveryEnabled,
+        sameDayDeliveryFee: Math.round(zoneForm.sameDayDeliveryFee * 100),
+        sameDayCutoffTime: zoneForm.sameDayCutoffTime || null,
+      };
+
+      const response = await fetch('/api/admin/zones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        await fetchZones();
+        resetForm();
+        setIsAddDialogOpen(false);
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Failed to add zone:', error);
+      alert('Failed to add zone');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (zone: ServiceZone) => {
+    setSelectedZone(zone);
+    setZoneForm({
+      name: zone.name,
+      zipCodes: zone.zipCodes,
+      deliveryFee: zone.deliveryFee / 100, // Convert from cents
+      useGeofencing: zone.useGeofencing || false,
+      centerLat: zone.centerLat?.toString() || '',
+      centerLng: zone.centerLng?.toString() || '',
+      radiusMeters: zone.radiusMeters?.toString() || '',
+      feeMultiplier: zone.feeMultiplier || 1.0,
+      maxDrivingMinutes: zone.maxDrivingMinutes?.toString() || '',
+      sameDayDeliveryEnabled: zone.sameDayDeliveryEnabled || false,
+      sameDayDeliveryFee: zone.sameDayDeliveryFee / 100,
+      sameDayCutoffTime: zone.sameDayCutoffTime || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateZone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedZone) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const formData = {
+        name: zoneForm.name,
+        zipCodes: zoneForm.zipCodes,
+        deliveryFee: Math.round(zoneForm.deliveryFee * 100),
+        useGeofencing: zoneForm.useGeofencing,
+        centerLat: zoneForm.centerLat ? parseFloat(zoneForm.centerLat) : null,
+        centerLng: zoneForm.centerLng ? parseFloat(zoneForm.centerLng) : null,
+        radiusMeters: zoneForm.radiusMeters ? parseInt(zoneForm.radiusMeters) : null,
+        feeMultiplier: zoneForm.feeMultiplier,
+        maxDrivingMinutes: zoneForm.maxDrivingMinutes ? parseInt(zoneForm.maxDrivingMinutes) : null,
+        sameDayDeliveryEnabled: zoneForm.sameDayDeliveryEnabled,
+        sameDayDeliveryFee: Math.round(zoneForm.sameDayDeliveryFee * 100),
+        sameDayCutoffTime: zoneForm.sameDayCutoffTime || null,
+      };
+
+      const response = await fetch(`/api/admin/zones/${selectedZone.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        await fetchZones();
+        resetForm();
+        setIsEditDialogOpen(false);
+        setSelectedZone(null);
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Failed to update zone:', error);
+      alert('Failed to update zone');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`/api/admin/zones/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await fetchZones();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete zone:', error);
+      alert('Failed to delete zone');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-yellow-600" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Service Zones</h1>
+          <p className="text-gray-600 mt-1">Manage your service areas and location-based pricing</p>
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Zone
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Service Zone</DialogTitle>
+              <DialogDescription>
+                Define a new service area with associated ZIP codes and delivery fee.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAddZone}>
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                  <TabsTrigger value="geofence">Geofencing</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="basic" className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="zoneName">Zone Name</Label>
+                    <Input
+                      id="zoneName"
+                      placeholder="Zone A - City Center"
+                      value={zoneForm.name}
+                      onChange={(e) => setZoneForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="zoneZipCodes">ZIP Codes</Label>
+                    <Textarea
+                      id="zoneZipCodes"
+                      placeholder="10001,10002,10003,10004,10005"
+                      value={zoneForm.zipCodes}
+                      onChange={(e) => setZoneForm(prev => ({ ...prev, zipCodes: e.target.value }))}
+                      rows={2}
+                      required
+                    />
+                    <p className="text-sm text-gray-500">Enter ZIP codes separated by commas</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="zoneDeliveryFee">Base Delivery Fee ($)</Label>
+                    <Input
+                      id="zoneDeliveryFee"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="50.00"
+                      value={zoneForm.deliveryFee}
+                      onChange={(e) => setZoneForm(prev => ({ ...prev, deliveryFee: parseFloat(e.target.value) || 0 }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sameDayDelivery" className="flex items-center justify-between">
+                      <span>Same-Day Delivery</span>
+                      <Switch
+                        id="sameDayDelivery"
+                        checked={zoneForm.sameDayDeliveryEnabled}
+                        onCheckedChange={(checked) => setZoneForm(prev => ({ ...prev, sameDayDeliveryEnabled: checked }))}
+                      />
+                    </Label>
+                  </div>
+
+                  {zoneForm.sameDayDeliveryEnabled && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="sameDayFee">Same-Day Delivery Fee ($)</Label>
+                        <Input
+                          id="sameDayFee"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="25.00"
+                          value={zoneForm.sameDayDeliveryFee}
+                          onChange={(e) => setZoneForm(prev => ({ ...prev, sameDayDeliveryFee: parseFloat(e.target.value) || 0 }))}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="cutoffTime">Cutoff Time</Label>
+                        <Input
+                          id="cutoffTime"
+                          type="time"
+                          value={zoneForm.sameDayCutoffTime}
+                          onChange={(e) => setZoneForm(prev => ({ ...prev, sameDayCutoffTime: e.target.value }))}
+                        />
+                      </div>
+                    </>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="geofence" className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Enable Geofencing</Label>
+                      <p className="text-sm text-gray-500">
+                        Calculate delivery fees based on actual driving distance
+                      </p>
+                    </div>
+                    <Switch
+                      checked={zoneForm.useGeofencing}
+                      onCheckedChange={(checked) => setZoneForm(prev => ({ ...prev, useGeofencing: checked }))}
+                    />
+                  </div>
+
+                  {zoneForm.useGeofencing && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="centerLat">Center Latitude</Label>
+                          <Input
+                            id="centerLat"
+                            type="number"
+                            step="0.000001"
+                            placeholder="39.1200"
+                            value={zoneForm.centerLat}
+                            onChange={(e) => setZoneForm(prev => ({ ...prev, centerLat: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="centerLng">Center Longitude</Label>
+                          <Input
+                            id="centerLng"
+                            type="number"
+                            step="0.000001"
+                            placeholder="-88.5434"
+                            value={zoneForm.centerLng}
+                            onChange={(e) => setZoneForm(prev => ({ ...prev, centerLng: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="radiusMeters">Service Radius (meters)</Label>
+                        <Input
+                          id="radiusMeters"
+                          type="number"
+                          placeholder="20000"
+                          value={zoneForm.radiusMeters}
+                          onChange={(e) => setZoneForm(prev => ({ ...prev, radiusMeters: e.target.value }))}
+                        />
+                        <p className="text-sm text-gray-500">
+                          Maximum distance from center point in meters (e.g., 20000 = 20km)
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="feeMultiplier">Fee Multiplier</Label>
+                        <Input
+                          id="feeMultiplier"
+                          type="number"
+                          step="0.1"
+                          placeholder="1.5"
+                          value={zoneForm.feeMultiplier}
+                          onChange={(e) => setZoneForm(prev => ({ ...prev, feeMultiplier: parseFloat(e.target.value) || 1.0 }))}
+                        />
+                        <p className="text-sm text-gray-500">
+                          Multiply the base fee by this amount (e.g., 1.5 = 150% of base fee)
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="maxDrivingMinutes">Max Driving Time (minutes)</Label>
+                        <Input
+                          id="maxDrivingMinutes"
+                          type="number"
+                          placeholder="45"
+                          value={zoneForm.maxDrivingMinutes}
+                          onChange={(e) => setZoneForm(prev => ({ ...prev, maxDrivingMinutes: e.target.value }))}
+                        />
+                        <p className="text-sm text-gray-500">
+                          Maximum acceptable driving time for delivery in this zone
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </TabsContent>
+              </Tabs>
+
+              <DialogFooter className="mt-6">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Add Zone
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Service Zone</DialogTitle>
+            <DialogDescription>
+              Update the details of this service zone.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateZone}>
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="basic">Basic Information</TabsTrigger>
+                <TabsTrigger value="geofence">Geofencing</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editZoneName">Zone Name</Label>
+                  <Input
+                    id="editZoneName"
+                    value={zoneForm.name}
+                    onChange={(e) => setZoneForm(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editZoneZipCodes">ZIP Codes</Label>
+                  <Textarea
+                    id="editZoneZipCodes"
+                    value={zoneForm.zipCodes}
+                    onChange={(e) => setZoneForm(prev => ({ ...prev, zipCodes: e.target.value }))}
+                    rows={2}
+                    required
+                  />
+                  <p className="text-sm text-gray-500">Enter ZIP codes separated by commas</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editZoneDeliveryFee">Base Delivery Fee ($)</Label>
+                  <Input
+                    id="editZoneDeliveryFee"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={zoneForm.deliveryFee}
+                    onChange={(e) => setZoneForm(prev => ({ ...prev, deliveryFee: parseFloat(e.target.value) || 0 }))}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editSameDayDelivery" className="flex items-center justify-between">
+                    <span>Same-Day Delivery</span>
+                    <Switch
+                      id="editSameDayDelivery"
+                      checked={zoneForm.sameDayDeliveryEnabled}
+                      onCheckedChange={(checked) => setZoneForm(prev => ({ ...prev, sameDayDeliveryEnabled: checked }))}
+                    />
+                  </Label>
+                </div>
+
+                {zoneForm.sameDayDeliveryEnabled && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="editSameDayFee">Same-Day Delivery Fee ($)</Label>
+                      <Input
+                        id="editSameDayFee"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={zoneForm.sameDayDeliveryFee}
+                        onChange={(e) => setZoneForm(prev => ({ ...prev, sameDayDeliveryFee: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="editCutoffTime">Cutoff Time</Label>
+                      <Input
+                        id="editCutoffTime"
+                        type="time"
+                        value={zoneForm.sameDayCutoffTime}
+                        onChange={(e) => setZoneForm(prev => ({ ...prev, sameDayCutoffTime: e.target.value }))}
+                      />
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+
+              <TabsContent value="geofence" className="space-y-4 pt-4">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Enable Geofencing</Label>
+                    <p className="text-sm text-gray-500">
+                      Calculate delivery fees based on actual driving distance
+                    </p>
+                  </div>
+                  <Switch
+                    checked={zoneForm.useGeofencing}
+                    onCheckedChange={(checked) => setZoneForm(prev => ({ ...prev, useGeofencing: checked }))}
+                  />
+                </div>
+
+                {zoneForm.useGeofencing && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="editCenterLat">Center Latitude</Label>
+                        <Input
+                          id="editCenterLat"
+                          type="number"
+                          step="0.000001"
+                          placeholder="39.1200"
+                          value={zoneForm.centerLat}
+                          onChange={(e) => setZoneForm(prev => ({ ...prev, centerLat: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="editCenterLng">Center Longitude</Label>
+                        <Input
+                          id="editCenterLng"
+                          type="number"
+                          step="0.000001"
+                          placeholder="-88.5434"
+                          value={zoneForm.centerLng}
+                          onChange={(e) => setZoneForm(prev => ({ ...prev, centerLng: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="editRadiusMeters">Service Radius (meters)</Label>
+                      <Input
+                        id="editRadiusMeters"
+                        type="number"
+                        placeholder="20000"
+                        value={zoneForm.radiusMeters}
+                        onChange={(e) => setZoneForm(prev => ({ ...prev, radiusMeters: e.target.value }))}
+                      />
+                      <p className="text-sm text-gray-500">
+                        Maximum distance from center point in meters (e.g., 20000 = 20km)
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="editFeeMultiplier">Fee Multiplier</Label>
+                      <Input
+                        id="editFeeMultiplier"
+                        type="number"
+                        step="0.1"
+                        placeholder="1.5"
+                        value={zoneForm.feeMultiplier}
+                        onChange={(e) => setZoneForm(prev => ({ ...prev, feeMultiplier: parseFloat(e.target.value) || 1.0 }))}
+                      />
+                      <p className="text-sm text-gray-500">
+                        Multiply the base fee by this amount (e.g., 1.5 = 150% of base fee)
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="editMaxDrivingMinutes">Max Driving Time (minutes)</Label>
+                      <Input
+                        id="editMaxDrivingMinutes"
+                        type="number"
+                        placeholder="45"
+                        value={zoneForm.maxDrivingMinutes}
+                        onChange={(e) => setZoneForm(prev => ({ ...prev, maxDrivingMinutes: e.target.value }))}
+                      />
+                      <p className="text-sm text-gray-500">
+                        Maximum acceptable driving time for delivery in this zone
+                      </p>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="mt-6">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Update Zone
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Service Zones Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {zones.map((zone) => {
+          const zipCodeCount = zone.zipCodes ? zone.zipCodes.split(',').filter(Boolean).length : 0;
+
+          return (
+            <Card key={zone.id}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center text-lg">
+                  {zone.useGeofencing ? (
+                    <Globe className="mr-2 h-5 w-5 text-yellow-600" />
+                  ) : (
+                    <MapPin className="mr-2 h-5 w-5 text-yellow-600" />
+                  )}
+                  {zone.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium">Zone Type</p>
+                    <p className="text-sm font-medium mt-1">
+                      {zone.useGeofencing ? (
+                        <span className="flex items-center text-emerald-600">
+                          <Map className="mr-1 h-4 w-4" />
+                          Geofence-based pricing
+                        </span>
+                      ) : (
+                        <span className="flex items-center text-blue-600">
+                          <MapPin className="mr-1 h-4 w-4" />
+                          ZIP code-based pricing
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  {!zone.useGeofencing && (
+                    <div>
+                      <p className="text-sm font-medium">ZIP Codes</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {zipCodeCount > 0 ? (
+                          zipCodeCount > 5
+                            ? zone.zipCodes.split(',').slice(0, 5).join(', ') + ` +${zipCodeCount - 5} more`
+                            : zone.zipCodes.split(',').join(', ')
+                        ) : (
+                          <span className="text-gray-400">No ZIP codes defined</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {zone.useGeofencing && (
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="font-medium">Center Point</p>
+                        <p className="text-gray-600">
+                          {zone.centerLat && zone.centerLng ? (
+                            <span>{zone.centerLat.toFixed(4)}, {zone.centerLng.toFixed(4)}</span>
+                          ) : (
+                            <span className="text-gray-400">Not set</span>
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Radius</p>
+                        <p className="text-gray-600">
+                          {zone.radiusMeters ? (
+                            <span>{(zone.radiusMeters / 1000).toFixed(1)} km</span>
+                          ) : (
+                            <span className="text-gray-400">Not set</span>
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Fee Multiplier</p>
+                        <p className="text-gray-600">
+                          {zone.feeMultiplier ? (
+                            <span>{zone.feeMultiplier.toFixed(1)}x</span>
+                          ) : (
+                            <span>1.0x</span>
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-medium">Max Drive Time</p>
+                        <p className="text-gray-600">
+                          {zone.maxDrivingMinutes ? (
+                            <span>{zone.maxDrivingMinutes} mins</span>
+                          ) : (
+                            <span className="text-gray-400">No limit</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium">Delivery Fee</p>
+                      <p className="text-lg font-bold text-yellow-600">${(zone.deliveryFee / 100).toFixed(2)}</p>
+                    </div>
+                    {!zone.useGeofencing && (
+                      <div>
+                        <p className="text-sm font-medium">Coverage</p>
+                        <p className="text-lg font-bold">{zipCodeCount} ZIP codes</p>
+                      </div>
+                    )}
+                    {zone.useGeofencing && (
+                      <div>
+                        <p className="text-sm font-medium">Dynamic Pricing</p>
+                        <div className="flex items-center">
+                          <Navigation className="h-4 w-4 mr-1 text-orange-500" />
+                          <p className="text-sm font-medium">Distance-based</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-2 pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(zone)}
+                    >
+                      <Edit className="mr-1 h-4 w-4" /> Edit
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="mr-1 h-4 w-4" /> Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the "{zone.name}" service zone. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(zone.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,94 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
+import { db } from '@/lib/db';
+import { customerAccounts } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { email, password } = await request.json();
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { message: "Email and password are required" },
+        { status: 400 }
+      );
+    }
+
+    // Find the customer account by email (case-insensitive)
+    const [account] = await db
+      .select()
+      .from(customerAccounts)
+      .where(eq(customerAccounts.email, email.toLowerCase().trim()));
+
+    if (!account) {
+      return NextResponse.json(
+        { message: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    // Check if account has been set up (has a password)
+    if (!account.passwordHash) {
+      return NextResponse.json(
+        {
+          message: "Account not set up yet. Please check your email for the setup link.",
+          code: "ACCOUNT_NOT_SETUP",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if email is verified
+    if (!account.emailVerified) {
+      return NextResponse.json(
+        {
+          message: "Email not verified. Please check your email for the verification link.",
+          code: "EMAIL_NOT_VERIFIED",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Verify the password using bcrypt
+    const isValid = await bcrypt.compare(password, account.passwordHash);
+
+    if (!isValid) {
+      return NextResponse.json(
+        { message: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    // Update last login time
+    await db
+      .update(customerAccounts)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(customerAccounts.id, account.id));
+
+    // Set session cookie (same pattern as admin auth)
+    const cookieStore = cookies();
+    cookieStore.set('customer_id', account.id.toString(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return NextResponse.json({
+      id: account.id,
+      email: account.email,
+      name: account.name,
+      companyName: account.companyName,
+      isBusinessAccount: account.isBusinessAccount,
+    });
+  } catch (err) {
+    console.error("Error in customer login:", err);
+    return NextResponse.json(
+      { message: "Login failed" },
+      { status: 500 }
+    );
+  }
+}

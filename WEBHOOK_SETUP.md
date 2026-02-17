@@ -16,8 +16,8 @@ This guide shows you how to set up Stripe webhooks to automatically update payme
 2. Click "Add endpoint"
 
 ### 2. Configure Webhook Endpoint
-1. **Endpoint URL**: Enter your deployed app URL + `/api/stripe-webhook`
-   - Example: `https://your-app-name.replit.app/api/stripe-webhook`
+1. **Endpoint URL**: Enter your deployed app URL + `/api/webhook`
+   - Example: `https://your-app-name.vercel.app/api/webhook`
 2. **Events to send**: Select these events:
    - `checkout.session.completed`
    - `payment_link.payment.completed` (if available)
@@ -28,7 +28,7 @@ This guide shows you how to set up Stripe webhooks to automatically update payme
 3. Copy the webhook secret (starts with `whsec_`)
 
 ### 4. Add Webhook Secret to Environment
-Add the webhook secret to your Replit secrets:
+Add the webhook secret to your Vercel environment variables:
 - Key: `STRIPE_WEBHOOK_SECRET`
 - Value: The webhook secret you copied (starts with `whsec_`)
 
