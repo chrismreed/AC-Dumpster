@@ -68,14 +68,24 @@ export async function PUT(
 
     // Transform frontend-specific fields to database fields
     if (body.capacity !== undefined) {
-      updateData.weightLimit = body.capacity * 2000; // Convert capacity back to weight limit
+      updateData.weightLimit = body.capacity * 2000;
     }
     if (body.isActive !== undefined) {
-      updateData.availability = body.isActive ? 1 : 0; // Convert boolean to number
+      updateData.availability = body.isActive ? 1 : 0;
     }
 
-    // Note: basePrice is stored in dumpsterPricing table, not dumpsters table
-    // We only update the dumpsters table fields here
+    // Pricing mode fields
+    if (body.pricingMode !== undefined) updateData.pricingMode = body.pricingMode;
+    if (body.basePricePerDay !== undefined) updateData.basePricePerDay = body.basePricePerDay;
+    if (body.dailyRate !== undefined) updateData.dailyRate = body.dailyRate;
+    if (body.minDays !== undefined) updateData.minDays = body.minDays;
+    if (body.maxDays !== undefined) updateData.maxDays = body.maxDays;
+    if (body.overageRate !== undefined) updateData.overageRate = body.overageRate;
+    // Declining daily rate fields
+    if (body.firstDayRate !== undefined) updateData.firstDayRate = body.firstDayRate;
+    if (body.rateDeclineType !== undefined) updateData.rateDeclineType = body.rateDeclineType;
+    if (body.rateDeclineAmount !== undefined) updateData.rateDeclineAmount = body.rateDeclineAmount;
+    if (body.minimumDailyRate !== undefined) updateData.minimumDailyRate = body.minimumDailyRate;
 
     // Validate the dumpster data
     const validatedData = insertDumpsterSchema.partial().parse(updateData);
@@ -101,9 +111,19 @@ export async function PUT(
       description: dumpster.description,
       dimensions: dumpster.dimensions,
       capacity: Math.floor(dumpster.weightLimit / 2000),
-      basePrice: body.basePrice || 0, // Preserve the basePrice from request since it's not in dumpsters table
+      basePrice: body.basePrice || 0,
       sortOrder: dumpster.sortOrder,
       isActive: dumpster.availability > 0,
+      pricingMode: dumpster.pricingMode,
+      basePricePerDay: dumpster.basePricePerDay,
+      dailyRate: dumpster.dailyRate,
+      minDays: dumpster.minDays,
+      maxDays: dumpster.maxDays,
+      overageRate: dumpster.overageRate,
+      firstDayRate: dumpster.firstDayRate,
+      rateDeclineType: dumpster.rateDeclineType,
+      rateDeclineAmount: dumpster.rateDeclineAmount,
+      minimumDailyRate: dumpster.minimumDailyRate,
       createdAt: dumpster.createdAt,
     };
 

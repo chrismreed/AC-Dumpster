@@ -85,6 +85,8 @@ export async function GET(request: NextRequest) {
         serviceName: services.name,
         // Original delivery date from booking (may differ from scheduledDate if rescheduled)
         bookingDeliveryDate: bookings.deliveryDate,
+        // Payment status from the linked booking
+        paymentStatus: bookings.paymentStatus,
         // Customer account info (for repeat customer tracking)
         customerAccount: {
           id: customerAccounts.id,

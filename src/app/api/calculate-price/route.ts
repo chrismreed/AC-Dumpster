@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { dumpsters, dumpsterPricing, serviceZones, rentalDurations } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { calculatePerDayRental } from '@/lib/pricing/per-day-calculator';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,13 +10,14 @@ export async function POST(request: NextRequest) {
       dumpsterId,
       rentalDurationId,
       pricingId,
+      rentalDays: bodyRentalDays,
       deliveryZipCode,
       deliveryAddress,
       deliveryCity,
       selectedAddOns
     } = await request.json();
 
-    if (!dumpsterId || (!rentalDurationId && !pricingId) || !deliveryZipCode) {
+    if (!dumpsterId || !deliveryZipCode) {
       return NextResponse.json(
         { message: "Missing required fields" },
         { status: 400 }
@@ -35,43 +37,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let duration;
-    if (pricingId) {
-      // Get rental duration from dumpster pricing
-      const pricingOptions = await db
-        .select()
-        .from(dumpsterPricing)
-        .where(eq(dumpsterPricing.dumpsterId, Number(dumpsterId)));
-
-      const selectedPricing = pricingOptions.find(p => p.id === Number(pricingId));
-      if (!selectedPricing) {
-        return NextResponse.json(
-          { message: "Pricing option not found" },
-          { status: 404 }
-        );
-      }
-      // Create a duration object with the pricing data
-      duration = {
-        id: selectedPricing.id,
-        days: selectedPricing.days,
-        additionalPrice: selectedPricing.price
-      };
-    } else {
-      // Get rental duration directly
-      const [rentalDuration] = await db
-        .select()
-        .from(rentalDurations)
-        .where(eq(rentalDurations.id, Number(rentalDurationId)));
-
-      if (!rentalDuration) {
-        return NextResponse.json(
-          { message: "Rental duration not found" },
-          { status: 404 }
-        );
-      }
-      duration = rentalDuration;
-    }
-
     // Get service zone using ZIP code lookup
     let zone = null;
 
@@ -80,7 +45,6 @@ export async function POST(request: NextRequest) {
         .select()
         .from(serviceZones);
 
-      // Find zone by ZIP code - split comma-separated list and match exactly
       for (const checkZone of zones) {
         if (checkZone.zipCodes) {
           const zipCodeList = checkZone.zipCodes.split(',').map(zip => zip.trim());
@@ -99,43 +63,134 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate base price
-    const basePrice = duration.additionalPrice || 0;
     const deliveryFee = zone.deliveryFee || 0;
-    const subtotal = basePrice + deliveryFee;
+
+    // Determine pricing based on mode
+    let rentalPrice: number;
+    let days: number;
+    let pricingMode: 'tier' | 'per_day';
+
+    if (bodyRentalDays && dumpster.pricingMode === 'per_day') {
+      // Per-day mode: use shared calculator (handles both flat and declining rate)
+      days = Number(bodyRentalDays);
+      const perDayResult = calculatePerDayRental(
+        {
+          basePricePerDay: dumpster.basePricePerDay,
+          dailyRate: dumpster.dailyRate,
+          firstDayRate: dumpster.firstDayRate,
+          rateDeclineType: dumpster.rateDeclineType,
+          rateDeclineAmount: dumpster.rateDeclineAmount,
+          minimumDailyRate: dumpster.minimumDailyRate,
+        },
+        days
+      );
+      rentalPrice = perDayResult.grandTotal;
+      pricingMode = 'per_day';
+    } else if (pricingId) {
+      // Tier mode: get from dumpster pricing
+      const pricingOptions = await db
+        .select()
+        .from(dumpsterPricing)
+        .where(eq(dumpsterPricing.dumpsterId, Number(dumpsterId)));
+
+      const selectedPricing = pricingOptions.find(p => p.id === Number(pricingId));
+      if (!selectedPricing) {
+        return NextResponse.json(
+          { message: "Pricing option not found" },
+          { status: 404 }
+        );
+      }
+      rentalPrice = selectedPricing.price;
+      days = selectedPricing.days;
+      pricingMode = 'tier';
+    } else if (rentalDurationId) {
+      // Legacy: get rental duration directly
+      const [rentalDuration] = await db
+        .select()
+        .from(rentalDurations)
+        .where(eq(rentalDurations.id, Number(rentalDurationId)));
+
+      if (!rentalDuration) {
+        return NextResponse.json(
+          { message: "Rental duration not found" },
+          { status: 404 }
+        );
+      }
+      rentalPrice = rentalDuration.additionalPrice || 0;
+      days = rentalDuration.days;
+      pricingMode = 'tier';
+    } else {
+      return NextResponse.json(
+        { message: "Either pricingId, rentalDurationId, or rentalDays is required" },
+        { status: 400 }
+      );
+    }
+
+    const subtotal = rentalPrice + deliveryFee;
 
     // Calculate add-on costs
     let addOnTotal = 0;
-    let addOnsBreakdown = [];
+    let addOnsBreakdown: any[] = [];
 
     if (selectedAddOns && selectedAddOns.length > 0) {
-      // In a full implementation, you'd look up add-on prices from database
-      // For now, assume prices are passed in or use defaults
       addOnTotal = selectedAddOns.reduce((total: number, addon: any) => total + (addon.price || 0), 0);
       addOnsBreakdown = selectedAddOns;
     }
 
     const total = subtotal + addOnTotal;
 
+    // Build breakdown based on pricing mode
+    const breakdown: any = {
+      dumpster: {
+        name: dumpster.name,
+        days,
+        price: rentalPrice / 100,
+        pricingMode,
+      },
+      delivery: {
+        zone: zone.name,
+        fee: deliveryFee / 100
+      },
+      addOns: addOnsBreakdown
+    };
+
+    // Add per-day detail fields
+    if (pricingMode === 'per_day') {
+      const perDayDetail = calculatePerDayRental(
+        {
+          basePricePerDay: dumpster.basePricePerDay,
+          dailyRate: dumpster.dailyRate,
+          firstDayRate: dumpster.firstDayRate,
+          rateDeclineType: dumpster.rateDeclineType,
+          rateDeclineAmount: dumpster.rateDeclineAmount,
+          minimumDailyRate: dumpster.minimumDailyRate,
+        },
+        days
+      );
+      breakdown.dumpster.baseFee = perDayDetail.deliveryFee / 100;
+      breakdown.dumpster.rentalSubtotal = perDayDetail.rentalTotal / 100;
+      breakdown.dumpster.isDeclineMode = perDayDetail.isDeclineMode;
+      breakdown.dumpster.dailyBreakdown = perDayDetail.breakdown.map(r => ({
+        day: r.day,
+        rate: r.rate / 100,
+      }));
+      // Legacy field for flat mode compatibility
+      if (!perDayDetail.isDeclineMode) {
+        breakdown.dumpster.dailyRate = (dumpster.dailyRate || 0) / 100;
+      }
+    }
+
     return NextResponse.json({
-      basePrice: basePrice / 100, // Convert cents to dollars
+      basePrice: rentalPrice / 100,
       deliveryFee: deliveryFee / 100,
       addOnTotal: addOnTotal / 100,
       subtotal: subtotal / 100,
       total: total / 100,
       currency: "USD",
-      breakdown: {
-        dumpster: {
-          name: dumpster.name,
-          days: duration.days,
-          price: basePrice / 100
-        },
-        delivery: {
-          zone: zone.name,
-          fee: deliveryFee / 100
-        },
-        addOns: addOnsBreakdown
-      }
+      pricingMode,
+      rentalDays: days,
+      rentalPrice: rentalPrice / 100,
+      breakdown
     });
   } catch (error) {
     console.error('Error calculating price:', error);

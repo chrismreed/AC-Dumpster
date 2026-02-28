@@ -176,7 +176,7 @@ export default function BookingsPage() {
   }, []);
 
   // Fetch bookings
-  const { data: bookings = [], isLoading: isLoadingBookings } = useQuery<Booking[]>({
+  const { data: bookings = [], isLoading: isLoadingBookings, isFetching: isFetchingBookings } = useQuery<Booking[]>({
     queryKey: ['admin-bookings'],
     queryFn: async () => {
       const res = await fetch('/api/admin/bookings');
@@ -480,14 +480,14 @@ export default function BookingsPage() {
           <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">Manage all dumpster rental bookings</p>
         </div>
         <div className="flex items-center gap-2">
-          {isLoadingBookings && <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />}
           <Button
             variant="outline"
             size="sm"
             onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-bookings'] })}
+            disabled={isFetchingBookings}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetchingBookings ? 'animate-spin' : ''}`} />
+            {isFetchingBookings ? 'Refreshing…' : 'Refresh'}
           </Button>
         </div>
       </div>

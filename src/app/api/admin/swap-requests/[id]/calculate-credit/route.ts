@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { swapRequests, bookings } from '@shared/schema';
+import { swapRequests, bookings, dumpsterPricing } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
@@ -53,7 +53,16 @@ export async function GET(
 
     // Calculate unused days
     const deliveryDate = new Date(booking.deliveryDate);
-    const rentalDays = booking.rentalDays;
+
+    // Use stored rentalDays, fall back to pricing tier lookup for legacy bookings
+    let rentalDays = booking.rentalDays;
+    if (!rentalDays && booking.pricingId) {
+      const [pricing] = await db
+        .select()
+        .from(dumpsterPricing)
+        .where(eq(dumpsterPricing.id, booking.pricingId));
+      rentalDays = pricing?.days ?? null;
+    }
 
     if (!rentalDays || rentalDays <= 0 || !booking.totalPrice || booking.totalPrice <= 0) {
       // Return with zero values - this is a valid scenario, not an error

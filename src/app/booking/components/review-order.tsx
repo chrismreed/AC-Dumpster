@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { calculatePerDayRental } from '@/lib/pricing/per-day-calculator';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { usePaymentConfig } from '@/hooks/use-payment-config';
 import { SquarePaymentForm } from './square-payment-form';
@@ -76,6 +77,16 @@ interface Dumpster {
   dimensions: string;
   description: string;
   weightLimit: number;
+  pricingMode?: 'tier' | 'per_day';
+  basePricePerDay?: number | null;
+  dailyRate?: number | null;
+  minDays?: number | null;
+  maxDays?: number | null;
+  // Declining daily rate
+  firstDayRate?: number | null;
+  rateDeclineType?: string | null;
+  rateDeclineAmount?: number | null;
+  minimumDailyRate?: number | null;
 }
 
 interface DumpsterPricing {
@@ -359,6 +370,8 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
+  const isPerDayMode = !bookingData.pricingId;
+
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
@@ -371,7 +384,7 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
           }
         }
 
-        // Fetch pricing details
+        // Fetch pricing details (tier mode only)
         if (bookingData.pricingId) {
           const pricingResponse = await fetch(`/api/dumpster-pricing/${bookingData.dumpsterId}`);
           if (pricingResponse.ok) {
@@ -391,7 +404,10 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
   }, [bookingData.dumpsterId, bookingData.pricingId]);
 
   const calculateTotal = () => {
-    let total = pricing?.price || 0;
+    // Per-day mode: use rentalPrice from booking data; Tier mode: use pricing tier
+    let total = isPerDayMode
+      ? (bookingData.rentalPrice || 0)
+      : (pricing?.price || 0);
     // Add-on prices are stored in cents in the database
     const addonTotal = bookingData.selectedAddOns?.reduce((sum: number, addon: Addon) => sum + addon.price, 0) || 0;
     return total + addonTotal;
@@ -461,14 +477,79 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Rental Duration</p>
-              <p className="font-medium text-foreground">{pricing ? `${pricing.days} days` : 'Not selected'}</p>
-            </div>
-            <div className="col-span-2">
-              <p className="text-sm text-muted-foreground mb-1">Base Price</p>
-              <p className="font-semibold text-primary text-lg">
-                {pricing ? `$${(pricing.price / 100).toFixed(2)}` : '$0.00'}
+              <p className="font-medium text-foreground">
+                {isPerDayMode
+                  ? `${bookingData.rentalDays || 0} days`
+                  : pricing ? `${pricing.days} days` : 'Not selected'}
               </p>
             </div>
+            {isPerDayMode ? (
+              /* Per-day pricing breakdown */
+              (() => {
+                const rentalDays = bookingData.rentalDays || 0;
+                const isDecline = (dumpster?.firstDayRate ?? null) != null;
+                const calcResult = dumpster && rentalDays > 0
+                  ? calculatePerDayRental(
+                      {
+                        basePricePerDay: dumpster.basePricePerDay ?? null,
+                        dailyRate: dumpster.dailyRate ?? null,
+                        firstDayRate: dumpster.firstDayRate ?? null,
+                        rateDeclineType: dumpster.rateDeclineType ?? null,
+                        rateDeclineAmount: dumpster.rateDeclineAmount ?? null,
+                        minimumDailyRate: dumpster.minimumDailyRate ?? null,
+                      },
+                      rentalDays
+                    )
+                  : null;
+
+                return (
+                  <div className="col-span-2 space-y-1">
+                    <p className="text-sm text-muted-foreground mb-1">Rental Price</p>
+                    <div className="space-y-1 text-sm">
+                      {(dumpster?.basePricePerDay ?? 0) > 0 && (
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Delivery fee</span>
+                          <span>${((dumpster?.basePricePerDay || 0) / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {isDecline && calcResult ? (
+                        <>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Day 1</span>
+                            <span>${((calcResult.breakdown[0]?.rate ?? 0) / 100).toFixed(2)}</span>
+                          </div>
+                          {rentalDays > 1 && (
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>Days 2–{rentalDays} (declining rate)</span>
+                              <span>${((calcResult.rentalTotal - (calcResult.breakdown[0]?.rate ?? 0)) / 100).toFixed(2)}</span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>{rentalDays} day{rentalDays !== 1 ? 's' : ''} × ${((dumpster?.dailyRate || 0) / 100).toFixed(2)}/day</span>
+                          <span>${(((dumpster?.dailyRate || 0) * rentalDays) / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="border-t border-border pt-1 flex justify-between">
+                        <span className="font-medium text-foreground">Subtotal</span>
+                        <span className="font-semibold text-primary text-lg">
+                          ${((bookingData.rentalPrice || 0) / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              /* Tier pricing display */
+              <div className="col-span-2">
+                <p className="text-sm text-muted-foreground mb-1">Base Price</p>
+                <p className="font-semibold text-primary text-lg">
+                  {pricing ? `$${(pricing.price / 100).toFixed(2)}` : '$0.00'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

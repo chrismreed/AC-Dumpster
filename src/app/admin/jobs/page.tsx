@@ -68,6 +68,7 @@ import {
   List,
   Map,
   Eye,
+  AlertCircle,
 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
@@ -75,7 +76,9 @@ import { format } from 'date-fns';
 import { JobsCalendar } from '@/components/admin/jobs-calendar';
 import { JobsMap } from '@/components/admin/jobs-map';
 import { AdditionalCharges } from '@/components/admin/additional-charges';
+import { LoadDetailsDialog } from '@/components/admin/load-details-dialog';
 import { JobLoadTracking } from '@/components/admin/job-load-tracking';
+import { CreateJobDialog } from '@/components/admin/create-job-dialog';
 import {
   type Job,
   type RentalLifecycleStatus,
@@ -103,7 +106,7 @@ interface FleetUnit {
 interface Dumpster {
   id: number;
   name: string;
-  size: number;
+  dimensions?: string;
 }
 
 interface Hub {
@@ -120,6 +123,7 @@ interface Booking {
   deliveryAddress: string;
   deliveryCity: string;
   deliveryZipCode: string;
+  deliveryDate: string;
   status: string;
   dumpsterId: number;
 }
@@ -199,6 +203,9 @@ export default function JobsPage() {
   const [selectedRental, setSelectedRental] = useState<RentalGroup | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<{ type: 'rental'; rental: RentalGroup } | { type: 'single'; jobId: number; jobLabel: string } | null>(null);
 
+  // Load details dialog state (picked_up → dumping intercept)
+  const [loadDetailsDialog, setLoadDetailsDialog] = useState<{ jobId: number; rental: RentalGroup } | null>(null);
+
   // Return destination dialog state
   const [returnDestinationDialog, setReturnDestinationDialog] = useState<{ jobId: number; rental: RentalGroup } | null>(null);
   const [selectedDropOffType, setSelectedDropOffType] = useState<string>('');
@@ -214,7 +221,7 @@ export default function JobsPage() {
   }, []);
 
   // Fetch jobs
-  const { data: jobs = [], isLoading } = useQuery<Job[]>({
+  const { data: jobs = [], isLoading, isFetching } = useQuery<Job[]>({
     queryKey: ['admin-jobs'],
     queryFn: async () => {
       const res = await fetch('/api/admin/jobs');
@@ -321,6 +328,24 @@ export default function JobsPage() {
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to update job.', variant: 'destructive' });
+    },
+  });
+
+  // Check payment status mutation
+  const checkPaymentStatusMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const res = await fetch(`/api/admin/bookings/${bookingId}/check-payment-status`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to check payment status');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
+      toast({ title: 'Payment status checked', description: data.message });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to check payment status.', variant: 'destructive' });
     },
   });
 
@@ -534,6 +559,15 @@ export default function JobsPage() {
   };
 
   const handleStatusChange = (jobId: number, newStatus: string, skipConfirm = false) => {
+    // Load details intercept (pickup picked_up → dumping)
+    if (newStatus === 'dumping') {
+      const job = jobs.find(j => j.id === jobId);
+      if (job?.jobType === 'pickup' && job.status === 'picked_up' && selectedRental) {
+        setLoadDetailsDialog({ jobId, rental: selectedRental });
+        return;
+      }
+    }
+
     // Intercept cancellation — require confirmation
     if (newStatus === 'cancelled' && !skipConfirm) {
       const job = jobs.find(j => j.id === jobId);
@@ -554,6 +588,37 @@ export default function JobsPage() {
     }
 
     updateStatusMutation.mutate({ jobId, status: newStatus });
+  };
+
+  // Handle load details submission
+  const handleLoadDetailsSubmit = async (data: {
+    bookingId: number;
+    loadNumber: number;
+    priceCharged: number;
+    loadWeight?: number | null;
+    notes?: string | null;
+    receiptPhotoUrl?: string | null;
+  }) => {
+    if (!loadDetailsDialog) return;
+    try {
+      const res = await fetch('/api/admin/load-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to create load record');
+      toast({ title: 'Load record created', description: `Load #${data.loadNumber} logged successfully.` });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save load record, but advancing status.', variant: 'destructive' });
+    }
+    updateStatusMutation.mutate({ jobId: loadDetailsDialog.jobId, status: 'dumping' });
+    setLoadDetailsDialog(null);
+  };
+
+  const handleLoadDetailsSkip = () => {
+    if (!loadDetailsDialog) return;
+    updateStatusMutation.mutate({ jobId: loadDetailsDialog.jobId, status: 'dumping' });
+    setLoadDetailsDialog(null);
   };
 
   // Handle return destination confirmation
@@ -720,6 +785,21 @@ export default function JobsPage() {
     }
   };
 
+  const getPaymentStatus = (job: Job): string | null =>
+    job.paymentStatus ?? null;
+
+  const PaymentBadge = ({ job }: { job: Job }) => {
+    const status = getPaymentStatus(job);
+    if (!status || status === 'not_required') return null;
+    const isPaid = status === 'paid';
+    return (
+      <Badge className={isPaid ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}>
+        {isPaid ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
+        {status}
+      </Badge>
+    );
+  };
+
   if (isLoading && jobs.length === 0) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
@@ -745,14 +825,15 @@ export default function JobsPage() {
           <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">Unified view of all deliveries, pickups, swaps, and service jobs</p>
         </div>
         <div className="flex items-center gap-2">
-          {isLoading && <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />}
+          <CreateJobDialog queryInvalidate={() => queryClient.invalidateQueries({ queryKey: ['admin-jobs'] })} />
           <Button
             variant="outline"
             size="sm"
             onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-jobs'] })}
+            disabled={isFetching}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Refreshing…' : 'Refresh'}
           </Button>
         </div>
       </div>
@@ -945,10 +1026,13 @@ export default function JobsPage() {
                             <p className="font-medium truncate">{deliveryJob.customerName}</p>
                             <p className="text-xs text-gray-500">Booking #{item.bookingId}</p>
                           </div>
-                          <Badge className="bg-amber-100 text-amber-800 flex-shrink-0">
-                            <Truck className="h-3 w-3 mr-1" />
-                            Rental
-                          </Badge>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <PaymentBadge job={deliveryJob} />
+                            <Badge className="bg-amber-100 text-amber-800">
+                              <Truck className="h-3 w-3 mr-1" />
+                              Rental
+                            </Badge>
+                          </div>
                         </div>
                         <div className="text-sm text-gray-600 space-y-1">
                           <p className="flex items-center gap-1">
@@ -998,6 +1082,7 @@ export default function JobsPage() {
                           <p className="text-xs text-gray-500">#{job.id}</p>
                         </div>
                         <div className="flex-shrink-0 flex items-center gap-1">
+                          <PaymentBadge job={job} />
                           {getTypeBadge(job.jobType, job.serviceName)}
                         </div>
                       </div>
@@ -1066,6 +1151,7 @@ export default function JobsPage() {
                       <TableHead>ID</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Customer</TableHead>
+                      <TableHead>Payment</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Scheduled</TableHead>
                       <TableHead>Dumpster</TableHead>
@@ -1100,6 +1186,9 @@ export default function JobsPage() {
                                 <p className="font-medium">{deliveryJob.customerName}</p>
                                 <p className="text-xs text-gray-500">{deliveryJob.customerPhone}</p>
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              <PaymentBadge job={deliveryJob} />
                             </TableCell>
                             <TableCell>
                               <div className="max-w-[200px]">
@@ -1160,6 +1249,9 @@ export default function JobsPage() {
                               <p className="font-medium">{job.customerName}</p>
                               <p className="text-xs text-gray-500">{job.customerPhone}</p>
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <PaymentBadge job={job} />
                           </TableCell>
                           <TableCell>
                             <div className="max-w-[200px]">
@@ -1254,6 +1346,7 @@ export default function JobsPage() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-lg font-bold text-gray-900">{selectedJob.customerName}</h2>
+                  <PaymentBadge job={selectedJob} />
                   {selectedRental ? (
                     <Badge className={lifecycleConfig[selectedRental.lifecycleStatus].color}>
                       {lifecycleConfig[selectedRental.lifecycleStatus].label}
@@ -1441,6 +1534,18 @@ export default function JobsPage() {
                   <Mail className="h-4 w-4 mr-1" />
                   Email
                 </Button>
+                {selectedJob.bookingId && getPaymentStatus(selectedJob) !== 'paid' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => checkPaymentStatusMutation.mutate(selectedJob.bookingId!)}
+                    disabled={checkPaymentStatusMutation.isPending}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${checkPaymentStatusMutation.isPending ? 'animate-spin' : ''}`} />
+                    Payment
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -1891,6 +1996,22 @@ export default function JobsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Load Details Dialog (picked_up → dumping) */}
+      {loadDetailsDialog && (
+        <LoadDetailsDialog
+          open={!!loadDetailsDialog}
+          onOpenChange={() => setLoadDetailsDialog(null)}
+          bookingId={loadDetailsDialog.rental.bookingId}
+          customerName={loadDetailsDialog.rental.deliveryJob.customerName}
+          dumpsterName={
+            dumpsters.find(d => d.id === loadDetailsDialog.rental.deliveryJob.dumpsterId)?.name || 'Dumpster'
+          }
+          onSubmit={handleLoadDetailsSubmit}
+          onSkip={handleLoadDetailsSkip}
+          isSubmitting={updateStatusMutation.isPending}
+        />
+      )}
+
       {/* Return Destination Dialog */}
       {returnDestinationDialog && (
         <Dialog open={!!returnDestinationDialog} onOpenChange={() => setReturnDestinationDialog(null)}>
@@ -1937,25 +2058,50 @@ export default function JobsPage() {
                 </div>
               )}
 
-              {selectedDropOffType === 'customer' && (
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Select Customer Booking</Label>
-                  <Select value={selectedCustomerBookingId} onValueChange={setSelectedCustomerBookingId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a customer booking..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bookingsData
-                        .filter((b) => b.id !== returnDestinationDialog.rental.bookingId && ['pending', 'confirmed'].includes(b.status))
-                        .map((booking) => (
-                          <SelectItem key={booking.id} value={booking.id.toString()}>
-                            {booking.customerName} — {booking.deliveryAddress}, {booking.deliveryCity}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {selectedDropOffType === 'customer' && (() => {
+                const currentDumpsterId = returnDestinationDialog.rental.deliveryJob.dumpsterId;
+                const eligibleBookings = bookingsData
+                  .filter((b) =>
+                    b.id !== returnDestinationDialog.rental.bookingId &&
+                    ['pending', 'confirmed'].includes(b.status) &&
+                    (currentDumpsterId ? b.dumpsterId === currentDumpsterId : true)
+                  )
+                  .sort((a, b) => {
+                    const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : Infinity;
+                    const dateB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : Infinity;
+                    return dateA - dateB;
+                  });
+
+                return (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Select Customer Booking</Label>
+                    {eligibleBookings.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic py-2">
+                        No customers with the same dumpster size are awaiting delivery.
+                      </p>
+                    ) : (
+                      <Select value={selectedCustomerBookingId} onValueChange={setSelectedCustomerBookingId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a customer booking..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {eligibleBookings.map((booking) => {
+                            const dumpster = dumpsters.find(d => d.id === booking.dumpsterId);
+                            const dateStr = booking.deliveryDate
+                              ? new Date(booking.deliveryDate).toLocaleDateString()
+                              : 'No date';
+                            return (
+                              <SelectItem key={booking.id} value={booking.id.toString()}>
+                                {booking.customerName} — {dumpster?.name || 'Dumpster'} — {dateStr} — {booking.deliveryAddress}, {booking.deliveryCity}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                );
+              })()}
 
               {selectedDropOffType === 'customer' && selectedCustomerBookingId && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">

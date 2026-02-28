@@ -28,32 +28,38 @@ export async function POST(
 
     const stripe = await getStripeClient();
 
-    // Check original booking payment status if it has a payment intent
+    // Check original booking payment status if it has a payment intent or checkout session
     if (booking.stripePaymentIntentId && booking.paymentStatus !== 'paid' && stripe) {
       try {
-        const paymentIntent = await stripe.paymentIntents.retrieve(
-          booking.stripePaymentIntentId
-        );
-        console.log(
-          `Checking payment intent ${booking.stripePaymentIntentId}: status=${paymentIntent.status}, current booking status=${booking.paymentStatus}`
-        );
+        const stripeId = booking.stripePaymentIntentId;
+        let isPaid = false;
 
-        if (paymentIntent.status === 'succeeded' && booking.paymentStatus !== 'paid') {
+        if (stripeId.startsWith('cs_')) {
+          // Stored ID is a Checkout Session — retrieve it directly
+          const session = await stripe.checkout.sessions.retrieve(stripeId);
+          console.log(`Checking checkout session ${stripeId}: payment_status=${session.payment_status}`);
+          isPaid = session.payment_status === 'paid';
+        } else {
+          // Stored ID is a Payment Intent
+          const paymentIntent = await stripe.paymentIntents.retrieve(stripeId);
+          console.log(`Checking payment intent ${stripeId}: status=${paymentIntent.status}`);
+          isPaid = paymentIntent.status === 'succeeded';
+        }
+
+        if (isPaid) {
           await db
             .update(bookings)
-            .set({ paymentStatus: 'paid' })
+            .set({ paymentStatus: 'paid', status: 'confirmed' })
             .where(eq(bookings.id, bookingId));
           console.log(`Updated booking ${bookingId} payment status to paid`);
           updatedCount++;
           updates.push('Updated booking payment to paid status');
-        } else if (paymentIntent.status === 'succeeded') {
-          updates.push('Booking payment already marked as paid');
         } else {
-          updates.push(`Payment intent status: ${paymentIntent.status}`);
+          updates.push(`Payment not yet completed`);
         }
       } catch (stripeError: any) {
         console.warn(
-          `Error checking Stripe payment intent ${booking.stripePaymentIntentId}:`,
+          `Error checking Stripe record ${booking.stripePaymentIntentId}:`,
           stripeError
         );
         updates.push(`Error checking payment: ${stripeError.message}`);

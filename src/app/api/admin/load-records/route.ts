@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
         customerAccount: {
           id: customerAccounts.id,
           companyName: customerAccounts.companyName,
-          accountNumber: customerAccounts.accountNumber,
         },
         fleetUnit: {
           id: fleetUnits.id,

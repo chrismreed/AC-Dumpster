@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 interface BookingData {
   dumpsterId?: number;
-  pricingId?: number;
+  pricingId?: number | null;
   rentalDays?: number;
   rentalPrice?: number;
   selectedAddOns?: any[];
@@ -60,7 +60,7 @@ export function BookingForm() {
     }
   };
 
-  const handleDumpsterSelect = (data: { dumpsterId: number; pricingId: number }) => {
+  const handleDumpsterSelect = (data: { dumpsterId: number; pricingId: number | null; rentalDays: number; rentalPrice: number; deliveryDate?: string }) => {
     setBookingData((prevData: BookingData) => ({ ...prevData, ...data }));
     setCurrentStep(2);
   };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { fleetUnits, insertFleetUnitSchema } from '@shared/schema';
+import { fleetUnits, insertFleetUnitSchema, bookings, jobs } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
@@ -45,22 +45,21 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Add admin authentication middleware
     const id = Number(params.id);
-
     if (!id) {
-      return NextResponse.json(
-        { message: "Fleet unit ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Fleet unit ID is required" }, { status: 400 });
+    }
+
+    const [existing] = await db.select().from(fleetUnits).where(eq(fleetUnits.id, id));
+    if (!existing) {
+      return NextResponse.json({ message: "Fleet unit not found" }, { status: 404 });
     }
 
     const body = await request.json();
-
-    // Validate the update data (partial update)
     const validatedData = insertFleetUnitSchema.partial().parse(body);
+    const newBookingId = 'currentBookingId' in validatedData ? validatedData.currentBookingId ?? null : existing.currentBookingId;
+    const oldBookingId = existing.currentBookingId;
 
-    // Update the fleet unit
     const [updatedFleetUnit] = await db
       .update(fleetUnits)
       .set(validatedData)
@@ -68,10 +67,17 @@ export async function PUT(
       .returning();
 
     if (!updatedFleetUnit) {
-      return NextResponse.json(
-        { message: "Fleet unit not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "Fleet unit not found" }, { status: 404 });
+    }
+
+    // Unassign this fleet unit from ALL other bookings/jobs first (one dumpster = one job/booking only)
+    await db.update(bookings).set({ assignedFleetUnitId: null }).where(eq(bookings.assignedFleetUnitId, id));
+    await db.update(jobs).set({ assignedFleetUnitId: null }).where(eq(jobs.assignedFleetUnitId, id));
+
+    // Assign to new booking if moved to customer location
+    if (newBookingId) {
+      await db.update(bookings).set({ assignedFleetUnitId: id }).where(eq(bookings.id, newBookingId));
+      await db.update(jobs).set({ assignedFleetUnitId: id }).where(eq(jobs.bookingId, newBookingId));
     }
 
     return NextResponse.json(updatedFleetUnit);

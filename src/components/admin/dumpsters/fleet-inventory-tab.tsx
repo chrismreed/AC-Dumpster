@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { LocationSelect } from './location-select';
 import {
   Collapsible,
   CollapsibleContent,
@@ -43,23 +44,17 @@ interface FleetUnit {
   unitNumber: string;
   dumpsterId: number;
   status: 'available' | 'in_use' | 'maintenance' | 'out_of_service';
-  condition: 'excellent' | 'good' | 'fair' | 'poor';
-  location: string;
-  lastServiceDate: string | null;
-  nextServiceDate: string | null;
-  notes: string | null;
+  condition?: 'excellent' | 'good' | 'fair' | 'poor';
+  locationDisplay?: string;
+  currentLocation?: string;
+  currentHubId?: number | null;
+  currentBookingId?: number | null;
+  lastServiceDate?: string | null;
+  nextServiceDate?: string | null;
+  notes?: string | null;
   createdAt: string;
-  dumpster?: {
-    id: number;
-    name: string;
-    dimensions: string;
-  };
-  currentBooking?: {
-    id: number;
-    customerName: string;
-    deliveryDate: string;
-    status: string;
-  };
+  dumpster?: { id: number; name: string; dimensions: string };
+  currentBooking?: { id: number; customerName: string; deliveryDate: string; status: string };
 }
 
 interface DumpsterType {
@@ -73,7 +68,7 @@ interface FleetUnitForm {
   dumpsterId: number;
   status: 'available' | 'in_use' | 'maintenance' | 'out_of_service';
   condition: 'excellent' | 'good' | 'fair' | 'poor';
-  location: string;
+  locationValue: string;
   lastServiceDate: string;
   nextServiceDate: string;
   notes: string;
@@ -94,7 +89,7 @@ export default function FleetInventoryTab() {
     dumpsterId: 0,
     status: 'available',
     condition: 'good',
-    location: '',
+    locationValue: '',
     lastServiceDate: '',
     nextServiceDate: '',
     notes: '',
@@ -211,7 +206,7 @@ export default function FleetInventoryTab() {
     if (searchTerm) {
       filtered = filtered.filter(unit =>
         unit.unitNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        unit.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (unit.locationDisplay || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         unit.dumpster?.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -229,27 +224,56 @@ export default function FleetInventoryTab() {
       dumpsterId: 0,
       status: 'available',
       condition: 'good',
-      location: '',
+      locationValue: '',
       lastServiceDate: '',
       nextServiceDate: '',
       notes: '',
     });
   };
 
+  const locationValueToPayload = (locationValue: string) => {
+    if (locationValue === 'in_transit') {
+      return { currentLocation: 'in_transit' as const, currentHubId: null, currentBookingId: null };
+    }
+    if (locationValue.startsWith('hub:')) {
+      const hubId = parseInt(locationValue.slice(4), 10);
+      return { currentLocation: 'hub' as const, currentHubId: hubId, currentBookingId: null };
+    }
+    if (locationValue.startsWith('booking:')) {
+      const bookingId = parseInt(locationValue.slice(8), 10);
+      return { currentLocation: 'customer_address' as const, currentHubId: null, currentBookingId: bookingId };
+    }
+    return { currentLocation: 'hub' as const, currentHubId: null, currentBookingId: null };
+  };
+
+  const unitToLocationValue = (unit: FleetUnit): string => {
+    if (unit.currentLocation === 'in_transit') return 'in_transit';
+    if (unit.currentHubId) return `hub:${unit.currentHubId}`;
+    if (unit.currentBookingId) return `booking:${unit.currentBookingId}`;
+    return '';
+  };
+
   const handleCreateUnit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    const { currentLocation, currentHubId, currentBookingId } = locationValueToPayload(unitForm.locationValue || 'in_transit');
 
     try {
       const response = await fetch('/api/admin/fleet-units', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(unitForm),
+        body: JSON.stringify({
+          unitNumber: unitForm.unitNumber,
+          dumpsterId: unitForm.dumpsterId,
+          status: unitForm.status,
+          currentLocation,
+          currentHubId,
+          currentBookingId,
+        }),
       });
 
       if (response.ok) {
-        const newUnit = await response.json();
-        setFleetUnits(prev => [newUnit, ...prev]);
+        await fetchFleetUnits();
         resetForm();
         setIsCreateDialogOpen(false);
       }
@@ -264,10 +288,10 @@ export default function FleetInventoryTab() {
       unitNumber: unit.unitNumber,
       dumpsterId: unit.dumpsterId,
       status: unit.status,
-      condition: unit.condition,
-      location: unit.location,
-      lastServiceDate: unit.lastServiceDate?.split('T')[0] || '',
-      nextServiceDate: unit.nextServiceDate?.split('T')[0] || '',
+      condition: (unit.condition as 'excellent' | 'good' | 'fair' | 'poor') || 'good',
+      locationValue: unitToLocationValue(unit),
+      lastServiceDate: (unit.lastServiceDate as string)?.split?.('T')?.[0] || '',
+      nextServiceDate: (unit.nextServiceDate as string)?.split?.('T')?.[0] || '',
       notes: unit.notes || '',
     });
     setIsEditDialogOpen(true);
@@ -277,17 +301,24 @@ export default function FleetInventoryTab() {
     e.preventDefault();
     if (!editingUnit) return;
     setIsSubmitting(true);
+    const { currentLocation, currentHubId, currentBookingId } = locationValueToPayload(unitForm.locationValue || 'in_transit');
 
     try {
       const response = await fetch(`/api/admin/fleet-units/${editingUnit.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(unitForm),
+        body: JSON.stringify({
+          unitNumber: unitForm.unitNumber,
+          dumpsterId: unitForm.dumpsterId,
+          status: unitForm.status,
+          currentLocation,
+          currentHubId,
+          currentBookingId,
+        }),
       });
 
       if (response.ok) {
-        const updatedUnit = await response.json();
-        setFleetUnits(prev => prev.map(u => u.id === editingUnit.id ? updatedUnit : u));
+        await fetchFleetUnits();
         setIsEditDialogOpen(false);
       }
     } finally {
@@ -333,7 +364,7 @@ export default function FleetInventoryTab() {
               Add Dumpster
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[700px] rounded-2xl border-none shadow-2xl">
+          <DialogContent className="sm:max-w-[700px] rounded-2xl border-none shadow-2xl bg-white" forceLight>
             <DialogHeader>
               <DialogTitle className="text-2xl font-black text-gray-900">Add Dumpster</DialogTitle>
               <DialogDescription className="font-medium">
@@ -407,12 +438,10 @@ export default function FleetInventoryTab() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="unitLocation" className="font-bold text-gray-700 ml-1">Current Location</Label>
-                  <Input
+                  <LocationSelect
                     id="unitLocation"
-                    value={unitForm.location}
-                    onChange={(e) => setUnitForm(prev => ({ ...prev, location: e.target.value }))}
-                    className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-yellow-500/20 transition-all font-medium"
-                    placeholder="e.g., Main Yard, Warehouse B"
+                    value={unitForm.locationValue || ''}
+                    onChange={(v) => setUnitForm(prev => ({ ...prev, locationValue: v }))}
                     required
                   />
                 </div>
@@ -696,8 +725,8 @@ export default function FleetInventoryTab() {
                                 </TableCell>
                                 <TableCell className="py-3">
                                   <div className="flex items-center text-sm font-medium text-gray-500">
-                                    <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
-                                    {unit.location}
+                                    <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-400 shrink-0" />
+                                    <span className="truncate">{unit.locationDisplay || '—'}</span>
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-3">
@@ -768,7 +797,7 @@ export default function FleetInventoryTab() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] rounded-2xl border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[700px] rounded-2xl border-none shadow-2xl bg-white" forceLight>
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-gray-900">Edit Dumpster</DialogTitle>
             <DialogDescription className="font-medium">
@@ -840,11 +869,11 @@ export default function FleetInventoryTab() {
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="editLocation" className="font-bold text-gray-700 ml-1">Current Location</Label>
-                <Input
+                <LocationSelect
                   id="editLocation"
-                  value={unitForm.location}
-                  onChange={(e) => setUnitForm(prev => ({ ...prev, location: e.target.value }))}
-                  className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-yellow-500/20 transition-all font-medium"
+                  value={unitForm.locationValue || ''}
+                  onChange={(v) => setUnitForm(prev => ({ ...prev, locationValue: v }))}
+                  labelOverride={editingUnit?.locationDisplay}
                 />
               </div>
               <div className="space-y-2">

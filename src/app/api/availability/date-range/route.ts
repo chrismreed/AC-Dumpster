@@ -5,29 +5,41 @@ import { eq, and, or } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
-    const { dumpsterId, pricingId, startDate, endDate } = await request.json();
+    const { dumpsterId, pricingId, startDate, endDate, rentalDays: bodyRentalDays } = await request.json();
 
-    if (!dumpsterId || !pricingId || !startDate || !endDate) {
+    if (!dumpsterId || !startDate || !endDate) {
       return NextResponse.json(
         { message: "Missing required parameters" },
         { status: 400 }
       );
     }
 
-    // Get rental duration from pricing option
-    const [pricing] = await db
-      .select()
-      .from(dumpsterPricing)
-      .where(eq(dumpsterPricing.id, Number(pricingId)));
+    // Determine rental days: either passed directly (per_day mode) or from pricing tier
+    let rentalDays: number;
 
-    if (!pricing) {
+    if (bodyRentalDays) {
+      // Per-day mode: rentalDays passed directly
+      rentalDays = Number(bodyRentalDays);
+    } else if (pricingId) {
+      // Tier mode: look up from pricing option
+      const [pricing] = await db
+        .select()
+        .from(dumpsterPricing)
+        .where(eq(dumpsterPricing.id, Number(pricingId)));
+
+      if (!pricing) {
+        return NextResponse.json(
+          { message: "Pricing option not found" },
+          { status: 404 }
+        );
+      }
+      rentalDays = pricing.days;
+    } else {
       return NextResponse.json(
-        { message: "Pricing option not found" },
-        { status: 404 }
+        { message: "Either pricingId or rentalDays is required" },
+        { status: 400 }
       );
     }
-
-    const rentalDays = pricing.days;
 
     // Get total fleet units for this dumpster type
     const totalFleetUnits = await db
@@ -75,10 +87,10 @@ export async function POST(request: NextRequest) {
         )
       );
 
-    // Pre-fetch all pricing info for bookings
+    // Pre-fetch pricing info for bookings that don't have rentalDays stored
     const bookingPricingMap = new Map();
     for (const booking of overlappingBookings) {
-      if (!bookingPricingMap.has(booking.pricingId)) {
+      if (!booking.rentalDays && booking.pricingId && !bookingPricingMap.has(booking.pricingId)) {
         const [bookingPricing] = await db
           .select()
           .from(dumpsterPricing)
@@ -102,11 +114,17 @@ export async function POST(request: NextRequest) {
       // Check bookings
       for (const booking of overlappingBookings) {
         const bookingStart = new Date(booking.deliveryDate);
-        const bookingPricing = bookingPricingMap.get(booking.pricingId);
 
-        if (bookingPricing) {
+        // Use stored rentalDays first, fall back to pricing tier lookup for legacy bookings
+        let bookingDuration: number | null = booking.rentalDays;
+        if (!bookingDuration && booking.pricingId) {
+          const bookingPricing = bookingPricingMap.get(booking.pricingId);
+          bookingDuration = bookingPricing?.days ?? null;
+        }
+
+        if (bookingDuration) {
           const bookingEnd = new Date(bookingStart);
-          bookingEnd.setDate(bookingEnd.getDate() + bookingPricing.days);
+          bookingEnd.setDate(bookingEnd.getDate() + bookingDuration);
 
           // Check if periods overlap
           if (checkDate < bookingEnd && checkEndDate > bookingStart) {

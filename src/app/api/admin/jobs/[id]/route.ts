@@ -185,6 +185,17 @@ export async function PUT(
     // Always update the updatedAt timestamp
     updateData.updatedAt = new Date();
 
+    // When assigning a fleet unit, unassign it from all other jobs/bookings first (one dumpster = one job)
+    if (body.assignedFleetUnitId) {
+      await db.update(bookings).set({ assignedFleetUnitId: null }).where(eq(bookings.assignedFleetUnitId, body.assignedFleetUnitId));
+      await db.update(jobs).set({ assignedFleetUnitId: null }).where(eq(jobs.assignedFleetUnitId, body.assignedFleetUnitId));
+      // Sync fleet unit location to this job's booking
+      const [job] = await db.select({ bookingId: jobs.bookingId }).from(jobs).where(eq(jobs.id, jobId));
+      if (job?.bookingId) {
+        await db.update(fleetUnits).set({ currentBookingId: job.bookingId }).where(eq(fleetUnits.id, body.assignedFleetUnitId));
+      }
+    }
+
     // Update the job
     const [updatedJob] = await db
       .update(jobs)

@@ -19,6 +19,12 @@ export async function GET(request: NextRequest) {
         availability: dumpsters.availability,
         imageUrl: dumpsters.imageUrl,
         sortOrder: dumpsters.sortOrder,
+        pricingMode: dumpsters.pricingMode,
+        basePricePerDay: dumpsters.basePricePerDay,
+        dailyRate: dumpsters.dailyRate,
+        minDays: dumpsters.minDays,
+        maxDays: dumpsters.maxDays,
+        overageRate: dumpsters.overageRate,
         createdAt: dumpsters.createdAt,
         basePrice: min(dumpsterPricing.price),
       })
@@ -33,6 +39,12 @@ export async function GET(request: NextRequest) {
         dumpsters.availability,
         dumpsters.imageUrl,
         dumpsters.sortOrder,
+        dumpsters.pricingMode,
+        dumpsters.basePricePerDay,
+        dumpsters.dailyRate,
+        dumpsters.minDays,
+        dumpsters.maxDays,
+        dumpsters.overageRate,
         dumpsters.createdAt
       )
       .orderBy(dumpsters.sortOrder);
@@ -43,10 +55,16 @@ export async function GET(request: NextRequest) {
       name: dumpster.name,
       description: dumpster.description,
       dimensions: dumpster.dimensions,
-      capacity: Math.floor(dumpster.weightLimit / 2000), // Rough estimate: ~2000 lbs per yard
-      basePrice: dumpster.basePrice ? dumpster.basePrice / 100 : 0, // Convert cents to dollars, default to 0
+      capacity: Math.floor(dumpster.weightLimit / 2000),
+      basePrice: dumpster.basePrice ? dumpster.basePrice / 100 : 0,
       sortOrder: dumpster.sortOrder,
       isActive: dumpster.availability > 0,
+      pricingMode: dumpster.pricingMode,
+      basePricePerDay: dumpster.basePricePerDay,
+      dailyRate: dumpster.dailyRate,
+      minDays: dumpster.minDays,
+      maxDays: dumpster.maxDays,
+      overageRate: dumpster.overageRate,
       createdAt: dumpster.createdAt,
     }));
 

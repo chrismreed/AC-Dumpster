@@ -1,15 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Calendar, Truck, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AvailabilityCalendarProps {
   dumpsterId: number;
-  pricingId: number;
+  pricingId?: number | null;
   selectedDate: string;
   onDateSelect: (date: string) => void;
   rentalDays?: number;
+  /** Range mode: called when user clicks both start and end dates */
+  onRangeSelect?: (startDate: string, endDate: string, days: number) => void;
+  /** Minimum rental days (range mode) */
+  minDays?: number;
+  /** Maximum rental days (range mode) */
+  maxDays?: number;
 }
 
 interface DateAvailability {
@@ -24,6 +30,9 @@ export function AvailabilityCalendar({
   selectedDate,
   onDateSelect,
   rentalDays: propRentalDays,
+  onRangeSelect,
+  minDays,
+  maxDays,
 }: AvailabilityCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(() => {
     const today = new Date();
@@ -34,12 +43,18 @@ export function AvailabilityCalendar({
   const [rentalDays, setRentalDays] = useState(propRentalDays || 0);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Update rentalDays when prop changes
+  // Range mode state
+  const isRangeMode = !!onRangeSelect;
+  const [rangeStep, setRangeStep] = useState<'start' | 'end'>('start');
+  const [rangeError, setRangeError] = useState<string | null>(null);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+
+  // Update rentalDays when prop changes (skip in range mode — days are computed from clicks)
   useEffect(() => {
-    if (propRentalDays && propRentalDays !== rentalDays) {
+    if (!isRangeMode && propRentalDays && propRentalDays !== rentalDays) {
       setRentalDays(propRentalDays);
     }
-  }, [propRentalDays]);
+  }, [propRentalDays, isRangeMode]);
 
   const today = useMemo(() => {
     const d = new Date();
@@ -78,9 +93,36 @@ export function AvailabilityCalendar({
     return date.toISOString().split('T')[0] === pickupDate.toISOString().split('T')[0];
   };
 
+  // Check if a date is in the hover preview range (between selected start and hovered date)
+  const isInHoverPreview = useCallback((date: Date): boolean => {
+    if (!isRangeMode || rangeStep !== 'end' || !selectedDate || !hoveredDate) return false;
+    // Only show preview when no confirmed range yet
+    if (rentalDays > 0) return false;
+    const startD = new Date(selectedDate + 'T00:00:00');
+    const hoverD = new Date(hoveredDate + 'T00:00:00');
+    if (hoverD.getTime() <= startD.getTime()) return false;
+    const dateTime = date.getTime();
+    return dateTime > startD.getTime() && dateTime <= hoverD.getTime();
+  }, [isRangeMode, rangeStep, selectedDate, hoveredDate, rentalDays]);
+
+  // Mouse handlers for hover preview
+  const handleDateMouseEnter = useCallback((date: Date) => {
+    if (!isRangeMode || rangeStep !== 'end') return;
+    setHoveredDate(date.toISOString().split('T')[0]);
+  }, [isRangeMode, rangeStep]);
+
+  const handleDateMouseLeave = useCallback(() => {
+    if (!isRangeMode) return;
+    setHoveredDate(null);
+  }, [isRangeMode]);
+
   // Fetch availability when month changes or dumpster/pricing changes
+  // In range mode, use minDays as baseline when no selection yet (rentalDays=0)
+  const fetchRentalDays = isRangeMode ? (rentalDays || minDays || 1) : rentalDays;
+
   useEffect(() => {
-    if (!dumpsterId || !pricingId) return;
+    // Need either pricingId (tier mode), rentalDays (per-day stepper), or range mode
+    if (!dumpsterId || (!pricingId && !fetchRentalDays && !isRangeMode)) return;
 
     const fetchAvailability = async () => {
       setIsLoading(true);
@@ -88,21 +130,31 @@ export function AvailabilityCalendar({
         const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
         const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 2, 0); // Get 2 months
 
+        // Build request body: include pricingId only when truthy, otherwise send rentalDays
+        const requestBody: Record<string, any> = {
+          dumpsterId,
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+        };
+        if (pricingId) {
+          requestBody.pricingId = pricingId;
+        }
+        // In range mode, use minDays for initial availability check; otherwise use rentalDays
+        const daysForRequest = isRangeMode ? (minDays || 1) : rentalDays;
+        if (daysForRequest) {
+          requestBody.rentalDays = daysForRequest;
+        }
+
         const response = await fetch('/api/availability/date-range', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            dumpsterId,
-            pricingId,
-            startDate: startDate.toISOString().split('T')[0],
-            endDate: endDate.toISOString().split('T')[0],
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (response.ok) {
           const data = await response.json();
           setAvailability(data.availability);
-          if (data.rentalDays) {
+          if (data.rentalDays && !propRentalDays && !isRangeMode) {
             setRentalDays(data.rentalDays);
           }
         }
@@ -114,7 +166,8 @@ export function AvailabilityCalendar({
     };
 
     fetchAvailability();
-  }, [dumpsterId, pricingId, currentMonth]);
+    // In range mode, use stable minDays for fetching (don't re-fetch when rentalDays changes from clicks)
+  }, [dumpsterId, pricingId, isRangeMode ? minDays : rentalDays, currentMonth]);
 
   const daysInMonth = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -165,20 +218,68 @@ export function AvailabilityCalendar({
     return dateAvail?.available !== false;
   };
 
-  const getDateStatus = (date: Date): 'available' | 'limited' | 'unavailable' | 'past' => {
+  const getDateStatus = (date: Date): 'available' | 'unavailable' | 'past' => {
     if (date < today) return 'past';
     const dateKey = date.toISOString().split('T')[0];
     const dateAvail = availability[dateKey];
 
     if (!dateAvail) return 'available'; // Default to available if no data yet
     if (!dateAvail.available) return 'unavailable';
-    if (dateAvail.unitsAvailable <= 1) return 'limited';
     return 'available';
   };
 
   const handleDateClick = (date: Date) => {
     if (!isDateSelectable(date)) return;
     const dateStr = date.toISOString().split('T')[0];
+
+    // Range mode: two-click flow (start date → end date)
+    if (isRangeMode) {
+      if (rangeStep === 'start') {
+        // First click: set the drop-off date
+        onDateSelect(dateStr);
+        setRentalDays(0); // Clear old rental period visualization
+        setRangeError(null);
+        setRangeStep('end');
+        return;
+      }
+
+      // Second click: set the pickup date
+      const startD = new Date(selectedDate + 'T00:00:00');
+      const endD = date;
+
+      // If clicked on or before start date, treat as new start selection
+      if (endD.getTime() <= startD.getTime()) {
+        onDateSelect(dateStr);
+        setRentalDays(0);
+        setRangeError(null);
+        // Stay in 'end' step — they're resetting the start date
+        return;
+      }
+
+      // Compute number of days between start and end
+      const diffMs = endD.getTime() - startD.getTime();
+      const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+      // Validate against min/max constraints
+      if (minDays && days < minDays) {
+        setRangeError(`Minimum rental is ${minDays} day${minDays !== 1 ? 's' : ''}`);
+        return;
+      }
+      if (maxDays && days > maxDays) {
+        setRangeError(`Maximum rental is ${maxDays} days`);
+        return;
+      }
+
+      // Valid range — apply it
+      setRentalDays(days);
+      setRangeError(null);
+      setHoveredDate(null); // Clear hover preview
+      setRangeStep('start'); // Reset for potential re-selection
+      onRangeSelect!(selectedDate, dateStr, days);
+      return;
+    }
+
+    // Default (non-range) mode: single date selection with dropdown close
     onDateSelect(dateStr);
     setIsOpen(false);
   };
@@ -212,39 +313,62 @@ export function AvailabilityCalendar({
 
   return (
     <div className="space-y-4">
-      {/* Trigger Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "w-full flex items-center justify-between px-4 py-3 border-2 rounded-lg transition-all text-left",
-          selectedDate
-            ? "border-primary bg-primary/10"
-            : "border-border bg-background hover:border-muted-foreground",
-          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <Calendar className={cn(
-            "h-5 w-5",
-            selectedDate ? "text-primary" : "text-muted-foreground"
+      {/* Trigger Button — hidden in range mode (calendar always visible) */}
+      {!isRangeMode && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={cn(
+            "w-full flex items-center justify-between px-4 py-3 border-2 rounded-lg transition-all text-left",
+            selectedDate
+              ? "border-primary bg-primary/10"
+              : "border-border bg-background hover:border-muted-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <Calendar className={cn(
+              "h-5 w-5",
+              selectedDate ? "text-primary" : "text-muted-foreground"
+            )} />
+            <span className={cn(
+              "font-medium",
+              selectedDate ? "text-foreground" : "text-muted-foreground"
+            )}>
+              {selectedDate ? 'Change delivery date' : 'Select a delivery date'}
+            </span>
+          </div>
+          <ChevronRight className={cn(
+            "h-5 w-5 text-muted-foreground transition-transform",
+            isOpen && "rotate-90"
           )} />
-          <span className={cn(
-            "font-medium",
-            selectedDate ? "text-foreground" : "text-muted-foreground"
-          )}>
-            {selectedDate ? 'Change delivery date' : 'Select a delivery date'}
-          </span>
-        </div>
-        <ChevronRight className={cn(
-          "h-5 w-5 text-muted-foreground transition-transform",
-          isOpen && "rotate-90"
-        )} />
-      </button>
+        </button>
+      )}
 
-      {/* Calendar Dropdown */}
-      {isOpen && (
+      {/* Calendar — always visible in range mode, dropdown in default mode */}
+      {(isOpen || isRangeMode) && (
         <div className="bg-card border border-border rounded-xl shadow-xl p-4">
+          {/* Range mode hint text */}
+          {isRangeMode && (
+            <div className="mb-3">
+              <p className="text-sm font-medium text-muted-foreground text-center">
+                {rangeStep === 'start'
+                  ? '📅 Click a date for your drop-off'
+                  : '📅 Now click your pickup date'}
+              </p>
+              {rangeError && (
+                <p className="text-sm font-medium text-red-500 text-center mt-1">
+                  {rangeError}
+                </p>
+              )}
+              {isRangeMode && minDays && maxDays && (
+                <p className="text-xs text-muted-foreground text-center mt-1">
+                  {minDays}–{maxDays} day rental period
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
@@ -295,6 +419,7 @@ export function AvailabilityCalendar({
                 const isDelivery = isDeliveryDate(date);
                 const isPickup = isPickupDate(date);
                 const isInPeriod = isInRentalPeriod(date);
+                const isHoverPreview = isInHoverPreview(date);
                 const status = getDateStatus(date);
                 const selectable = isDateSelectable(date);
 
@@ -303,30 +428,28 @@ export function AvailabilityCalendar({
                     key={dateStr}
                     type="button"
                     onClick={() => handleDateClick(date)}
+                    onMouseEnter={() => handleDateMouseEnter(date)}
+                    onMouseLeave={handleDateMouseLeave}
                     disabled={!selectable}
                     className={cn(
                       "h-10 w-full text-sm font-medium transition-all relative",
                       // Delivery date (start)
                       isDelivery && "bg-primary text-primary-foreground rounded-l-lg rounded-r-none",
-                      // Pickup date (end)
-                      isPickup && "bg-amber-700 text-white rounded-r-lg rounded-l-none",
-                      // In rental period (middle)
-                      isInPeriod && !isDelivery && !isPickup && "bg-primary/20 text-foreground",
-                      // Available (not in rental period)
-                      !isDelivery && !isPickup && !isInPeriod && status === 'available' && "bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30 rounded-lg",
-                      // Limited availability
-                      !isDelivery && !isPickup && !isInPeriod && status === 'limited' && "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/30 rounded-lg",
+                      // Pickup date (end) — same primary color as delivery
+                      isPickup && "bg-primary text-primary-foreground rounded-r-lg rounded-l-none",
+                      // In rental period (confirmed) — slightly darker shade of primary
+                      isInPeriod && !isDelivery && !isPickup && "bg-primary/30 text-foreground",
+                      // Hover preview — lighter shade to show prospective range
+                      !isDelivery && !isPickup && !isInPeriod && isHoverPreview && "bg-primary/15 text-foreground",
+                      // Available (not in rental period or hover preview)
+                      !isDelivery && !isPickup && !isInPeriod && !isHoverPreview && status === 'available' && "bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30 rounded-lg",
                       // Unavailable
-                      !isDelivery && !isPickup && !isInPeriod && status === 'unavailable' && "bg-muted text-muted-foreground/50 cursor-not-allowed line-through rounded-lg",
+                      !isDelivery && !isPickup && !isInPeriod && !isHoverPreview && status === 'unavailable' && "bg-muted text-muted-foreground/50 cursor-not-allowed line-through rounded-lg",
                       // Past dates
-                      !isDelivery && !isPickup && !isInPeriod && status === 'past' && "text-muted-foreground/30 cursor-not-allowed rounded-lg"
+                      !isDelivery && !isPickup && !isInPeriod && !isHoverPreview && status === 'past' && "text-muted-foreground/30 cursor-not-allowed rounded-lg"
                     )}
                   >
                     {date.getDate()}
-                    {/* Low availability indicator */}
-                    {status === 'limited' && !isDelivery && !isPickup && !isInPeriod && (
-                      <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-yellow-500 rounded-full" />
-                    )}
                   </button>
                 );
               })}
@@ -337,15 +460,11 @@ export function AvailabilityCalendar({
           <div className="flex flex-wrap items-center justify-center gap-3 mt-4 pt-4 border-t border-border">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-primary" />
-              <span className="text-xs text-muted-foreground">Drop-off</span>
+              <span className="text-xs text-muted-foreground">Drop-off / Pickup</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded bg-primary/20" />
+              <div className="w-3 h-3 rounded bg-primary/30" />
               <span className="text-xs text-muted-foreground">Rental</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded bg-amber-700" />
-              <span className="text-xs text-muted-foreground">Pickup</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-green-500/30 border border-green-500/50" />
@@ -389,8 +508,8 @@ export function AvailabilityCalendar({
             <div className="flex-1 text-right">
               <div className="flex items-center justify-end gap-2 mb-1">
                 <span className="text-sm font-medium text-muted-foreground">Pickup</span>
-                <div className="w-8 h-8 rounded-full bg-amber-700 flex items-center justify-center">
-                  <Package className="h-4 w-4 text-white" />
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                  <Package className="h-4 w-4 text-primary-foreground" />
                 </div>
               </div>
               <p className="font-semibold text-foreground mr-10">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GooglePlacesAutocomplete } from '@/components/google-places-autocomplete';
 import { AvailabilityCalendar } from '@/components/ui/availability-calendar';
 import { checkServiceZone, AddressInfo } from '@/lib/service-zone-utils';
@@ -16,7 +16,9 @@ import {
   CalendarCheck,
   CheckCircle2,
   AlertCircle,
-  Loader2
+  Loader2,
+  Truck,
+  Package,
 } from 'lucide-react';
 
 interface DeliveryDetailsProps {
@@ -24,7 +26,7 @@ interface DeliveryDetailsProps {
   onNext: (data: any) => void;
   initialData?: any;
   selectedDumpsterId?: number;
-  selectedPricingId?: number;
+  selectedPricingId?: number | null;
   rentalDays?: number;
 }
 
@@ -55,6 +57,15 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
     serviceZoneId: initialData?.serviceZoneId,
     deliveryFee: initialData?.deliveryFee || 0,
   });
+
+  // The booking form is a carousel — all steps stay mounted the whole time.
+  // useState only initialises once, so if the user goes back to Step 1 and picks
+  // a different date we must re-sync formData.deliveryDate here.
+  useEffect(() => {
+    if (initialData?.deliveryDate !== undefined) {
+      setFormData(prev => ({ ...prev, deliveryDate: initialData.deliveryDate || '' }));
+    }
+  }, [initialData?.deliveryDate]);
 
   const [serviceZoneStatus, setServiceZoneStatus] = useState<{
     isChecking: boolean;
@@ -265,7 +276,61 @@ export function DeliveryDetails({ onBack, onNext, initialData, selectedDumpsterI
             Delivery Date
           </h3>
 
-          {selectedDumpsterId && selectedPricingId ? (
+          {formData.deliveryDate && rentalDays && !selectedPricingId ? (
+            /* Per-day mode: dates already chosen in Step 1 — show read-only summary */
+            (() => {
+              const dropOff = new Date(formData.deliveryDate + 'T00:00:00');
+              const pickup = new Date(dropOff.getTime() + rentalDays * 86400000);
+              const fmt = (d: Date) =>
+                d.toLocaleDateString('en-US', {
+                  weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+                });
+              return (
+                <div className="space-y-3">
+                  <div className="bg-primary/10 border-2 border-primary rounded-xl p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Drop-off */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                            <Truck className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                          <span className="text-sm font-medium text-white">Drop-off</span>
+                        </div>
+                        <p className="font-semibold text-white ml-10">{fmt(dropOff)}</p>
+                      </div>
+
+                      {/* Arrow / duration */}
+                      <div className="flex flex-col items-center px-2 shrink-0">
+                        <div className="text-xs text-white font-medium">
+                          {rentalDays} day{rentalDays !== 1 ? 's' : ''}
+                        </div>
+                        <div className="w-12 h-0.5 bg-primary my-1" />
+                        <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M13.025 1l-2.847 2.828 6.176 6.176h-16.354v3.992h16.354l-6.176 6.176 2.847 2.828 10.975-11z" />
+                        </svg>
+                      </div>
+
+                      {/* Pickup */}
+                      <div className="flex-1 text-right">
+                        <div className="flex items-center justify-end gap-2 mb-1">
+                          <span className="text-sm font-medium text-white">Pickup</span>
+                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                            <Package className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        </div>
+                        <p className="font-semibold text-white mr-10">{fmt(pickup)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-white text-center">
+                    To change dates, go back to Step 1.
+                  </p>
+                </div>
+              );
+            })()
+          ) : selectedDumpsterId && (selectedPricingId || rentalDays) ? (
+            /* Tier mode: pick date from availability calendar */
             <AvailabilityCalendar
               dumpsterId={selectedDumpsterId}
               pricingId={selectedPricingId}

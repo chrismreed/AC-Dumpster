@@ -60,6 +60,7 @@ import {
   ArrowUpFromLine,
 } from 'lucide-react';
 import { AdditionalCharges } from '@/components/admin/additional-charges';
+import { LoadDetailsDialog } from '@/components/admin/load-details-dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   type Job,
@@ -129,6 +130,9 @@ export default function AdminDashboard() {
   const [selectedRental, setSelectedRental] = useState<RentalGroup | null>(null);
   const [selectedSingleJob, setSelectedSingleJob] = useState<Job | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+
+  // Load details dialog state (picked_up → dumping intercept)
+  const [loadDetailsDialog, setLoadDetailsDialog] = useState<{ jobId: number; rental: RentalGroup } | null>(null);
 
   // Return destination dialog state
   const [returnDestinationDialog, setReturnDestinationDialog] = useState<{ jobId: number; rental: RentalGroup } | null>(null);
@@ -324,6 +328,15 @@ export default function AdminDashboard() {
   // ─── Handlers ──────────────────────────────────────────────────────
 
   const handleStatusChange = (jobId: number, newStatus: string) => {
+    // Load details intercept (pickup picked_up → dumping)
+    if (newStatus === 'dumping') {
+      const job = allJobs.find(j => j.id === jobId);
+      if (job?.jobType === 'pickup' && job.status === 'picked_up' && selectedRental) {
+        setLoadDetailsDialog({ jobId, rental: selectedRental });
+        return;
+      }
+    }
+
     // Cancel intercept
     if (newStatus === 'cancelled') {
       const job = allJobs.find(j => j.id === jobId);
@@ -344,6 +357,36 @@ export default function AdminDashboard() {
     }
 
     updateStatusMutation.mutate({ jobId, status: newStatus });
+  };
+
+  const handleLoadDetailsSubmit = async (data: {
+    bookingId: number;
+    loadNumber: number;
+    priceCharged: number;
+    loadWeight?: number | null;
+    notes?: string | null;
+    receiptPhotoUrl?: string | null;
+  }) => {
+    if (!loadDetailsDialog) return;
+    try {
+      const res = await fetch('/api/admin/load-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to create load record');
+      toast({ title: 'Load record created', description: `Load #${data.loadNumber} logged successfully.` });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save load record, but advancing status.', variant: 'destructive' });
+    }
+    updateStatusMutation.mutate({ jobId: loadDetailsDialog.jobId, status: 'dumping' });
+    setLoadDetailsDialog(null);
+  };
+
+  const handleLoadDetailsSkip = () => {
+    if (!loadDetailsDialog) return;
+    updateStatusMutation.mutate({ jobId: loadDetailsDialog.jobId, status: 'dumping' });
+    setLoadDetailsDialog(null);
   };
 
   const handleRentalOverride = (value: string) => {
@@ -932,6 +975,22 @@ export default function AdminDashboard() {
         </Dialog>
       )}
 
+      {/* Load Details Dialog (picked_up → dumping) */}
+      {loadDetailsDialog && (
+        <LoadDetailsDialog
+          open={!!loadDetailsDialog}
+          onOpenChange={() => setLoadDetailsDialog(null)}
+          bookingId={loadDetailsDialog.rental.bookingId}
+          customerName={loadDetailsDialog.rental.deliveryJob.customerName}
+          dumpsterName={
+            dumpsters.find(d => d.id === loadDetailsDialog.rental.deliveryJob.dumpsterId)?.name || 'Dumpster'
+          }
+          onSubmit={handleLoadDetailsSubmit}
+          onSkip={handleLoadDetailsSkip}
+          isSubmitting={updateStatusMutation.isPending}
+        />
+      )}
+
       {/* Return Destination Dialog */}
       {returnDestinationDialog && (
         <Dialog open={!!returnDestinationDialog} onOpenChange={() => setReturnDestinationDialog(null)}>
@@ -978,25 +1037,50 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {selectedDropOffType === 'customer' && (
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Select Customer Booking</Label>
-                  <Select value={selectedCustomerBookingId} onValueChange={setSelectedCustomerBookingId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a customer booking..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bookings
-                        .filter((b) => b.id !== returnDestinationDialog.rental.bookingId && ['pending', 'confirmed'].includes(b.status))
-                        .map((booking) => (
-                          <SelectItem key={booking.id} value={booking.id.toString()}>
-                            {booking.customerName} — {booking.deliveryAddress}, {booking.deliveryCity}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {selectedDropOffType === 'customer' && (() => {
+                const currentDumpsterId = returnDestinationDialog.rental.deliveryJob.dumpsterId;
+                const eligibleBookings = bookings
+                  .filter((b) =>
+                    b.id !== returnDestinationDialog.rental.bookingId &&
+                    ['pending', 'confirmed'].includes(b.status) &&
+                    (currentDumpsterId ? b.dumpsterId === currentDumpsterId : true)
+                  )
+                  .sort((a, b) => {
+                    const dateA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : Infinity;
+                    const dateB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : Infinity;
+                    return dateA - dateB;
+                  });
+
+                return (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Select Customer Booking</Label>
+                    {eligibleBookings.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic py-2">
+                        No customers with the same dumpster size are awaiting delivery.
+                      </p>
+                    ) : (
+                      <Select value={selectedCustomerBookingId} onValueChange={setSelectedCustomerBookingId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a customer booking..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {eligibleBookings.map((booking) => {
+                            const dumpster = dumpsters.find(d => d.id === booking.dumpsterId);
+                            const dateStr = booking.deliveryDate
+                              ? new Date(booking.deliveryDate).toLocaleDateString()
+                              : 'No date';
+                            return (
+                              <SelectItem key={booking.id} value={booking.id.toString()}>
+                                {booking.customerName} — {dumpster?.name || 'Dumpster'} — {dateStr} — {booking.deliveryAddress}, {booking.deliveryCity}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                );
+              })()}
 
               {selectedDropOffType === 'customer' && selectedCustomerBookingId && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">

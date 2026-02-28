@@ -1,9 +1,9 @@
 import { AdminAuthProvider } from '@/lib/admin/auth-context';
 import { ProtectedRoute } from '@/components/admin/protected-route';
 import { DashboardLayout } from '@/components/admin/dashboard-layout';
-import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
 import { ForceLightMode } from '@/components/admin/force-light-mode';
+import { AdminThemeProvider } from '@/components/admin/admin-theme-provider';
 
 export default function AdminLayout({
   children,
@@ -11,7 +11,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Providers>
+    <AdminThemeProvider>
       <ForceLightMode />
       <AdminAuthProvider>
         <ProtectedRoute>
@@ -21,6 +21,6 @@ export default function AdminLayout({
         </ProtectedRoute>
       </AdminAuthProvider>
       <Toaster />
-    </Providers>
+    </AdminThemeProvider>
   );
 }

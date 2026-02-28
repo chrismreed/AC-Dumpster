@@ -6,6 +6,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { calculatePerDayRental } from "@/lib/pricing/per-day-calculator";
+import { AvailabilityCalendar } from "@/components/ui/availability-calendar";
 
 interface Dumpster {
   id: number;
@@ -17,6 +19,17 @@ interface Dumpster {
   imageUrl?: string;
   sortOrder: number;
   createdAt: string;
+  pricingMode: 'tier' | 'per_day';
+  basePricePerDay?: number | null;
+  dailyRate?: number | null;
+  minDays?: number | null;
+  maxDays?: number | null;
+  overageRate?: number | null;
+  // Declining daily rate
+  firstDayRate?: number | null;
+  rateDeclineType?: string | null;
+  rateDeclineAmount?: number | null;
+  minimumDailyRate?: number | null;
 }
 
 interface DumpsterPricing {
@@ -29,9 +42,9 @@ interface DumpsterPricing {
 }
 
 interface DumpsterSelectorProps {
-  onNext: (data: { dumpsterId: number, pricingId: number, rentalDays: number, rentalPrice: number }) => void;
+  onNext: (data: { dumpsterId: number, pricingId: number | null, rentalDays: number, rentalPrice: number, deliveryDate?: string }) => void;
   selectedDumpsterId?: number;
-  selectedPricingId?: number;
+  selectedPricingId?: number | null;
 }
 
 export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId, selectedPricingId: initialPricingId }: DumpsterSelectorProps) {
@@ -41,7 +54,37 @@ export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId
   const [pricingOptions, setPricingOptions] = useState<DumpsterPricing[]>([]);
   const [isLoadingDumpsters, setIsLoadingDumpsters] = useState(true);
   const [isLoadingPricing, setIsLoadingPricing] = useState(false);
+  const [perDayRentalDays, setPerDayRentalDays] = useState<number>(1);
+  const [deliveryDate, setDeliveryDate] = useState<string | null>(null);
   const durationSectionRef = useRef<HTMLDivElement>(null);
+
+  // Get the currently selected dumpster object
+  const selectedDumpster = dumpsters.find(d => d.id === selectedDumpsterId) || null;
+  const isPerDayMode = selectedDumpster?.pricingMode === 'per_day';
+
+  // Per-day pricing computed values
+  const perDayMinDays = selectedDumpster?.minDays || 1;
+  const perDayMaxDays = selectedDumpster?.maxDays || 90;
+
+  // Use shared calculator for correct pricing in both flat and declining modes
+  const perDayCalcResult = isPerDayMode && selectedDumpster
+    ? calculatePerDayRental(
+        {
+          basePricePerDay: selectedDumpster.basePricePerDay ?? null,
+          dailyRate: selectedDumpster.dailyRate ?? null,
+          firstDayRate: selectedDumpster.firstDayRate ?? null,
+          rateDeclineType: selectedDumpster.rateDeclineType ?? null,
+          rateDeclineAmount: selectedDumpster.rateDeclineAmount ?? null,
+          minimumDailyRate: selectedDumpster.minimumDailyRate ?? null,
+        },
+        perDayRentalDays
+      )
+    : null;
+
+  const perDayBaseFee = selectedDumpster?.basePricePerDay || 0;
+  const perDayDailyRate = selectedDumpster?.dailyRate || 0;
+  const perDayTotal = perDayCalcResult?.grandTotal ?? (perDayBaseFee + perDayDailyRate * perDayRentalDays);
+  const isDeclineMode = perDayCalcResult?.isDeclineMode ?? false;
 
   // Fetch dumpsters on mount
   useEffect(() => {
@@ -95,6 +138,13 @@ export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId
     }
   }, [pricingOptions, selectedPricingId]);
 
+  // Reset per-day rental days when dumpster changes
+  useEffect(() => {
+    if (selectedDumpster?.pricingMode === 'per_day') {
+      setPerDayRentalDays(selectedDumpster.minDays || 1);
+    }
+  }, [selectedDumpsterId, selectedDumpster?.pricingMode, selectedDumpster?.minDays]);
+
   // Scroll to pricing section when a dumpster is selected
   useEffect(() => {
     if (selectedDumpsterId && durationSectionRef.current) {
@@ -104,22 +154,47 @@ export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId
           block: 'start'
         });
       }, 100);
-      // Reset pricing selection when dumpster changes
+      // Reset pricing/date selection when dumpster changes
       setSelectedPricingId(null);
+      setDeliveryDate(null);
     }
   }, [selectedDumpsterId]);
 
   const handleContinue = () => {
-    if (selectedDumpsterId && selectedPricingId) {
+    if (!selectedDumpsterId) return;
+
+    if (isPerDayMode) {
+      // Per-day mode: no pricingId, compute price from dumpster config
+      onNext({
+        dumpsterId: selectedDumpsterId,
+        pricingId: null,
+        rentalDays: perDayRentalDays,
+        rentalPrice: perDayTotal,
+        deliveryDate: deliveryDate ?? undefined,
+      });
+    } else if (selectedPricingId) {
+      // Tier mode: use selected pricing tier
       const selectedPricing = pricingOptions.find(p => p.id === selectedPricingId);
       onNext({
         dumpsterId: selectedDumpsterId,
         pricingId: selectedPricingId,
         rentalDays: selectedPricing?.days || 0,
-        rentalPrice: selectedPricing?.price || 0
+        rentalPrice: selectedPricing?.price || 0,
       });
     }
   };
+
+  // Can the user proceed?
+  const canContinue = selectedDumpsterId && (
+    isPerDayMode
+      ? (
+          !!deliveryDate &&
+          perDayRentalDays >= perDayMinDays &&
+          perDayRentalDays <= perDayMaxDays &&
+          (perDayDailyRate > 0 || (selectedDumpster?.firstDayRate ?? 0) > 0)
+        )
+      : !!selectedPricingId
+  );
 
   if (isLoadingDumpsters) {
     return (
@@ -161,12 +236,68 @@ export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId
 
         {selectedDumpsterId && (
           <>
-            {isLoadingPricing ? (
+            {isLoadingPricing && !isPerDayMode ? (
               <div className="flex justify-center items-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 <span className="ml-2 text-muted-foreground">Loading pricing options...</span>
               </div>
+            ) : isPerDayMode ? (
+              /* Per-Day Pricing Mode — calendar with direct range selection */
+              <div className="space-y-6">
+                <AvailabilityCalendar
+                  key={selectedDumpsterId}
+                  dumpsterId={selectedDumpsterId}
+                  selectedDate={deliveryDate || ''}
+                  onDateSelect={(date) => setDeliveryDate(date)}
+                  onRangeSelect={(startDate, _endDate, days) => {
+                    setDeliveryDate(startDate);
+                    setPerDayRentalDays(days);
+                  }}
+                  minDays={perDayMinDays}
+                  maxDays={perDayMaxDays}
+                />
+
+                {/* Live Price Breakdown — only shown after dates are chosen */}
+                {deliveryDate && (
+                <div className="bg-primary/10 border-2 border-primary rounded-xl p-6">
+                  <div className="space-y-2">
+                    {perDayBaseFee > 0 && (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Delivery fee</span>
+                        <span>${(perDayBaseFee / 100).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {isDeclineMode && perDayCalcResult ? (
+                      <>
+                        {/* Day 1 line */}
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>Day 1 rate</span>
+                          <span>${((perDayCalcResult.breakdown[0]?.rate ?? 0) / 100).toFixed(2)}</span>
+                        </div>
+                        {/* Days 2+ line (if any) */}
+                        {perDayCalcResult.breakdown.length > 1 && (
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>Days 2–{perDayRentalDays} (declining)</span>
+                            <span>${(perDayCalcResult.rentalTotal / 100 - perDayCalcResult.breakdown[0].rate / 100).toFixed(2)}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>{perDayRentalDays} day{perDayRentalDays !== 1 ? 's' : ''} × ${(perDayDailyRate / 100).toFixed(2)}/day</span>
+                        <span>${((perDayDailyRate * perDayRentalDays) / 100).toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-primary/30 pt-2 flex justify-between items-center">
+                      <span className="font-semibold text-foreground">Total</span>
+                      <span className="text-2xl font-bold text-primary">${(perDayTotal / 100).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+                )}
+              </div>
             ) : pricingOptions && pricingOptions.length > 0 ? (
+              /* Tier Pricing Mode */
               <RadioGroup
                 value={selectedPricingId?.toString()}
                 onValueChange={(value) => setSelectedPricingId(parseInt(value))}
@@ -213,7 +344,7 @@ export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId
       <div className="mt-10 text-center md:text-right">
         <Button
           onClick={handleContinue}
-          disabled={!selectedDumpsterId || !selectedPricingId}
+          disabled={!canContinue}
           className="px-8 py-3 font-semibold"
         >
           Continue to Delivery Details

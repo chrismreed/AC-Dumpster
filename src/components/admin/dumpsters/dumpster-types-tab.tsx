@@ -49,6 +49,7 @@ import {
   CSS,
 } from '@dnd-kit/utilities';
 import { useToast } from "@/hooks/use-toast";
+import { calculatePerDayRental, formatDeclineSchedule } from "@/lib/pricing/per-day-calculator";
 
 // Types
 interface Dumpster {
@@ -60,6 +61,17 @@ interface Dumpster {
   availability: number;
   imageUrl: string | null;
   sortOrder: number;
+  pricingMode: string;
+  basePricePerDay: number | null;
+  dailyRate: number | null;
+  minDays: number | null;
+  maxDays: number | null;
+  overageRate: number | null;
+  // Declining daily rate fields
+  firstDayRate: number | null;
+  rateDeclineType: string | null;
+  rateDeclineAmount: number | null;
+  minimumDailyRate: number | null;
 }
 
 interface Booking {
@@ -116,7 +128,7 @@ const apiRequest = async (method: string, url: string, data?: any) => {
 };
 
 // Sortable dumpster card component
-function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDelete, pricingData, setPricingData, handleAddPricing, handleDeletePricing, handleUpdatePricing, addingPricing, setAddingPricing, newPricingDays, setNewPricingDays, newPricingPrice, setNewPricingPrice, handlePricingDragEnd }: any) {
+function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDelete, pricingData, setPricingData, handleAddPricing, handleDeletePricing, handleUpdatePricing, addingPricing, setAddingPricing, newPricingDays, setNewPricingDays, newPricingPrice, setNewPricingPrice, handlePricingDragEnd, onUpdatePricingMode, onUpdatePerDayConfig }: any) {
   const {
     attributes,
     listeners,
@@ -124,6 +136,12 @@ function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDe
     transform,
     transition,
   } = useSortable({ id: dumpster.id });
+
+  // Must be called unconditionally at the top level (Rules of Hooks).
+  // These are used by the inner DndContext for pricing-tier reordering.
+  const pointerSensor = useSensor(PointerSensor);
+  const keyboardSensor = useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates });
+  const pricingSensors = useSensors(pointerSensor, keyboardSensor);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -194,102 +212,416 @@ function SortableDumpsterCard({ dumpster, getDeployedCount, handleEdit, handleDe
       {/* Pricing Management Section */}
       <div className="px-6 pb-6 border-t border-gray-200">
         <div className="mt-4">
-          <div className="flex flex-col gap-3 mb-4">
-            <h4 className="font-semibold text-gray-900">Rental Duration Pricing</h4>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAddingPricing(dumpster.id)}
-              className="text-xs w-fit"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Add Option
-            </Button>
+          {/* Pricing Mode Toggle */}
+          <div className="flex items-center gap-2 mb-4">
+            <h4 className="font-semibold text-gray-900">Pricing Mode</h4>
+            <div className="flex bg-gray-100 rounded-lg p-0.5 ml-auto">
+              <button
+                onClick={() => onUpdatePricingMode(dumpster.id, 'tier')}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  dumpster.pricingMode === 'tier'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Duration Tiers
+              </button>
+              <button
+                onClick={() => onUpdatePricingMode(dumpster.id, 'per_day')}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                  dumpster.pricingMode === 'per_day'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Base + Per Day
+              </button>
+            </div>
           </div>
 
-          {/* Current pricing options with drag and drop */}
-          <DndContext
-            sensors={[useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })]}
-            collisionDetection={closestCenter}
-            onDragEnd={(event) => handlePricingDragEnd(event, dumpster.id, pricingData, setPricingData)}
-          >
-            <SortableContext
-              items={pricingData[dumpster.id]?.map((p: any) => p.id) || []}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2 mb-3">
-                {pricingData[dumpster.id]?.map((pricing: any) => (
-                  <SortablePricingItem
-                    key={pricing.id}
-                    pricing={pricing}
-                    onDelete={() => handleDeletePricing(pricing.id, dumpster.id)}
-                    onUpdate={(pricingId: number, updates: { days: number; price: number }) =>
-                      handleUpdatePricing(pricingId, dumpster.id, updates)
-                    }
-                  />
-                ))}
-                {(!pricingData[dumpster.id] || pricingData[dumpster.id].length === 0) && (
-                  <div className="text-sm text-gray-500 italic">No pricing options set</div>
-                )}
-              </div>
-            </SortableContext>
-          </DndContext>
-
-          {/* Add new pricing form */}
-          {addingPricing === dumpster.id && (
-            <div className="bg-gray-50 p-3 rounded border">
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Days
-                  </label>
-                  <StringNumberInput
-                    placeholder="3"
-                    value={newPricingDays}
-                    onChange={setNewPricingDays}
-                    allowDecimals={false}
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Price ($)
-                  </label>
-                  <StringNumberInput
-                    placeholder="480.00"
-                    value={newPricingPrice}
-                    onChange={setNewPricingPrice}
-                    allowDecimals={true}
-                    className="text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleAddPricing(dumpster.id)}
-                  className="text-xs"
-                >
-                  Add
-                </Button>
+          {/* Tier mode: existing pricing tier CRUD */}
+          {dumpster.pricingMode === 'tier' && (
+            <>
+              <div className="flex flex-col gap-3 mb-4">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setAddingPricing(null);
-                    setNewPricingDays("");
-                    setNewPricingPrice("");
-                  }}
-                  className="text-xs"
+                  onClick={() => setAddingPricing(dumpster.id)}
+                  className="text-xs w-fit"
                 >
-                  Cancel
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Option
                 </Button>
               </div>
-            </div>
+
+              <DndContext
+                sensors={pricingSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => handlePricingDragEnd(event, dumpster.id, pricingData, setPricingData)}
+              >
+                <SortableContext
+                  items={pricingData[dumpster.id]?.map((p: any) => p.id) || []}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2 mb-3">
+                    {pricingData[dumpster.id]?.map((pricing: any) => (
+                      <SortablePricingItem
+                        key={pricing.id}
+                        pricing={pricing}
+                        onDelete={() => handleDeletePricing(pricing.id, dumpster.id)}
+                        onUpdate={(pricingId: number, updates: { days: number; price: number }) =>
+                          handleUpdatePricing(pricingId, dumpster.id, updates)
+                        }
+                      />
+                    ))}
+                    {(!pricingData[dumpster.id] || pricingData[dumpster.id].length === 0) && (
+                      <div className="text-sm text-gray-500 italic">No pricing options set</div>
+                    )}
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              {addingPricing === dumpster.id && (
+                <div className="bg-gray-50 p-3 rounded border">
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Days</label>
+                      <StringNumberInput
+                        placeholder="3"
+                        value={newPricingDays}
+                        onChange={setNewPricingDays}
+                        allowDecimals={false}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Price ($)</label>
+                      <StringNumberInput
+                        placeholder="480.00"
+                        value={newPricingPrice}
+                        onChange={setNewPricingPrice}
+                        allowDecimals={true}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleAddPricing(dumpster.id)} className="text-xs">Add</Button>
+                    <Button variant="outline" size="sm" onClick={() => { setAddingPricing(null); setNewPricingDays(""); setNewPricingPrice(""); }} className="text-xs">Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
+
+          {/* Per-day mode: base fee + daily rate config */}
+          {dumpster.pricingMode === 'per_day' && (
+            <PerDayPricingForm dumpster={dumpster} onSave={onUpdatePerDayConfig} />
+          )}
+
+          {/* Overage Rate (both modes) */}
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <OverageRateField dumpster={dumpster} onSave={onUpdatePerDayConfig} />
+          </div>
         </div>
       </div>
     </Card>
+  );
+}
+
+// Per-day pricing configuration form
+function PerDayPricingForm({ dumpster, onSave }: { dumpster: Dumpster; onSave: (id: number, data: any) => void }) {
+  const [baseFee, setBaseFee] = useState(
+    dumpster.basePricePerDay != null ? (dumpster.basePricePerDay / 100).toFixed(2) : ""
+  );
+  const [dailyRate, setDailyRate] = useState(
+    dumpster.dailyRate != null ? (dumpster.dailyRate / 100).toFixed(2) : ""
+  );
+  const [minDays, setMinDays] = useState(
+    dumpster.minDays != null ? dumpster.minDays.toString() : ""
+  );
+  const [maxDays, setMaxDays] = useState(
+    dumpster.maxDays != null ? dumpster.maxDays.toString() : ""
+  );
+
+  // Declining rate state
+  const [declineEnabled, setDeclineEnabled] = useState(dumpster.firstDayRate != null);
+  const [firstDayRate, setFirstDayRate] = useState(
+    dumpster.firstDayRate != null ? (dumpster.firstDayRate / 100).toFixed(2) : ""
+  );
+  const [declineType, setDeclineType] = useState<string>(
+    dumpster.rateDeclineType ?? "flat"
+  );
+  const [declineAmount, setDeclineAmount] = useState(
+    dumpster.rateDeclineAmount != null ? (dumpster.rateDeclineAmount / 100).toFixed(2) : ""
+  );
+  const [minimumRate, setMinimumRate] = useState(
+    dumpster.minimumDailyRate != null ? (dumpster.minimumDailyRate / 100).toFixed(2) : ""
+  );
+
+  const [deliveryFeeEnabled, setDeliveryFeeEnabled] = useState(dumpster.basePricePerDay != null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(dumpster.id, {
+        basePricePerDay: deliveryFeeEnabled && baseFee ? Math.round(parseFloat(baseFee) * 100) : null,
+        dailyRate: dailyRate ? Math.round(parseFloat(dailyRate) * 100) : null,
+        minDays: minDays ? parseInt(minDays) : null,
+        maxDays: maxDays ? parseInt(maxDays) : null,
+        // Declining rate fields
+        firstDayRate: declineEnabled && firstDayRate ? Math.round(parseFloat(firstDayRate) * 100) : null,
+        rateDeclineType: declineEnabled ? declineType : null,
+        // Both flat (cents) and percent (basis points) use ×100 conversion from their display unit
+        rateDeclineAmount: declineEnabled && declineAmount ? Math.round(parseFloat(declineAmount) * 100) : null,
+        minimumDailyRate: declineEnabled && minimumRate ? Math.round(parseFloat(minimumRate) * 100) : null,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Build live example using the shared calculator
+  const liveExample = (() => {
+    const exampleDays = 7;
+    const base = parseFloat(baseFee || "0");
+    const daily = parseFloat(dailyRate || "0");
+    const fdr = parseFloat(firstDayRate || "0");
+    const da = parseFloat(declineAmount || "0");
+    const minR = parseFloat(minimumRate || "0");
+
+    if (declineEnabled && fdr > 0 && daily > 0) {
+      const result = calculatePerDayRental(
+        {
+          basePricePerDay: Math.round(base * 100),
+          dailyRate: Math.round(daily * 100),
+          firstDayRate: Math.round(fdr * 100),
+          rateDeclineType: declineType,
+          rateDeclineAmount: Math.round(da * 100),
+          minimumDailyRate: Math.round(minR * 100),
+        },
+        exampleDays
+      );
+      const schedule = formatDeclineSchedule(result);
+      const total = (result.grandTotal / 100).toFixed(2);
+      return `Example (${exampleDays} days): ${schedule} = $${total} total`;
+    } else if (!declineEnabled && daily > 0) {
+      const total = (base + daily * exampleDays).toFixed(2);
+      return `Example: 7 days = $${base.toFixed(2)} + (7 × $${daily.toFixed(2)}) = $${total}`;
+    }
+    return null;
+  })();
+
+  return (
+    <div className="bg-gray-50 p-3 rounded border space-y-3">
+      {/* Drop-off & Pickup fee — optional, toggled */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id={`delivery-fee-toggle-${dumpster.id}`}
+            checked={deliveryFeeEnabled}
+            onChange={(e) => {
+              setDeliveryFeeEnabled(e.target.checked);
+              if (!e.target.checked) setBaseFee("");
+            }}
+            className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
+          />
+          <label
+            htmlFor={`delivery-fee-toggle-${dumpster.id}`}
+            className="text-xs font-medium text-gray-700 cursor-pointer select-none"
+          >
+            Charge a separate drop-off &amp; pickup fee
+          </label>
+        </div>
+        {deliveryFeeEnabled && (
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Drop-off &amp; Pickup Fee ($)</label>
+            <StringNumberInput
+              placeholder="150.00"
+              value={baseFee}
+              onChange={setBaseFee}
+              allowDecimals={true}
+              className="text-sm"
+            />
+            <p className="text-[10px] text-gray-400 mt-0.5">One-time fee for truck delivery and pickup — not a daily charge</p>
+          </div>
+        )}
+      </div>
+
+      {/* Daily rental rate (flat mode only — decline mode shows it in the blue box) */}
+      {!declineEnabled && (
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Daily Rental Rate ($)</label>
+          <StringNumberInput
+            placeholder="25.00"
+            value={dailyRate}
+            onChange={setDailyRate}
+            allowDecimals={true}
+            className="text-sm"
+          />
+          <p className="text-[10px] text-gray-400 mt-0.5">Charged for every day the dumpster is on-site</p>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Min Days</label>
+          <StringNumberInput
+            placeholder="1"
+            value={minDays}
+            onChange={setMinDays}
+            allowDecimals={false}
+            className="text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Max Days</label>
+          <StringNumberInput
+            placeholder="90"
+            value={maxDays}
+            onChange={setMaxDays}
+            allowDecimals={false}
+            className="text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Declining rate toggle */}
+      <div className="flex items-center gap-2 pt-1">
+        <input
+          type="checkbox"
+          id={`decline-toggle-${dumpster.id}`}
+          checked={declineEnabled}
+          onChange={(e) => setDeclineEnabled(e.target.checked)}
+          className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
+        />
+        <label
+          htmlFor={`decline-toggle-${dumpster.id}`}
+          className="text-xs font-medium text-gray-700 cursor-pointer select-none"
+        >
+          Enable declining daily rate
+        </label>
+      </div>
+
+      {/* Declining rate fields */}
+      {declineEnabled && (
+        <div className="border border-blue-200 bg-blue-50 rounded p-2.5 space-y-2.5">
+          <p className="text-[10px] text-blue-600 font-medium">
+            Day 1 uses the first rate. From day 2 onward, the rate starts lower and decreases each day.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Day 1 Rate ($)</label>
+              <StringNumberInput
+                placeholder="300.00"
+                value={firstDayRate}
+                onChange={setFirstDayRate}
+                allowDecimals={true}
+                className="text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-0.5">Rate for day 1 only (e.g. a higher first-day rate)</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Day 2+ Rate ($)</label>
+              <StringNumberInput
+                placeholder="100.00"
+                value={dailyRate}
+                onChange={setDailyRate}
+                allowDecimals={true}
+                className="text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-0.5">Rate on day 2, decreases each additional day</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Decline Type</label>
+              <select
+                value={declineType}
+                onChange={(e) => setDeclineType(e.target.value)}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="flat">Flat ($/day)</option>
+                <option value="percent">Percent (%/day)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                {declineType === "percent" ? "Decline % per Day" : "Decline $ per Day"}
+              </label>
+              <StringNumberInput
+                placeholder={declineType === "percent" ? "5.00" : "10.00"}
+                value={declineAmount}
+                onChange={setDeclineAmount}
+                allowDecimals={true}
+                className="text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Minimum Daily Rate ($)</label>
+            <StringNumberInput
+              placeholder="50.00"
+              value={minimumRate}
+              onChange={setMinimumRate}
+              allowDecimals={true}
+              className="text-sm"
+            />
+            <p className="text-[10px] text-gray-400 mt-0.5">Rate floor — never goes below this amount</p>
+          </div>
+        </div>
+      )}
+
+      {liveExample && (
+        <p className="text-xs text-gray-500 bg-white border rounded px-2 py-1.5">{liveExample}</p>
+      )}
+
+      <Button size="sm" onClick={handleSave} disabled={isSaving} className="text-xs">
+        {isSaving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
+        Save Per-Day Pricing
+      </Button>
+    </div>
+  );
+}
+
+// Overage rate field (shown for both pricing modes)
+function OverageRateField({ dumpster, onSave }: { dumpster: Dumpster; onSave: (id: number, data: any) => void }) {
+  const [overageRate, setOverageRate] = useState(
+    dumpster.overageRate != null ? (dumpster.overageRate / 100).toFixed(2) : ""
+  );
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(dumpster.id, {
+        overageRate: overageRate ? Math.round(parseFloat(overageRate) * 100) : null,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex-1">
+        <label className="block text-xs font-medium text-gray-700 mb-1">Overage Rate ($/day)</label>
+        <StringNumberInput
+          placeholder="35.00"
+          value={overageRate}
+          onChange={setOverageRate}
+          allowDecimals={true}
+          className="text-sm"
+        />
+      </div>
+      <Button size="sm" variant="outline" onClick={handleSave} disabled={isSaving} className="text-xs">
+        {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+      </Button>
+    </div>
   );
 }
 
@@ -834,6 +1166,40 @@ export default function DumpsterTypesTab() {
     deleteMutation.mutate(id);
   };
 
+  const handleUpdatePricingMode = async (dumpsterId: number, mode: 'tier' | 'per_day') => {
+    try {
+      await apiRequest('PUT', `/api/admin/dumpsters/${dumpsterId}`, { pricingMode: mode });
+      queryClient.invalidateQueries({ queryKey: ["/api/dumpsters"] });
+      toast({
+        title: "Success",
+        description: `Pricing mode updated to ${mode === 'tier' ? 'Duration Tiers' : 'Base + Per Day'}`,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update pricing mode",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdatePerDayConfig = async (dumpsterId: number, config: any) => {
+    try {
+      await apiRequest('PUT', `/api/admin/dumpsters/${dumpsterId}`, config);
+      queryClient.invalidateQueries({ queryKey: ["/api/dumpsters"] });
+      toast({
+        title: "Success",
+        description: "Pricing configuration saved",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to save pricing configuration",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -853,7 +1219,7 @@ export default function DumpsterTypesTab() {
               Add Dumpster
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] bg-white" forceLight>
             <DialogHeader>
               <DialogTitle>Add New Dumpster</DialogTitle>
               <DialogDescription>
@@ -943,7 +1309,7 @@ export default function DumpsterTypesTab() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] bg-white" forceLight>
           <DialogHeader>
             <DialogTitle>Edit Dumpster</DialogTitle>
             <DialogDescription>
@@ -1056,6 +1422,8 @@ export default function DumpsterTypesTab() {
                 newPricingPrice={newPricingPrice}
                 setNewPricingPrice={setNewPricingPrice}
                 handlePricingDragEnd={handlePricingDragEnd}
+                onUpdatePricingMode={handleUpdatePricingMode}
+                onUpdatePerDayConfig={handleUpdatePerDayConfig}
               />
             ))}
           </div>

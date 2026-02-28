@@ -25,6 +25,7 @@ export interface Job {
   adminNotes: string | null;
   rentalEndDate: string | null;
   bookingDeliveryDate: string | null;
+  paymentStatus?: string | null;
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;

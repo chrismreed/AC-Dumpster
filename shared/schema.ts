@@ -22,6 +22,18 @@ export const dumpsters = pgTable("dumpsters", {
   availability: integer("availability").notNull(), // Number of units available
   imageUrl: text("image_url"),
   sortOrder: integer("sort_order").default(0).notNull(),
+  // Pricing mode configuration
+  pricingMode: text("pricing_mode").notNull().default("tier"), // "tier" | "per_day"
+  basePricePerDay: integer("base_price_per_day"), // cents - flat setup/delivery fee (per_day mode)
+  dailyRate: integer("daily_rate"), // cents per day (per_day mode)
+  minDays: integer("min_days"), // minimum rental days (per_day mode)
+  maxDays: integer("max_days"), // maximum rental days (per_day mode)
+  overageRate: integer("overage_rate"), // cents/day - overage charge (both modes)
+  // Declining daily rate fields (optional, per_day mode only)
+  firstDayRate: integer("first_day_rate"),         // cents — day 1 rate; null = flat per-day mode
+  rateDeclineType: text("rate_decline_type"),       // 'flat' | 'percent' | null
+  rateDeclineAmount: integer("rate_decline_amount"), // flat: cents/day; percent: basis points (5% = 500)
+  minimumDailyRate: integer("minimum_daily_rate"),  // cents — floor rate for declining mode
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -186,7 +198,7 @@ export const bookings = pgTable("bookings", {
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone").notNull(),
   dumpsterId: integer("dumpster_id").notNull(),
-  pricingId: integer("pricing_id").notNull(),
+  pricingId: integer("pricing_id"), // Nullable for per_day mode (no tier selected)
   deliveryAddress: text("delivery_address").notNull(),
   deliveryCity: text("delivery_city").notNull(),
   deliveryZipCode: text("delivery_zip_code").notNull(),
@@ -201,6 +213,10 @@ export const bookings = pgTable("bookings", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   status: text("status").notNull().default("pending"),
   assignedFleetUnitId: integer("assigned_fleet_unit_id"), // Which specific dumpster unit is assigned
+  // Denormalized pricing snapshot
+  rentalDays: integer("rental_days"), // stored explicitly for both modes
+  rentalPrice: integer("rental_price"), // cents - the rental portion at booking time
+  bookingPricingMode: text("booking_pricing_mode"), // "tier" or "per_day" snapshot at booking time
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -436,6 +452,8 @@ export const insertBookingSchema = createInsertSchema(bookings)
     createdAt: true,
   })
   .extend({
+    // Allow pricingId to be null for per_day pricing mode
+    pricingId: z.number().nullable().optional(),
     // Override the default date validation to handle string dates properly
     // Keep dates in YYYY-MM-DD format and create them at noon to avoid timezone shifts
     deliveryDate: z.string().or(z.date()).transform(val => {

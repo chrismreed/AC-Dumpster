@@ -13,22 +13,34 @@ export async function POST(request: NextRequest) {
     // Validate the booking data
     const validatedData = insertBookingSchema.parse(body);
 
-    // Get dumpster and pricing details
+    // Get dumpster details
     const [dumpster] = await db
       .select()
       .from(dumpsters)
       .where(eq(dumpsters.id, validatedData.dumpsterId));
 
-    const [pricing] = await db
-      .select()
-      .from(dumpsterPricing)
-      .where(eq(dumpsterPricing.id, validatedData.pricingId));
-
-    if (!dumpster || !pricing) {
+    if (!dumpster) {
       return NextResponse.json(
-        { message: 'Dumpster or pricing not found' },
+        { message: 'Dumpster not found' },
         { status: 404 }
       );
+    }
+
+    // Get pricing details (nullable for per_day mode)
+    let pricing = null;
+    if (validatedData.pricingId) {
+      const [p] = await db
+        .select()
+        .from(dumpsterPricing)
+        .where(eq(dumpsterPricing.id, validatedData.pricingId));
+
+      if (!p) {
+        return NextResponse.json(
+          { message: 'Pricing option not found' },
+          { status: 404 }
+        );
+      }
+      pricing = p;
     }
 
     // Create the booking first with pending payment status
@@ -46,10 +58,12 @@ export async function POST(request: NextRequest) {
     // Auto-create delivery and pickup jobs
     try {
       // Calculate pickup date (delivery date + rental days)
+      // Use stored rentalDays from booking, fall back to pricing tier
       const deliveryDate = new Date(booking.deliveryDate);
       const pickupDate = new Date(deliveryDate);
-      if (pricing) {
-        pickupDate.setDate(pickupDate.getDate() + pricing.days);
+      const bookingRentalDays = booking.rentalDays || (pricing ? pricing.days : 0);
+      if (bookingRentalDays > 0) {
+        pickupDate.setDate(pickupDate.getDate() + bookingRentalDays);
       }
 
       // Create delivery job
