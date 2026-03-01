@@ -267,27 +267,10 @@ export function DumpsterSelector({ onNext, selectedDumpsterId: initialDumpsterId
                         <span>${(perDayBaseFee / 100).toFixed(2)}</span>
                       </div>
                     )}
-                    {isDeclineMode && perDayCalcResult ? (
-                      <>
-                        {/* Day 1 line */}
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>Day 1 rate</span>
-                          <span>${((perDayCalcResult.breakdown[0]?.rate ?? 0) / 100).toFixed(2)}</span>
-                        </div>
-                        {/* Days 2+ line (if any) */}
-                        {perDayCalcResult.breakdown.length > 1 && (
-                          <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Days 2–{perDayRentalDays} (declining)</span>
-                            <span>${(perDayCalcResult.rentalTotal / 100 - perDayCalcResult.breakdown[0].rate / 100).toFixed(2)}</span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>{perDayRentalDays} day{perDayRentalDays !== 1 ? 's' : ''} × ${(perDayDailyRate / 100).toFixed(2)}/day</span>
-                        <span>${((perDayDailyRate * perDayRentalDays) / 100).toFixed(2)}</span>
-                      </div>
-                    )}
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>{perDayRentalDays} day{perDayRentalDays !== 1 ? 's' : ''} rental</span>
+                      <span>${((perDayCalcResult ? perDayCalcResult.rentalTotal : perDayDailyRate * perDayRentalDays) / 100).toFixed(2)}</span>
+                    </div>
                     <div className="border-t border-primary/30 pt-2 flex justify-between items-center">
                       <span className="font-semibold text-foreground">Total</span>
                       <span className="text-2xl font-bold text-primary">${(perDayTotal / 100).toFixed(2)}</span>

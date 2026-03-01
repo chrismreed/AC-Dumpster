@@ -512,25 +512,10 @@ export function ReviewOrder({ bookingData, onBack, onSubmit }: ReviewOrderProps)
                           <span>${((dumpster?.basePricePerDay || 0) / 100).toFixed(2)}</span>
                         </div>
                       )}
-                      {isDecline && calcResult ? (
-                        <>
-                          <div className="flex justify-between text-muted-foreground">
-                            <span>Day 1</span>
-                            <span>${((calcResult.breakdown[0]?.rate ?? 0) / 100).toFixed(2)}</span>
-                          </div>
-                          {rentalDays > 1 && (
-                            <div className="flex justify-between text-muted-foreground">
-                              <span>Days 2–{rentalDays} (declining rate)</span>
-                              <span>${((calcResult.rentalTotal - (calcResult.breakdown[0]?.rate ?? 0)) / 100).toFixed(2)}</span>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex justify-between text-muted-foreground">
-                          <span>{rentalDays} day{rentalDays !== 1 ? 's' : ''} × ${((dumpster?.dailyRate || 0) / 100).toFixed(2)}/day</span>
-                          <span>${(((dumpster?.dailyRate || 0) * rentalDays) / 100).toFixed(2)}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>{rentalDays} day{rentalDays !== 1 ? 's' : ''} rental</span>
+                        <span>${((calcResult ? calcResult.rentalTotal : (dumpster?.dailyRate || 0) * rentalDays) / 100).toFixed(2)}</span>
+                      </div>
                       <div className="border-t border-border pt-1 flex justify-between">
                         <span className="font-medium text-foreground">Subtotal</span>
                         <span className="font-semibold text-primary text-lg">
