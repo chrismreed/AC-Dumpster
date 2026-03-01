@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 function AccountSetupContent() {
@@ -23,7 +24,6 @@ function AccountSetupContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Validate the token on page load
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
@@ -96,10 +96,10 @@ function AccountSetupContent() {
   // Loading state
   if (isValidating) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-[#f7c948] mx-auto mb-4" />
-          <p className="text-gray-600">Validating your setup link...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-lg shadow-md p-8 max-w-md w-full text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Validating your setup link...</p>
         </div>
       </div>
     );
@@ -108,17 +108,17 @@ function AccountSetupContent() {
   // Success state
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-lg shadow-md p-8 max-w-md w-full text-center">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Account Set Up!</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Account Set Up!</h1>
+          <p className="text-muted-foreground mb-6">
             Your password has been set and your email has been verified.
             You can now log in to track your orders.
           </p>
           <Button
             onClick={() => router.push('/account/login')}
-            className="w-full bg-[#f7c948] hover:bg-[#e6b83e] text-black font-semibold"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
             Go to Login
           </Button>
@@ -130,16 +130,16 @@ function AccountSetupContent() {
   // Already verified state
   if (alreadyVerified) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-lg shadow-md p-8 max-w-md w-full text-center">
           <CheckCircle className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Already Set Up</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Already Set Up</h1>
+          <p className="text-muted-foreground mb-6">
             This account ({email}) has already been set up. You can log in with your email and password.
           </p>
           <Button
             onClick={() => router.push('/account/login')}
-            className="w-full bg-[#f7c948] hover:bg-[#e6b83e] text-black font-semibold"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
             Go to Login
           </Button>
@@ -151,11 +151,11 @@ function AccountSetupContent() {
   // Error state (invalid/expired token)
   if (!isValid) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Link</h1>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-lg shadow-md p-8 max-w-md w-full text-center">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Link</h1>
+          <p className="text-muted-foreground mb-6">
             {error || 'This setup link is invalid or has expired.'}
           </p>
           <div className="space-y-3">
@@ -175,40 +175,40 @@ function AccountSetupContent() {
 
   // Setup form
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-lg shadow-md p-8 max-w-md w-full">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Set Up Your Account</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl font-bold text-foreground">Set Up Your Account</h1>
+          <p className="text-muted-foreground mt-2">
             {name ? `Welcome, ${name}! ` : ''}Create a password to access your account.
           </p>
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-3 mb-6">
-          <p className="text-sm text-gray-500">Email</p>
-          <p className="font-medium text-gray-900">{email}</p>
+        <div className="bg-muted rounded-lg p-3 mb-6">
+          <p className="text-sm text-muted-foreground">Email</p>
+          <p className="font-medium text-foreground">{email}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
               Password
             </label>
             <div className="relative">
-              <input
+              <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f7c948] focus:border-transparent outline-none pr-10"
                 required
                 minLength={8}
+                className="pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -216,31 +216,30 @@ function AccountSetupContent() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1">
               Confirm Password
             </label>
-            <input
+            <Input
               id="confirmPassword"
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-enter your password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f7c948] focus:border-transparent outline-none"
               required
               minLength={8}
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-[#f7c948] hover:bg-[#e6b83e] text-black font-semibold py-2.5"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5"
           >
             {isSubmitting ? (
               <>
@@ -276,7 +275,6 @@ function ResendButton() {
       });
       setSent(true);
     } catch {
-      // Still show success to not reveal if email exists
       setSent(true);
     } finally {
       setSending(false);
@@ -295,7 +293,7 @@ function ResendButton() {
     return (
       <Button
         onClick={() => setShowForm(true)}
-        className="w-full bg-[#f7c948] hover:bg-[#e6b83e] text-black font-semibold"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
       >
         Request New Setup Link
       </Button>
@@ -304,18 +302,17 @@ function ResendButton() {
 
   return (
     <form onSubmit={handleResend} className="space-y-2">
-      <input
+      <Input
         type="email"
         value={email}
         onChange={(e) => setEmailInput(e.target.value)}
         placeholder="Enter your email"
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f7c948] focus:border-transparent outline-none text-sm"
         required
       />
       <Button
         type="submit"
         disabled={sending}
-        className="w-full bg-[#f7c948] hover:bg-[#e6b83e] text-black font-semibold"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
       >
         {sending ? 'Sending...' : 'Send New Link'}
       </Button>
@@ -327,10 +324,10 @@ export default function AccountSetupPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-[#f7c948] mx-auto mb-4" />
-            <p className="text-gray-600">Loading...</p>
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-lg shadow-md p-8 max-w-md w-full text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading...</p>
           </div>
         </div>
       }
