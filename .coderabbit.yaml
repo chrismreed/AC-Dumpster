@@ -43,12 +43,14 @@ reviews:
         - Proper session/auth validation
         - Users can only access their own data
 
-  # Don't nitpick these
+  # Only review the Next.js app — ignore legacy Vite client and other noise
   path_filters:
+    - "src/**"
     - "!**/*.md"
     - "!.next/**"
     - "!node_modules/**"
     - "!**/*.lock"
+    - "!client/**"
 
 chat:
   # Allow @coderabbitai commands in PR comments
