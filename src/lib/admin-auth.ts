@@ -21,7 +21,9 @@ export async function verifyAdminAuth(request: NextRequest): Promise<AuthResult>
       return { authorized: false, error: 'No authentication token found' };
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: number };
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
+    const decoded = jwt.verify(token, jwtSecret) as { userId: number };
 
     if (!decoded.userId) {
       return { authorized: false, error: 'Invalid token format' };

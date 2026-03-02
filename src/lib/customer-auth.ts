@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { customerAccounts } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
 
 export interface CustomerSession {
   id: number;
@@ -19,14 +20,19 @@ export interface CustomerSession {
 export async function getCustomerSession(): Promise<CustomerSession | null> {
   try {
     const cookieStore = cookies();
-    const customerIdCookie = cookieStore.get('customer_id');
+    const token = cookieStore.get('customer_token')?.value;
 
-    if (!customerIdCookie?.value) {
+    if (!token) {
       return null;
     }
 
-    const customerId = Number(customerIdCookie.value);
-    if (!customerId || isNaN(customerId)) {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
+
+    const decoded = jwt.verify(token, jwtSecret) as { customerId: number };
+    const customerId = decoded.customerId;
+
+    if (!customerId || typeof customerId !== 'number') {
       return null;
     }
 

@@ -55,11 +55,10 @@ const SECRET_KEYS: Set<string> = new Set([
 function getEncryptionKey(): Buffer {
   const keyHex = process.env.PAYMENT_ENCRYPTION_KEY;
   if (!keyHex || keyHex.length !== 64) {
-    // Fallback: derive a key from DATABASE_URL if no encryption key is set
-    // This is less secure but prevents breakage during setup
-    const fallback = process.env.DATABASE_URL || 'default-key-change-me-immediately';
-    const crypto = require('crypto');
-    return crypto.createHash('sha256').update(fallback).digest();
+    throw new Error(
+      'PAYMENT_ENCRYPTION_KEY is not set or invalid. ' +
+      'Generate a 64-char hex key with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+    );
   }
   return Buffer.from(keyHex, 'hex');
 }

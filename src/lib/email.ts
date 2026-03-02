@@ -1,4 +1,5 @@
 import sgMail from '@sendgrid/mail';
+import { randomBytes } from 'crypto';
 
 // Initialize SendGrid
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
@@ -155,13 +156,8 @@ export async function sendResendVerificationEmail(
 }
 
 export function generateVerificationToken(): string {
-  // Generate a URL-safe random token
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 64; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  // 32 cryptographically random bytes → 43-char URL-safe base64 string
+  return randomBytes(32).toString('base64url');
 }
 
 export function getTokenExpiryDate(): Date {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { db } from '@/lib/db';
 import { customerAccounts } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -67,9 +68,14 @@ export async function POST(request: NextRequest) {
       .set({ lastLoginAt: new Date() })
       .where(eq(customerAccounts.id, account.id));
 
-    // Set session cookie (same pattern as admin auth)
+    // Issue a signed JWT session cookie (same pattern as admin auth)
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json({ message: 'Server configuration error' }, { status: 500 });
+    }
+    const token = jwt.sign({ customerId: account.id }, jwtSecret, { expiresIn: '7d' });
     const cookieStore = cookies();
-    cookieStore.set('customer_id', account.id.toString(), {
+    cookieStore.set('customer_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
