@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { bookings, dumpsters, dumpsterPricing, jobs, customerAccounts } from '@shared/schema';
+import { bookings, dumpsters, dumpsterPricing, jobs, customerAccounts, addOns as addOnsTable } from '@shared/schema';
 import { insertBookingSchema } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { sendAccountSetupEmail, generateVerificationToken, getTokenExpiryDate } from '@/lib/email';
+import { calculatePerDayRental } from '@/lib/pricing/per-day-calculator';
+
+// All price-related fields are computed server-side and must not come from the client.
+// paymentStatus / status / stripePaymentIntentId are also server-controlled.
+const bookingInputSchema = insertBookingSchema.omit({
+  totalPrice: true,
+  rentalPrice: true,
+  bookingPricingMode: true,
+  paymentStatus: true,
+  status: true,
+  stripePaymentIntentId: true,
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log('Received booking request for dumpster:', body.dumpsterId);
 
-    // Validate the booking data
-    const validatedData = insertBookingSchema.parse(body);
+    // Validate the booking data — price fields are stripped and computed below
+    const validatedData = bookingInputSchema.parse(body);
 
     // Get dumpster details
     const [dumpster] = await db
@@ -40,14 +52,89 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
+      // Ensure the pricing tier actually belongs to the requested dumpster
+      if (p.dumpsterId !== validatedData.dumpsterId) {
+        return NextResponse.json(
+          { message: 'Pricing option does not match the selected dumpster' },
+          { status: 400 }
+        );
+      }
       pricing = p;
     }
 
-    // Create the booking first with pending payment status
+    // --- Compute all prices server-side (never trust client-supplied values) ---
+
+    // 1. Base rental price
+    let rentalPrice: number;
+    let rentalDays: number;
+    let bookingPricingMode: string;
+
+    if (pricing) {
+      // Tier mode: price is the fixed amount stored in the DB for this tier
+      rentalPrice = pricing.price;
+      rentalDays = pricing.days;
+      bookingPricingMode = 'tier';
+    } else {
+      // Per-day mode: client supplies the number of days; price is derived from dumpster config
+      const clientRentalDays = validatedData.rentalDays;
+      if (!clientRentalDays || clientRentalDays < 1) {
+        return NextResponse.json(
+          { message: 'rentalDays is required for per-day pricing' },
+          { status: 400 }
+        );
+      }
+      if (dumpster.minDays && clientRentalDays < dumpster.minDays) {
+        return NextResponse.json(
+          { message: `Minimum rental period is ${dumpster.minDays} days` },
+          { status: 400 }
+        );
+      }
+      if (dumpster.maxDays && clientRentalDays > dumpster.maxDays) {
+        return NextResponse.json(
+          { message: `Maximum rental period is ${dumpster.maxDays} days` },
+          { status: 400 }
+        );
+      }
+      const perDayResult = calculatePerDayRental(dumpster, clientRentalDays);
+      rentalPrice = perDayResult.grandTotal;
+      rentalDays = clientRentalDays;
+      bookingPricingMode = 'per_day';
+    }
+
+    // 2. Add-ons: re-fetch from DB so we use the canonical price, not the client-submitted one
+    let addOnTotal = 0;
+    let verifiedAddOns: (typeof addOnsTable.$inferSelect)[] = [];
+    const submittedAddOns = validatedData.selectedAddOns as Array<{ id: number } | number> | null;
+
+    if (submittedAddOns && submittedAddOns.length > 0) {
+      const addOnIds = submittedAddOns
+        .map((a) => (typeof a === 'object' && a !== null ? (a as { id: number }).id : a))
+        .filter((id): id is number => typeof id === 'number');
+
+      if (addOnIds.length > 0) {
+        const dbAddOns = await db
+          .select()
+          .from(addOnsTable)
+          .where(inArray(addOnsTable.id, addOnIds));
+        verifiedAddOns = dbAddOns.filter((a) => a.isActive);
+        addOnTotal = verifiedAddOns.reduce((sum, a) => sum + a.price, 0);
+      }
+    }
+
+    // 3. Final total = rental + verified add-ons (all values in cents)
+    const totalPrice = rentalPrice + addOnTotal;
+
+    // Create the booking with server-computed prices
     const [booking] = await db
       .insert(bookings)
       .values({
         ...validatedData,
+        // Server-computed — these override any client-supplied values
+        totalPrice,
+        rentalPrice,
+        rentalDays,
+        bookingPricingMode,
+        selectedAddOns: verifiedAddOns.length > 0 ? verifiedAddOns : [],
         paymentStatus: 'pending',
         status: 'pending',
       })
@@ -202,8 +289,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Do not expose internal error details (DB table/column names etc.) to the client
     return NextResponse.json(
-      { message: 'Failed to create booking', error: error instanceof Error ? error.message : 'Unknown error' },
+      { message: 'Failed to create booking' },
       { status: 500 }
     );
   }

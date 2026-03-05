@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { paymentLinks, additionalCharges } from '@shared/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/payment-config';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // POST /api/admin/payment-links/[linkId]/check-status - Check and update payment status
 export async function POST(

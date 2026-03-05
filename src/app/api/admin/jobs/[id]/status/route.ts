@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { jobs, fleetUnits, bookings, dumpsters } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { sendNotification, type NotificationEventType } from '@/lib/notifications';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // Valid job statuses — expanded lifecycle
 // Delivery: pending → scheduled → en_route → completed

@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { paymentLinks } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/payment-config';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // DELETE /api/admin/payment-links/[linkId] - Delete/deactivate a payment link
 export async function DELETE(

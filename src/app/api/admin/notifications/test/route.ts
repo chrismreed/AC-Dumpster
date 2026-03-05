@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendNotification, type NotificationEventType, type NotificationContext } from '@/lib/notifications';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // POST: Send a test notification
 export async function POST(request: NextRequest) {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const { eventType, email, phone } = body as {
       eventType: NotificationEventType;

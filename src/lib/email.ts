@@ -1,10 +1,22 @@
-import sgMail from '@sendgrid/mail';
+import sgMail, { MailService } from '@sendgrid/mail';
 import { randomBytes } from 'crypto';
 
 // Initialize SendGrid
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@alleycatdumpsters.com';
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+// Warn at startup if APP_URL falls back to localhost in production — account setup
+// email links will be broken and customers won't be able to set their password.
+const APP_URL = (() => {
+  const url = process.env.NEXT_PUBLIC_APP_URL;
+  if (!url && process.env.NODE_ENV === 'production') {
+    console.error(
+      'email.ts: NEXT_PUBLIC_APP_URL is not set. ' +
+      'Account setup and verification email links will point to http://localhost:3000 ' +
+      'and will not work for customers. Set NEXT_PUBLIC_APP_URL in your environment.'
+    );
+  }
+  return url || 'http://localhost:3000';
+})();
 
 if (SENDGRID_API_KEY) {
   sgMail.setApiKey(SENDGRID_API_KEY);
@@ -194,31 +206,26 @@ export async function sendTemplatedEmail(
   }
 
   try {
-    // If using dynamic config, set the API key for this call
+    // Use a fresh MailService instance for dynamic API keys to avoid mutating
+    // the module-level sgMail singleton (which would create a race condition
+    // when concurrent requests use different keys and one call's setApiKey()
+    // overwrites another's before send() completes).
+    const mailer = config?.apiKey ? new MailService() : sgMail;
     if (config?.apiKey) {
-      sgMail.setApiKey(config.apiKey);
+      mailer.setApiKey(config.apiKey);
     }
 
-    await sgMail.send({
+    await mailer.send({
       to,
       from: { email: fromEmail, name: 'Alley Cat Dumpsters' },
       subject,
       html: htmlBody,
     });
 
-    // Reset to default API key if we used a dynamic one
-    if (config?.apiKey && SENDGRID_API_KEY) {
-      sgMail.setApiKey(SENDGRID_API_KEY);
-    }
-
     console.log(`Templated email sent to ${to}: ${subject}`);
     return true;
   } catch (error) {
     console.error('Failed to send templated email:', error);
-    // Reset to default API key on error too
-    if (config?.apiKey && SENDGRID_API_KEY) {
-      sgMail.setApiKey(SENDGRID_API_KEY);
-    }
     return false;
   }
 }

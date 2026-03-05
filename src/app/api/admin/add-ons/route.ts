@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { addOns, insertAddOnSchema } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    const allAddOns = await db
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    const allAddOns = await db
       .select()
       .from(addOns)
       .orderBy(desc(addOns.createdAt));
@@ -25,8 +28,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    const body = await request.json();
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    const body = await request.json();
 
     // Convert price from dollars to cents for storage
     const dataWithCentsPrice = {

@@ -64,7 +64,12 @@ function getEncryptionKey(): Buffer {
 }
 
 export function encrypt(plaintext: string): string {
-  if (!plaintext) return '';
+  if (!plaintext) {
+    // Storing an empty string — callers cannot later distinguish "key not set" from
+    // "key was explicitly cleared". Warn so this is visible in server logs.
+    console.warn('payment-config: encrypt() called with empty string — storing empty value.');
+    return '';
+  }
   const key = getEncryptionKey();
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
@@ -93,8 +98,10 @@ export function decrypt(encryptedStr: string): string {
     decrypted += decipher.final('utf8');
     return decrypted;
   } catch {
-    // If decryption fails, the value might be stored in plain text (legacy)
-    return encryptedStr;
+    // Decryption failed — likely a corrupted value or a rotated encryption key.
+    // Return empty string so callers fall back to env vars rather than using garbled data.
+    console.warn('payment-config: decrypt() failed — returning empty string. Check PAYMENT_ENCRYPTION_KEY.');
+    return '';
   }
 }
 
@@ -111,18 +118,35 @@ export function maskSecret(value: string): string {
 // ─── Config Loading ───────────────────────────────────────────────────────────
 
 let configCache: { config: PaymentConfig; timestamp: number } | null = null;
+let configFetchPromise: Promise<PaymentConfig> | null = null; // single-flight guard
 const CACHE_TTL_MS = 60_000; // 60 seconds
 
 export function clearPaymentConfigCache(): void {
   configCache = null;
+  configFetchPromise = null;
+  cachedStripeClient = null; // Force new client on next request so key rotation takes effect immediately
 }
 
 export async function getPaymentConfig(): Promise<PaymentConfig> {
-  // Check cache
+  // Return from cache if still fresh
   if (configCache && Date.now() - configCache.timestamp < CACHE_TTL_MS) {
     return configCache.config;
   }
 
+  // Single-flight: if a DB fetch is already in progress, reuse that Promise
+  // so concurrent callers don't each fire a separate query on cold start / TTL expiry.
+  if (configFetchPromise) {
+    return configFetchPromise;
+  }
+
+  configFetchPromise = fetchPaymentConfig().finally(() => {
+    configFetchPromise = null;
+  });
+
+  return configFetchPromise;
+}
+
+async function fetchPaymentConfig(): Promise<PaymentConfig> {
   try {
     const settings = await db.select().from(businessSettings);
     const settingsMap = new Map(settings.map(s => [s.key, s.value]));

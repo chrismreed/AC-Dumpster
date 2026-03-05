@@ -44,8 +44,7 @@ export function SquarePaymentForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sourceId: token.token,
-          amount: totalAmount,
-          bookingId,
+          bookingId, // Amount is looked up server-side from the booking record
           note: `Dumpster rental booking #${bookingId}`,
         }),
       });

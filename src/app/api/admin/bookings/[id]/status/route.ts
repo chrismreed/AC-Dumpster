@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { bookings } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 const validStatuses = ['pending', 'confirmed', 'delivered', 'picked_up', 'complete', 'cancelled'];
 

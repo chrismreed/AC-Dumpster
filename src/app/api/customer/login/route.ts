@@ -5,9 +5,23 @@ import jwt from 'jsonwebtoken';
 import { db } from '@/lib/db';
 import { customerAccounts } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { checkRateLimit, resetRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const rateLimit = await checkRateLimit(ip, 'customer');
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: `Too many login attempts. Please try again in ${rateLimit.retryAfter} seconds.` },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rateLimit.retryAfter) },
+        }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -30,25 +44,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if account has been set up (has a password)
+    // Check if account has been set up (has a password).
+    // Use 401 (not 403) to avoid leaking that the email address exists in the DB.
     if (!account.passwordHash) {
       return NextResponse.json(
         {
           message: "Account not set up yet. Please check your email for the setup link.",
           code: "ACCOUNT_NOT_SETUP",
         },
-        { status: 403 }
+        { status: 401 }
       );
     }
 
-    // Check if email is verified
+    // Check if email is verified.
+    // Use 401 (not 403) for the same reason — consistent status prevents email enumeration.
     if (!account.emailVerified) {
       return NextResponse.json(
         {
           message: "Email not verified. Please check your email for the verification link.",
           code: "EMAIL_NOT_VERIFIED",
         },
-        { status: 403 }
+        { status: 401 }
       );
     }
 
@@ -62,6 +78,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Successful auth — reset the rate limit counter for this IP
+    await resetRateLimit(ip, 'customer');
+
     // Update last login time
     await db
       .update(customerAccounts)
@@ -69,12 +88,12 @@ export async function POST(request: NextRequest) {
       .where(eq(customerAccounts.id, account.id));
 
     // Issue a signed JWT session cookie (same pattern as admin auth)
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = process.env.JWT_SECRET_CUSTOMER;
     if (!jwtSecret) {
       return NextResponse.json({ message: 'Server configuration error' }, { status: 500 });
     }
     const token = jwt.sign({ customerId: account.id }, jwtSecret, { expiresIn: '7d' });
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set('customer_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

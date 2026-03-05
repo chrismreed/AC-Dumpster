@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hubs, jobs } from '@shared/schema';
 import { desc, and, isNotNull, notInArray, gte, or, ilike } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,11 @@ const SEARCH_DAYS = 180;
 /** Returns hubs and job/booking locations for the fleet location dropdown. Supports ?search= for finding jobs by customer/address. */
 export async function GET(request: NextRequest) {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim().toLowerCase();
     const daysBack = search ? SEARCH_DAYS : DEFAULT_DAYS;

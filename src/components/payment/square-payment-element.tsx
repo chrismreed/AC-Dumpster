@@ -106,8 +106,7 @@ export function SquarePaymentElement({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sourceId: result.token,
-            amount: Math.round(amount * 100), // Convert to cents
-            bookingId,
+            bookingId, // Amount is looked up server-side from the booking record
           }),
         });
 

@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { bookings, dumpsters, serviceZones } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    // For now, allow all requests
-
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const allBookings = await db
       .select({
         id: bookings.id,

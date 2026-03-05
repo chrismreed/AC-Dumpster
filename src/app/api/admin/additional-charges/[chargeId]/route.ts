@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { additionalCharges } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // DELETE /api/admin/additional-charges/[chargeId] - Delete an unpaid charge
 export async function DELETE(

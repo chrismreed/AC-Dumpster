@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
     // Retrieve the payment intent to check its status
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
+    // Security: verify the payment intent actually belongs to this booking.
+    // We use Stripe's own metadata as the source of truth — never the client-supplied bookingId.
+    if (paymentIntent.metadata?.bookingId !== String(bookingId)) {
+      return NextResponse.json(
+        { message: 'Payment does not match booking' },
+        { status: 400 }
+      );
+    }
+
     if (paymentIntent.status === 'succeeded') {
       // Update booking with successful payment
       await db
@@ -52,7 +61,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error confirming payment:', error);
     return NextResponse.json(
-      { message: 'Failed to confirm payment', error: error instanceof Error ? error.message : 'Unknown error' },
+      { message: 'Failed to confirm payment' },
       { status: 500 }
     );
   }

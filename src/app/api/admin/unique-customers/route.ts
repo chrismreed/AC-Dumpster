@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { bookings, customerAccounts } from '@shared/schema';
 import { desc } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    // Get all bookings
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    // Get all bookings
     const allBookings = await db
       .select({
         customerEmail: bookings.customerEmail,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { paymentLinks } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // GET /api/admin/bookings/[id]/payment-links - Get all payment links for a booking
 export async function GET(

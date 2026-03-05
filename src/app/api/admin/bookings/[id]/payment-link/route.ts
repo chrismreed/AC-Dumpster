@@ -4,6 +4,7 @@ import { paymentLinks, additionalCharges, bookings } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/payment-config';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // POST /api/admin/bookings/[id]/payment-link - Create a payment link for unpaid charges
 export async function POST(

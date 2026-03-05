@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    // Create all missing tables from the migration
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    // Create all missing tables from the migration
     const createStatements = [
       `CREATE TABLE IF NOT EXISTS customer_accounts (
         id serial PRIMARY KEY NOT NULL,

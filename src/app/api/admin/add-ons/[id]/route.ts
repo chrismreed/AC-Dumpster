@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { addOns } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 

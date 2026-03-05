@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { paymentLinks, bookings } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/payment-config';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // POST /api/admin/payment-links/[linkId]/send - Get message content to send via email or SMS
 export async function POST(

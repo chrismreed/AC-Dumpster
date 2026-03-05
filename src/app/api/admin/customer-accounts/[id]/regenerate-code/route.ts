@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { customerAccounts } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 async function generateAccessCode(): Promise<string> {
   return crypto.randomInt(100000, 999999).toString();
@@ -13,7 +14,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Add admin authentication middleware
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const id = Number(params.id);
 
     if (!id) {

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -718,6 +718,26 @@ export const insertNotificationLogSchema = createInsertSchema(notificationLog).o
   id: true,
   createdAt: true,
 });
+
+// ─── Login Attempts (rate limiting) ─────────────────────────────────────────
+// One row per (ip, endpoint). Upserted on every attempt; reset on success.
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id: serial("id").primaryKey(),
+    ip: text("ip").notNull(),
+    endpoint: text("endpoint").notNull(), // 'admin' | 'customer'
+    attemptCount: integer("attempt_count").notNull().default(1),
+    windowStart: timestamp("window_start").notNull().defaultNow(),
+    lastAttemptAt: timestamp("last_attempt_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    ipEndpointUnique: uniqueIndex("login_attempts_ip_endpoint_idx").on(
+      table.ip,
+      table.endpoint
+    ),
+  })
+);
 
 // Types
 export type User = typeof users.$inferSelect;

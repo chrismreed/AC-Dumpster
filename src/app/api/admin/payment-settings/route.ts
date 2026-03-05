@@ -11,6 +11,7 @@ import {
   getPaymentConfig,
 } from '@/lib/payment-config';
 import Stripe from 'stripe';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,8 +25,13 @@ const SECRET_FIELDS: Set<string> = new Set([
 // All valid payment setting keys
 const ALL_PAYMENT_KEYS = new Set(Object.values(PAYMENT_SETTINGS_KEYS));
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const settings = await db.select().from(businessSettings);
     const settingsMap = new Map(settings.map(s => [s.key, s.value]));
 
@@ -89,6 +95,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const { validate, ...settings } = body;
 

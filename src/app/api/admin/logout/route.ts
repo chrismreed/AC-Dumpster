@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = cookies();
 
     // Clear the admin session cookie
-    cookieStore.delete('admin_id');
+    cookieStore.delete('admin_token');
 
     return NextResponse.json({ message: 'Logged out successfully' });
   } catch (error) {

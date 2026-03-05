@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { bookings, dumpsterPricing, fleetUnits, jobs, customerAccounts, businessSettings } from '@shared/schema';
 import { insertBookingSchema } from '@shared/schema';
-import { eq, and, or, desc, sql } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 
 // Generate a random 6-digit access code
 function generateAccessCode(): string {
@@ -59,22 +59,6 @@ async function findOrCreateCustomerAccount(
   return newAccount.id;
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const allBookings = await db
-      .select()
-      .from(bookings)
-      .orderBy(desc(bookings.createdAt));
-
-    return NextResponse.json(allBookings);
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-    return NextResponse.json(
-      { message: 'Failed to fetch bookings' },
-      { status: 500 }
-    );
-  }
-}
 
 async function checkDumpsterAvailability(dumpsterId: number, deliveryDate: string, pricingId: number): Promise<boolean> {
   // Get rental duration from pricing option

@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { customerCredits, insertCustomerCreditSchema } from '@shared/schema';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    const { customerAccountId, amount, type, description, bookingId } = await request.json();
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    const { customerAccountId, amount, type, description, bookingId } = await request.json();
 
     if (!customerAccountId || !amount || !type) {
       return NextResponse.json(

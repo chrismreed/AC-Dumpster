@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    // For now, require adminId in request body
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    // For now, require adminId in request body
     const { adminId, username, email } = await request.json();
 
     if (!adminId || !username || !email) {

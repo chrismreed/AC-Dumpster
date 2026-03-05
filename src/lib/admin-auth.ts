@@ -21,8 +21,8 @@ export async function verifyAdminAuth(request: NextRequest): Promise<AuthResult>
       return { authorized: false, error: 'No authentication token found' };
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
+    const jwtSecret = process.env.JWT_SECRET_ADMIN;
+    if (!jwtSecret) throw new Error('JWT_SECRET_ADMIN environment variable is not set');
     const decoded = jwt.verify(token, jwtSecret) as { userId: number };
 
     if (!decoded.userId) {
@@ -33,6 +33,10 @@ export async function verifyAdminAuth(request: NextRequest): Promise<AuthResult>
 
     if (!user) {
       return { authorized: false, error: 'User not found' };
+    }
+
+    if (!user.isAdmin) {
+      return { authorized: false, error: 'Insufficient permissions' };
     }
 
     return {

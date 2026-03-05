@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { customerAccounts, bookings, jobs, swapRequests, customerCredits, dumpsters, dumpsterPricing, serviceZones } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 

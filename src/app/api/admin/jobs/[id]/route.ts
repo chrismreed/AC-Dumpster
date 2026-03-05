@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { jobs, dumpsters, fleetUnits, bookings, serviceResponses, services } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // GET: Get a single job by ID with full details
 export async function GET(

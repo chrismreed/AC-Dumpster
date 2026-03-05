@@ -3,12 +3,18 @@ import { db } from '@/lib/db';
 import { jobs, dumpsters, fleetUnits, bookings, serviceResponses, services, customerAccounts } from '@shared/schema';
 import { eq, desc, and, or, gte, lte, sql } from 'drizzle-orm';
 import { insertJobSchema } from '@shared/schema';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 // GET: List all jobs with optional filters
 export async function GET(request: NextRequest) {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const jobType = searchParams.get('jobType');
     const status = searchParams.get('status');
@@ -116,6 +122,11 @@ export async function GET(request: NextRequest) {
 // POST: Create a new job manually
 export async function POST(request: NextRequest) {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
 
     // Validate the input

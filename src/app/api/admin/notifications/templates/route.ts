@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { notificationTemplates } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 // GET: Fetch all notification templates
 export async function GET() {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const templates = await db
       .select()
       .from(notificationTemplates)
@@ -24,6 +30,11 @@ export async function GET() {
 // PUT: Batch update notification templates
 export async function PUT(request: NextRequest) {
   try {
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const { templates } = body as { templates: Array<{
       id: number;

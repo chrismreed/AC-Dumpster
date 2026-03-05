@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { customerAccounts, bookings, insertCustomerAccountSchema } from '@shared/schema';
 import { eq, desc, sql, count } from 'drizzle-orm';
 import { sendAccountSetupEmail, generateVerificationToken, getTokenExpiryDate } from '@/lib/email';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,8 +58,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    const body = await request.json();
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    const body = await request.json();
 
     // Validate the customer account data
     const validatedData = insertCustomerAccountSchema.parse(body);

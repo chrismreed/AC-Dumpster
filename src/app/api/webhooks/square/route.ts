@@ -4,7 +4,7 @@ import { bookings } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { getPaymentConfig } from '@/lib/payment-config';
 import { sendNotification } from '@/lib/notifications';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,11 +16,35 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     const signature = request.headers.get('x-square-hmacsha256-signature');
 
-    // Verify webhook signature if we have a webhook URL configured
-    // Square uses HMAC-SHA256 with the webhook signature key
-    // For now we process without verification in development
     if (!signature) {
-      console.warn('Square webhook received without signature');
+      return NextResponse.json(
+        { message: 'Missing Square webhook signature' },
+        { status: 401 }
+      );
+    }
+
+    const squareWebhookSignatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+    if (!squareWebhookSignatureKey) {
+      console.error('SQUARE_WEBHOOK_SIGNATURE_KEY not configured');
+      return NextResponse.json(
+        { message: 'Square webhook not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Square signature: HMAC-SHA256(key, notificationUrl + body), base64-encoded
+    const notificationUrl = (process.env.NEXT_PUBLIC_APP_URL || '') + '/api/webhooks/square';
+    const hmac = createHmac('sha256', squareWebhookSignatureKey);
+    hmac.update(notificationUrl + body);
+    const expectedSig = hmac.digest('base64');
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedSig);
+    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
+      console.error('Square webhook signature verification failed');
+      return NextResponse.json(
+        { message: 'Webhook signature verification failed' },
+        { status: 401 }
+      );
     }
 
     const event = JSON.parse(body);

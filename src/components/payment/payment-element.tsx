@@ -57,6 +57,7 @@ export function PaymentElement({
   return (
     <StripePaymentElement
       amount={amount}
+      bookingId={bookingId}
       onSuccess={onSuccess}
       onError={onError}
       collectBillingAddress={collectBillingAddress}

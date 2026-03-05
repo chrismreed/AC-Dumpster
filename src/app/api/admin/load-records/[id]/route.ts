@@ -2,13 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { loadRecords, insertLoadRecordSchema } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Add admin authentication middleware
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const id = Number(params.id);
 
     if (!id) {
@@ -45,7 +50,11 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Add admin authentication middleware
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const id = Number(params.id);
 
     if (!id) {
@@ -98,7 +107,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Add admin authentication middleware
+
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
     const id = Number(params.id);
 
     if (!id) {

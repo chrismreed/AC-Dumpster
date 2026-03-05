@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { dumpsters, insertDumpsterSchema, dumpsterPricing } from '@shared/schema';
 import { eq, desc, min } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    // Get dumpsters with their pricing data
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    // Get dumpsters with their pricing data
     const dumpstersWithPricing = await db
       .select({
         id: dumpsters.id,
@@ -80,8 +83,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication middleware
-    const body = await request.json();
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }    const body = await request.json();
 
     // Validate the dumpster data
     const validatedData = insertDumpsterSchema.parse(body);

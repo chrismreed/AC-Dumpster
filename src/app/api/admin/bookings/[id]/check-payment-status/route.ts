@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { bookings, paymentLinks } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/payment-config';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export async function POST(
   request: NextRequest,

@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { verifyAdminAuth } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies();
-    const adminId = cookieStore.get('admin_id')?.value;
-
-    if (!adminId) {
-      return NextResponse.json(
-        { message: 'Not authenticated' },
-        { status: 401 }
-      );
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.authorized) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const [user] = await db
@@ -26,7 +21,7 @@ export async function GET(request: NextRequest) {
         isAdmin: users.isAdmin,
       })
       .from(users)
-      .where(eq(users.id, Number(adminId)));
+      .where(eq(users.id, authResult.userId!));
 
     if (!user || !user.isAdmin) {
       return NextResponse.json(

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSquareClient, getSquareLocationId, getPaymentConfig } from '@/lib/payment-config';
+import { db } from '@/lib/db';
+import { bookings } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -20,43 +23,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { sourceId, amount, bookingId, note } = await request.json();
+    const { sourceId, bookingId, note } = await request.json();
 
     if (!sourceId) {
-      return NextResponse.json(
-        { error: 'Payment source token is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Payment source token is required' }, { status: 400 });
     }
 
-    if (!amount || amount < 100) {
-      return NextResponse.json(
-        { error: 'Amount must be at least $1.00' },
-        { status: 400 }
-      );
+    if (!bookingId) {
+      return NextResponse.json({ error: 'Booking ID is required' }, { status: 400 });
+    }
+
+    // Look up the booking server-side — the client must never supply the amount
+    const [booking] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, Number(bookingId)));
+
+    if (!booking) {
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    }
+
+    if (booking.paymentStatus === 'paid') {
+      return NextResponse.json({ error: 'Booking is already paid' }, { status: 400 });
     }
 
     const locationId = await getSquareLocationId();
     if (!locationId) {
-      return NextResponse.json(
-        { error: 'Square location ID is not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Square location ID is not configured' }, { status: 500 });
     }
-
-    const idempotencyKey = randomUUID();
 
     const result = await client.payments.create({
       sourceId,
-      idempotencyKey,
+      idempotencyKey: randomUUID(),
       amountMoney: {
-        amount: BigInt(amount),
+        amount: BigInt(booking.totalPrice), // In cents, from DB — never from client
         currency: config.currency.toUpperCase(),
       },
       locationId,
-      note: note || `Booking #${bookingId || 'N/A'}`,
-      referenceId: bookingId ? String(bookingId) : undefined,
+      note: note || `Booking #${bookingId}`,
+      referenceId: String(bookingId),
     });
+
+    // Update booking immediately on success — don't rely solely on the webhook
+    if (result.payment?.status === 'COMPLETED') {
+      await db
+        .update(bookings)
+        .set({ paymentStatus: 'paid', status: 'confirmed' })
+        .where(eq(bookings.id, Number(bookingId)));
+    }
 
     return NextResponse.json({
       paymentId: result.payment?.id,
@@ -66,7 +80,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Square payment error:', error);
     return NextResponse.json(
-      { error: error?.errors?.[0]?.detail || 'Failed to create Square payment' },
+      { error: 'Failed to create Square payment' },
       { status: 500 }
     );
   }

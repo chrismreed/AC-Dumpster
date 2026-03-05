@@ -94,6 +94,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
 interface StripePaymentElementProps {
   amount: number;
+  bookingId?: number;
   onSuccess?: () => void;
   onError?: (error: string) => void;
   collectBillingAddress?: boolean;
@@ -101,6 +102,7 @@ interface StripePaymentElementProps {
 
 export function StripePaymentElement({
   amount,
+  bookingId,
   onSuccess,
   onError,
   collectBillingAddress = false
@@ -125,7 +127,7 @@ export function StripePaymentElement({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: Math.round(amount * 100), // Convert to cents
+            bookingId, // Amount is looked up server-side from the booking record
             collectBillingAddress,
           }),
         });

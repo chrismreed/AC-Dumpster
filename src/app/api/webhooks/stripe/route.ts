@@ -26,27 +26,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let event: Stripe.Event;
     const webhookSecret = await getStripeWebhookSecret();
+    if (!webhookSecret) {
+      console.error('Stripe webhook secret not configured');
+      return NextResponse.json(
+        { message: 'Stripe webhook not configured' },
+        { status: 500 }
+      );
+    }
 
-    // Verify webhook signature if webhook secret is configured
-    if (webhookSecret) {
-      try {
-        event = stripe.webhooks.constructEvent(
-          body,
-          signature,
-          webhookSecret
-        );
-      } catch (err) {
-        console.error('Webhook signature verification failed:', err);
-        return NextResponse.json(
-          { message: 'Webhook signature verification failed' },
-          { status: 400 }
-        );
-      }
-    } else {
-      // Parse event without verification (for development)
-      event = JSON.parse(body) as Stripe.Event;
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
+      return NextResponse.json(
+        { message: 'Webhook signature verification failed' },
+        { status: 400 }
+      );
     }
 
     // Handle the event

@@ -3,6 +3,7 @@ import { notificationTemplates, notificationLog, businessSettings } from '@share
 import { eq } from 'drizzle-orm';
 import { sendTemplatedEmail } from '@/lib/email';
 import { sendSMS, type TwilioConfig } from '@/lib/sms';
+import { decrypt } from '@/lib/payment-config';
 
 export type NotificationEventType =
   | 'booking_confirmed'
@@ -60,12 +61,19 @@ async function loadProviderConfig(): Promise<{
     const settings = await db.select().from(businessSettings);
     const settingsMap = new Map(settings.map(s => [s.key, s.value]));
 
+    // Decrypt secrets that may have been stored encrypted via the admin settings route
+    const getRaw = (key: string) => settingsMap.get(key) || '';
+    const getSecret = (key: string, envFallback: string) => {
+      const raw = getRaw(key);
+      return (raw ? decrypt(raw) : '') || envFallback;
+    };
+
     return {
-      sendgridApiKey: settingsMap.get('sendgrid_api_key') || process.env.SENDGRID_API_KEY || '',
-      sendgridFromEmail: settingsMap.get('sendgrid_from_email') || process.env.SENDGRID_FROM_EMAIL || 'noreply@alleycatdumpsters.com',
-      twilioAccountSid: settingsMap.get('twilio_account_sid') || process.env.TWILIO_ACCOUNT_SID || '',
-      twilioAuthToken: settingsMap.get('twilio_auth_token') || process.env.TWILIO_AUTH_TOKEN || '',
-      twilioFromNumber: settingsMap.get('twilio_from_number') || process.env.TWILIO_FROM_NUMBER || '',
+      sendgridApiKey: getSecret('sendgrid_api_key', process.env.SENDGRID_API_KEY || ''),
+      sendgridFromEmail: getRaw('sendgrid_from_email') || process.env.SENDGRID_FROM_EMAIL || 'noreply@alleycatdumpsters.com',
+      twilioAccountSid: getRaw('twilio_account_sid') || process.env.TWILIO_ACCOUNT_SID || '',
+      twilioAuthToken: getSecret('twilio_auth_token', process.env.TWILIO_AUTH_TOKEN || ''),
+      twilioFromNumber: getRaw('twilio_from_number') || process.env.TWILIO_FROM_NUMBER || '',
     };
   } catch (error) {
     console.error('Failed to load provider config from DB, using env vars:', error);

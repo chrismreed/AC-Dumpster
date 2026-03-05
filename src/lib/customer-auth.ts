@@ -19,15 +19,15 @@ export interface CustomerSession {
  */
 export async function getCustomerSession(): Promise<CustomerSession | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('customer_token')?.value;
 
     if (!token) {
       return null;
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) throw new Error('JWT_SECRET environment variable is not set');
+    const jwtSecret = process.env.JWT_SECRET_CUSTOMER;
+    if (!jwtSecret) throw new Error('JWT_SECRET_CUSTOMER environment variable is not set');
 
     const decoded = jwt.verify(token, jwtSecret) as { customerId: number };
     const customerId = decoded.customerId;
