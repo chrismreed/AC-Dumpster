@@ -114,15 +114,64 @@ export async function POST(request: NextRequest) {
         const bookingId = paymentIntent.metadata?.bookingId;
 
         if (bookingId) {
-          await db
-            .update(bookings)
-            .set({
-              paymentStatus: 'paid',
-              status: 'confirmed',
-            })
+          // Only update + notify if not already marked paid (checkout.session.completed
+          // may have already handled this for Checkout-based flows).
+          const [existing] = await db
+            .select({ paymentStatus: bookings.paymentStatus })
+            .from(bookings)
             .where(eq(bookings.id, parseInt(bookingId)));
 
-          console.log(`Payment intent succeeded for booking ${bookingId}`);
+          if (existing && existing.paymentStatus !== 'paid') {
+            await db
+              .update(bookings)
+              .set({
+                paymentStatus: 'paid',
+                status: 'confirmed',
+                stripePaymentIntentId: paymentIntent.id,
+              })
+              .where(eq(bookings.id, parseInt(bookingId)));
+
+            console.log(`Payment intent succeeded for booking ${bookingId}`);
+
+            // Send booking confirmation notification
+            try {
+              const [booking] = await db
+                .select()
+                .from(bookings)
+                .where(eq(bookings.id, parseInt(bookingId)));
+
+              if (booking) {
+                let dumpsterName = '';
+                try {
+                  const [dumpster] = await db
+                    .select()
+                    .from(dumpsters)
+                    .where(eq(dumpsters.id, booking.dumpsterId));
+                  dumpsterName = dumpster?.name || '';
+                } catch {}
+
+                sendNotification('booking_confirmed', {
+                  customerName: booking.customerName,
+                  customerEmail: booking.customerEmail,
+                  customerPhone: booking.customerPhone,
+                  bookingId: bookingId,
+                  deliveryDate: new Date(booking.deliveryDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  }),
+                  dumpsterSize: dumpsterName,
+                  address: `${booking.deliveryAddress}, ${booking.deliveryCity}`,
+                  totalPrice: (booking.totalPrice / 100).toFixed(2),
+                });
+              }
+            } catch (notifError) {
+              console.error('Failed to send booking notification:', notifError);
+            }
+          } else {
+            console.log(`Booking ${bookingId} already paid — skipping duplicate payment_intent.succeeded`);
+          }
         }
         break;
       }
