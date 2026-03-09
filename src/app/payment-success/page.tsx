@@ -11,6 +11,8 @@ interface BookingDetails {
   customerEmail: string;
   deliveryDate: string;
   totalPrice: number;
+  status: string;
+  paymentStatus: string;
   dumpster?: { id: number; name: string };
   pricing?: { id: number; days: number; price: number };
   serviceZone?: { id: number; name: string; deliveryFee: number };
@@ -25,9 +27,12 @@ function PaymentSuccessContent() {
   const [error, setError] = useState<string | null>(null);
 
   const bookingId = searchParams.get('booking_id');
+  // Stripe appends these to the return_url after confirmPayment()
+  const paymentIntentId = searchParams.get('payment_intent');
+  const redirectStatus = searchParams.get('redirect_status');
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    const verifyAndFetch = async () => {
       if (!bookingId) {
         setError('Missing booking information');
         setIsLoading(false);
@@ -35,7 +40,23 @@ function PaymentSuccessContent() {
       }
 
       try {
-        const response = await fetch(`/api/admin/bookings/${bookingId}`);
+        // If Stripe redirected here with a succeeded payment intent, confirm
+        // the booking on the server as a safety net (in case webhook is delayed).
+        if (paymentIntentId && redirectStatus === 'succeeded') {
+          await fetch('/api/confirm-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentIntentId,
+              bookingId: Number(bookingId),
+            }),
+          });
+          // Not awaiting the result strictly — if it fails the webhook will
+          // handle it. We still proceed to show the booking details.
+        }
+
+        // Fetch booking details from the public confirmation endpoint
+        const response = await fetch(`/api/booking-confirmation/${bookingId}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch booking details');
@@ -51,8 +72,8 @@ function PaymentSuccessContent() {
       }
     };
 
-    verifyPayment();
-  }, [bookingId]);
+    verifyAndFetch();
+  }, [bookingId, paymentIntentId, redirectStatus]);
 
   if (isLoading) {
     return (
