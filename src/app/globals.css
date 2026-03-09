@@ -1,0 +1,481 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Premium Brand Colors */
+  --color-primary: #f7c948;
+  --color-primary-dark: #d9aa28;
+  --color-dark: #0f172a;
+  --color-light: #ffffff;
+  --color-highlight: #f7c948;
+  --color-gray: #f8fafc;
+  --color-border: #e2e8f0;
+
+  /* Modern HSL Color System */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 45 93% 63%;
+  /* #f7c948 */
+  --primary-foreground: 0 0% 0%;
+  /* Black text on yellow for contrast */
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 0 0% 100%;
+  --ring: 45 93% 63%;
+
+  /* Elevated card - same as card in light mode */
+  --card-elevated: 0 0% 100%;
+  --card-elevated-foreground: 222.2 84% 4.9%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+
+  /* Lighter card variant for product/pricing cards - subtle light gray that provides contrast without being too bright */
+  --card-elevated: 220 15% 20%;
+  --card-elevated-foreground: 210 40% 98%;
+
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 45 93% 63%;
+  --primary-foreground: 0 0% 0%;
+
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217.2 32.6% 17.5%;
+  --input: 222.2 84% 8%;
+  --ring: 45 93% 63%;
+
+  --color-primary: #f7c948;
+  --color-dark: #f8fafc;
+  /* Inverted for utility usage */
+}
+
+/* Light scrollbars for admin dialogs (forceLight adds .light to DialogContent) */
+.light::-webkit-scrollbar,
+.light ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.light::-webkit-scrollbar-track,
+.light ::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.light::-webkit-scrollbar-thumb,
+.light ::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.light::-webkit-scrollbar-thumb:hover,
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Force light mode for admin dashboard - overrides dark mode when .light class is present */
+.light {
+  color-scheme: light;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 45 93% 63%;
+  --primary-foreground: 0 0% 0%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 0 0% 100%;
+  --ring: 45 93% 63%;
+
+  --color-primary: #f7c948;
+  --color-dark: #0f172a;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+    position: relative;
+  }
+
+  #__next {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+
+  .bg-dark {
+    background-color: var(--color-dark);
+  }
+
+  .bg-light {
+    background-color: var(--color-light);
+  }
+
+  .bg-gray {
+    background-color: var(--color-gray);
+  }
+
+  .text-light {
+    color: var(--color-light);
+  }
+
+  .text-dark {
+    color: var(--color-dark);
+  }
+
+  .text-primary {
+    color: var(--color-primary);
+  }
+
+  /* FullCalendar Custom Styling - Uses theme variables */
+  .fc-toolbar {
+    @apply flex-wrap gap-2 mb-4;
+  }
+
+  .fc-toolbar-title {
+    @apply text-xl font-semibold text-foreground tracking-tight;
+  }
+
+  .fc-button-group {
+    @apply inline-flex rounded-lg shadow-sm;
+  }
+
+  .fc-button {
+    @apply px-3 py-2 text-sm font-medium border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors duration-200;
+  }
+
+  .fc-button:first-child {
+    @apply rounded-l-lg;
+  }
+
+  .fc-button:last-child {
+    @apply rounded-r-lg;
+  }
+
+  .fc-button:not(:first-child):not(:last-child) {
+    @apply rounded-none;
+  }
+
+  .fc-button-active {
+    @apply bg-primary text-primary-foreground border-primary hover:bg-primary/90;
+  }
+
+  .fc-prev-button,
+  .fc-next-button {
+    @apply px-4 py-2 rounded-lg bg-background border border-input text-foreground hover:bg-accent hover:text-accent-foreground shadow-sm transition-colors duration-200;
+  }
+
+  .fc-today-button {
+    @apply px-4 py-2 rounded-lg bg-primary text-primary-foreground border border-primary hover:bg-primary/90 shadow-sm font-medium transition-colors duration-200;
+  }
+
+  .fc-toolbar-chunk {
+    @apply flex items-center gap-2;
+  }
+
+  .fc-direction-ltr .fc-toolbar>*> :not(:first-child) {
+    @apply ml-0;
+  }
+
+  .fc-daygrid-day-number {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .fc-col-header-cell {
+    @apply bg-muted border-border font-medium text-muted-foreground;
+  }
+
+  .fc-scrollgrid {
+    @apply border border-border rounded-lg overflow-hidden;
+  }
+
+  .fc-event {
+    @apply border-0 rounded-md shadow-sm;
+  }
+
+  /* Mobile responsive calendar styling */
+  @media (max-width: 768px) {
+    .fc-toolbar {
+      @apply flex-col gap-3;
+    }
+
+    .fc-toolbar-title {
+      @apply text-lg text-center;
+    }
+
+    .fc-button {
+      @apply px-2 py-1.5 text-xs;
+    }
+
+    .fc-prev-button,
+    .fc-next-button {
+      @apply px-3 py-1.5 text-xs;
+    }
+
+    .fc-today-button {
+      @apply px-3 py-1.5 text-xs;
+    }
+
+    .fc-toolbar-chunk {
+      @apply justify-center;
+    }
+
+    .fc-daygrid-day-number {
+      @apply text-xs;
+    }
+  }
+
+  /* Better arrow icons for navigation */
+  .fc-icon-chevron-left:before {
+    content: "‹";
+    @apply text-lg font-bold;
+  }
+
+  .fc-icon-chevron-right:before {
+    content: "›";
+    @apply text-lg font-bold;
+  }
+
+  .border-primary {
+    border-color: var(--color-primary);
+  }
+
+  .border-subtle {
+    border-color: var(--color-border);
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-light);
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn-dark {
+    background-color: var(--color-dark);
+    color: var(--color-light);
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .btn-dark:hover {
+    filter: brightness(1.3);
+  }
+
+  /* Admin form enhancements */
+  .admin-form .form-card {
+    @apply bg-white border border-subtle rounded-lg shadow-sm transition-all hover:shadow-md;
+  }
+
+  .admin-card {
+    @apply rounded-lg shadow-sm border border-subtle bg-white transition-all;
+  }
+
+  .admin-card:hover {
+    @apply shadow-md;
+  }
+
+  .admin-input {
+    @apply rounded-md border-subtle focus:border-primary focus:ring-1 focus:ring-primary transition-all;
+  }
+
+  .admin-section {
+    @apply p-6 bg-gray rounded-lg mb-6;
+  }
+
+  /* Fix dialog modal issues - ensure proper z-index and interaction */
+  [data-radix-dialog-overlay] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+  }
+
+  [data-radix-dialog-content] {
+    position: fixed !important;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Ensure FullCalendar doesn't interfere with dialogs */
+  .fc {
+    z-index: 1 !important;
+  }
+
+  .fc .fc-popover {
+    z-index: 2 !important;
+  }
+
+  /* Ensure dialog content is scrollable */
+  [data-radix-dialog-content] {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Mobile menu slide animations */
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  .slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .slide-out-right {
+    animation: slideOutRight 0.3s ease-in;
+  }
+}
+
+/* These overrides have been removed - now using CSS variables in components */
+/* Select dropdowns and form inputs use bg-background, text-foreground, etc. */
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .glass {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(247, 201, 72, 0.3);
+  }
+
+  /* Angled Button Utilities */
+  .btn-angled {
+    transform: skew(-12deg);
+    border-radius: 0.25rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+
+  .btn-angled>* {
+    transform: skew(12deg);
+  }
+
+  .btn-angled:hover {
+    transform: skew(-12deg) translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 10px 20px -5px rgb(0 0 0 / 0.2), 0 4px 8px -4px rgb(0 0 0 / 0.15);
+  }
+
+  .btn-angled:active {
+    transform: skew(-12deg) translateY(0);
+    box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  }
+}
+
+@layer base {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-style: italic;
+    letter-spacing: -0.04em;
+    /* Tighter tracking for "sharper" look */
+  }
+
+  /* Hero heading specific - extra sharp/condensed feel */
+  .hero-heading {
+    font-style: italic;
+    letter-spacing: -0.05em;
+    font-stretch: condensed;
+  }
+}

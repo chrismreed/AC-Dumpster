@@ -4,5 +4,21 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+*.tsbuildinfo
+
+# Environment & secrets
 .env
-.env.production
+.env.*
+!.env.example
+
+# Build output
+.next/
+
+# IDE/temp
+.backup/
+.claude/
+tmpclaude-*
+*.log
+cookies.txt
+NUL

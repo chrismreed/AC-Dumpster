@@ -1,0 +1,57 @@
+# CodeRabbit configuration for AC-Dumpster
+# https://docs.coderabbit.ai/configure/configure-coderabbit
+
+language: "en-US"
+
+reviews:
+  # Review every PR push (incremental diff only after first review)
+  auto_review:
+    enabled: true
+    drafts: true          # Also review draft PRs
+    base_branches:
+      - "main"
+
+  # Focus areas for this codebase
+  profile: "chill"        # assertive | chill — start chill, can tighten later
+
+  path_instructions:
+    - path: "src/lib/**"
+      instructions: |
+        This is core business logic. Pay close attention to:
+        - Error handling and edge cases
+        - Security (auth checks, data validation)
+        - DB query safety (SQL injection, unhandled nulls)
+
+    - path: "src/app/api/**"
+      instructions: |
+        These are Next.js API routes. Check for:
+        - Missing authentication/authorization guards
+        - Proper HTTP status codes
+        - Input validation before DB writes
+        - Sensitive data exposure in responses
+
+    - path: "src/app/booking/**"
+      instructions: |
+        Booking flow is revenue-critical. Verify:
+        - Price calculations are correct and not client-manipulatable
+        - Payment state transitions are safe
+        - Race conditions on dumpster availability
+
+    - path: "src/app/account/**"
+      instructions: |
+        Customer account pages. Check for:
+        - Proper session/auth validation
+        - Users can only access their own data
+
+  # Only review the Next.js app — ignore legacy Vite client and other noise
+  path_filters:
+    - "src/**"
+    - "!**/*.md"
+    - "!.next/**"
+    - "!node_modules/**"
+    - "!**/*.lock"
+    - "!client/**"
+
+chat:
+  # Allow @coderabbitai commands in PR comments
+  auto_reply: true
