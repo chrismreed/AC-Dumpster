@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { bookings, dumpsterPricing, dumpsters, fleetUnits, jobs } from '@shared/schema';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, gt } from 'drizzle-orm';
+
+// Pending bookings older than this are considered abandoned and don't block availability
+const PENDING_EXPIRY_HOURS = 2;
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +35,9 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + pricing.days);
 
+    // Pending bookings expire after PENDING_EXPIRY_HOURS — don't count abandoned ones
+    const pendingCutoff = new Date(Date.now() - PENDING_EXPIRY_HOURS * 60 * 60 * 1000);
+
     // Get all active bookings for this dumpster that overlap with the requested period
     const overlappingBookings = await db
       .select()
@@ -40,9 +46,14 @@ export async function POST(request: NextRequest) {
         and(
           eq(bookings.dumpsterId, Number(dumpsterId)),
           or(
-            eq(bookings.status, 'pending'),
+            // Confirmed/delivered always block
             eq(bookings.status, 'confirmed'),
-            eq(bookings.status, 'delivered')
+            eq(bookings.status, 'delivered'),
+            // Pending only blocks if created recently (not abandoned)
+            and(
+              eq(bookings.status, 'pending'),
+              gt(bookings.createdAt, pendingCutoff)
+            )
           )
         )
       );
